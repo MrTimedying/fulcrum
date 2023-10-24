@@ -1,0 +1,63 @@
+{
+  "name": "fulcrum-app",
+  "version": "0.1.0",
+  "description": "Fulcrum aims to be a management software and workflow facilitator that will ease up the processes of work of any of these professions in a functional and practical manner.",
+  "keywords": [
+    "fitness",
+    "exercise",
+    "workout",
+    "health",
+    "management",
+    "tracking",
+    "trainer",
+    "physical therapy",
+    "kinesiology",
+    "fitness app",
+    "exercise app",
+    "patient management",
+    "workout app"
+  ],
+  "license": "MIT",
+  "private": true,
+  "main": "main.js",
+  "dependencies": {
+    "@testing-library/jest-dom": "^5.17.0",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/user-event": "^13.5.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-scripts": "5.0.1",
+    "tailwindcss": "^3.3.3",
+    "web-vitals": "^2.1.4"
+  },
+  "scripts": {
+    "start-react": "react-scripts start",
+    "start-electron": "electron .",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "@babel/plugin-transform-private-property-in-object": "^7.22.11",
+    "electron": "^27.0.0",
+    "electron-builder": "^24.6.4"
+  }
+}
