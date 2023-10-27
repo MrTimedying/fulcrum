@@ -2,7 +2,7 @@ const sqlite3 = require('sqlite3').verbose();
 
 const db = new sqlite3.Database('fulcrum.db');
 
-function initializeDatabase() {
+/* function initializeDatabase() {
   db.serialize(() => {
     // Check if the "Patients" table exists
     db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='Patients'", (err, table) => {
@@ -12,6 +12,6 @@ function initializeDatabase() {
       }
     });
   });
-}
+} */
 
-module.exports = { db, initializeDatabase };
+module.exports = { db };
