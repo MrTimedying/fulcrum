@@ -13,6 +13,7 @@ function Home() {
         <Sidebar />
         <Routes>
           <Route path="/patients/:ID" element={<MainBody />} />
+          <Route path="/" element={<MainBody />} />
         </Routes>
       </BrowserRouter>
     </div>

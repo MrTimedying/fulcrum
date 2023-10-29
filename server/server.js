@@ -6,6 +6,7 @@ const app = express();
 
 // Enable CORS for all routes
 app.use(cors());
+app.use(express.json());
 
 app.get("/api/patients", (req, res) => {
     db.all("SELECT * FROM Patients", (err, data) => {
@@ -40,8 +41,48 @@ app.get("/api/tests", (req, res) => {
     });
 });
 
-app.get('/test', (req, res) => {
-    res.json({ message: 'Test API endpoint reached' });
+/* I will list here instead all the POST methods */
+
+app.post("/api/patients", (req, res) => {
+    const {
+        Name,
+        Surname,
+        Age,
+        Gender,
+        BMI,
+        Status,
+        Height,
+        Weight
+    } = req.body;
+
+    if (!Name || !Surname || !Age || !Gender || !BMI || !Status || !Height || !Weight) {
+        return res.status(400).json({ error: "All fields are required" });
+    }
+
+    const query = `
+        INSERT INTO Patients (Name, Surname, Age, Gender, BMI, Status, Height, Weight)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    const values = [
+        Name,
+        Surname,
+        Age,
+        Gender,
+        BMI,
+        Status,
+        Height,
+        Weight
+    ];
+
+    db.run(query, values, function (err) {
+        if (err) {
+            console.error(err);
+            return res.status(500).json({ error: "Internal Server Error" });
+        }
+
+        res.status(201).json({ message: "Patient created", patientId: this.lastID });
+    });
 });
 
 app.listen(8080);

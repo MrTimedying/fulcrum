@@ -9,14 +9,14 @@ function MainBody() {
   if (ID) {
     // Fetch patient data and display patient-specific content
     return (
-      <div className="w-4/5 bg-slate-800 p-4 h-full">
+      <div className="w-4/5 bg-stone-800 border-l-2 border-stone-700 p-4 h-full">
         Display content for patient with ID: {ID}
       </div>
     );
   } else {
     // Display a message when no patient is selected
     return (
-      <div className="w-4/5 bg-slate-800 p-4 h-full">
+      <div className="w-4/5 bg-stone-800 border-l-2 border-stone-700 p-4 h-full">
         Select a patient to view their information.
       </div>
     );
