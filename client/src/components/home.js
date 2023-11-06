@@ -3,6 +3,7 @@ import MainBody from './mainbody'
 import Sidebar from './sidebar'
 import '../App.css';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import InterventionEditor from './editor/editor';
 
 
 
@@ -14,6 +15,7 @@ function Home() {
         <Routes>
           <Route path="/patients/:ID" element={<MainBody />} />
           <Route path="/" element={<MainBody />} />
+          <Route path="/editor" element={<InterventionEditor/>} />
         </Routes>
       </BrowserRouter>
     </div>
