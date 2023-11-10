@@ -1,7 +1,9 @@
 import React, { useState,useEffect, useCallback } from "react";
 import Timer from ".//time.ts";
+import PhasesForm from "./phasesEditor.js";
 
-function InterventionEditor() {
+
+function Editor() {
   const [phase, setPhase] = useState([]);
   const [selectedPhase, setSelectedPhase] = useState(null);
   const [interventionStartDate, setInterventionStartDate] = useState(null);
@@ -9,6 +11,12 @@ function InterventionEditor() {
   const [isAccepted, setIsAccepted] = useState(false);
   const [timer, setTimer] = useState(null);
   const [numPhases, setNumPhases] = useState(0);
+  const [PhaseValues, setPhaseValues] = useState([]);
+  const [PhaseData, setPhaseData] = useState([]);
+
+  // Formik Hook
+
+
 
   
   // First part of the Editor functions, handling the date picking logic.
@@ -105,12 +113,17 @@ function InterventionEditor() {
   };
 
   const phaseSelection = (e) => {
-    setSelectedPhase(Number(e.target.value));
+    const selectedPhaseIndex = Number(e.target.value)
+    setSelectedPhase(selectedPhaseIndex);
+
+     if (PhaseValues[selectedPhaseIndex]) {
+    // Parse the JSON string into an object and set the form's values
+    setPhaseData(JSON.parse(PhaseValues[selectedPhaseIndex]));
+  } 
+
   };
 
-  const phasesContent = (i) => {
-    return <div>Content specific for phase {i+1}</div>;
-  };
+
 
 
 
@@ -122,62 +135,121 @@ function InterventionEditor() {
         <div className="mb-4">
           <label className="text-gray-700 text-sm">
             <h3>Start of the intervention date</h3>
-            <input id="startDateInput" type="date" placeholder="Start day" onChange={changeInterventionStartDate}></input>
+            <input
+              id="startDateInput"
+              type="date"
+              placeholder="Start day"
+              onChange={changeInterventionStartDate}
+            ></input>
             <h3>End of the intervention date</h3>
-            <input id="endDateInput" type="date" placeholder="End day" onChange={changeInterventionEndDate}></input>
+            <input
+              id="endDateInput"
+              type="date"
+              placeholder="End day"
+              onChange={changeInterventionEndDate}
+            ></input>
           </label>
         </div>
-        
-        <button className="text-white bg-[#24292F] hover:bg-[#24292F]/90 focus:ring-4 focus:outline-none focus:ring-[#24292F]/50 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500 dark:hover:bg-[#050708]/30 mr-2 mb-2" onClick={handleAccept} disabled={!interventionStartDate || !interventionEndDate || isAccepted}>Accept</button>
-        <button className="text-white bg-[#24292F] hover:bg-[#24292F]/90 focus:ring-4 focus:outline-none focus:ring-[#24292F]/50 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500 dark:hover:bg-[#050708]/30 mr-2 mb-2" onClick={resetDate} disabled={!interventionStartDate || !interventionEndDate || !isAccepted}>Reset</button>
 
-      {isAccepted && (
-        <div>
-          <p>Intervention Start Date: {interventionStartDate.toDateString()}</p>
-          <p>Intervention End Date: {interventionEndDate.toDateString()}</p>
-          {/* You can add additional logic here to save or perform further actions */}
-        </div>
-      )}
+        <button
+          className="text-white bg-[#24292F] hover:bg-[#24292F]/90 focus:ring-4 focus:outline-none focus:ring-[#24292F]/50 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500 dark:hover:bg-[#050708]/30 mr-2 mb-2"
+          onClick={handleAccept}
+          disabled={
+            !interventionStartDate || !interventionEndDate || isAccepted
+          }
+        >
+          Accept
+        </button>
+        <button
+          className="text-white bg-[#24292F] hover:bg-[#24292F]/90 focus:ring-4 focus:outline-none focus:ring-[#24292F]/50 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500 dark:hover:bg-[#050708]/30 mr-2 mb-2"
+          onClick={resetDate}
+          disabled={
+            !interventionStartDate || !interventionEndDate || !isAccepted
+          }
+        >
+          Reset
+        </button>
 
+        {isAccepted && (
+          <div>
+            <p>
+              Intervention Start Date: {interventionStartDate.toDateString()}
+            </p>
+            <p>Intervention End Date: {interventionEndDate.toDateString()}</p>
+            {/* You can add additional logic here to save or perform further actions */}
+          </div>
+        )}
       </div>
 
-      <div className="grid grid-cols-2 gap-4 w-192 mt-4 border border-gray-300 rounded-lg shadow-md">
-        <h2 className="text-lg col-span-2 font-semibold mb-2">
-          Phases (or Mesocycles)
-        </h2>
-        <div className="col-span-2">
-          <button id="createPhase" className="text-white bg-[#24292F] hover:bg-[#24292F]/90 focus:ring-4 focus:outline-none focus:ring-[#24292F]/50 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500 dark:hover:bg-[#050708]/30 mr-2 mb-2" disabled={!timer} onClick={createPhase}>Create</button>
-          <button id="editPhase" className="text-white bg-[#24292F] hover:bg-[#24292F]/90 focus:ring-4 focus:outline-none focus:ring-[#24292F]/50 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500 dark:hover:bg-[#050708]/30 mr-2 mb-2" onClick={editPhase} disabled={selectedPhase === null}>
-            Edit
-          </button>
-          <button id="deletePhase" className="text-white bg-[#24292F] hover:bg-[#24292F]/90 focus:ring-4 focus:outline-none focus:ring-[#24292F]/50 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500 dark:hover:bg-[#050708]/30 mr-2 mb-2" onClick={deletePhase} disabled={selectedPhase === null}>
-            Delete
-          </button>
-        </div>
-        <div id="phase_editor" className="w-96 h-40 p-4 overflow-y-auto">
-          <div>
-            {phase.map((phase, index) => (
-              <div key={phase.id}>
-                <input
-                  type="radio"
-                  name="phase"
-                  value={index}
-                  checked={selectedPhase === index}
-                  onChange={phaseSelection}
-                />
-                {phase.label}
-              </div>
-            ))}
+      <div className="flex gap-4 w-192 mt-4 border border-gray-300 rounded-lg shadow-md">
+        <div className="flex flex-col">
+          <h2 className="text-lg h-16 col-span-1 row-span-1 font-semibold mb-2">
+            Phases (or Mesocycles)
+          </h2>
+          <div className="h-16 col-span-1 row-span-1">
+            <button
+              id="createPhase"
+              className="text-white bg-[#24292F] hover:bg-[#24292F]/90 focus:ring-4 focus:outline-none focus:ring-[#24292F]/50 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500 dark:hover:bg-[#050708]/30 mr-2 mb-2"
+              disabled={!timer}
+              onClick={createPhase}
+            >
+              Create
+            </button>
+            <button
+              id="editPhase"
+              className="text-white bg-[#24292F] hover:bg-[#24292F]/90 focus:ring-4 focus:outline-none focus:ring-[#24292F]/50 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500 dark:hover:bg-[#050708]/30 mr-2 mb-2"
+              onClick={editPhase}
+              disabled={selectedPhase === null}
+            >
+              Edit
+            </button>
+            <button
+              id="deletePhase"
+              className="text-white bg-[#24292F] hover:bg-[#24292F]/90 focus:ring-4 focus:outline-none focus:ring-[#24292F]/50 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500 dark:hover:bg-[#050708]/30 mr-2 mb-2"
+              onClick={deletePhase}
+              disabled={selectedPhase === null}
+            >
+              Delete
+            </button>
+          </div>
+          <div
+            id="phase_editor"
+            className="col-span-1 row-span-1 w-96 h-80 p-4 overflow-y-auto"
+          >
+            <div>
+              {phase.map((phase, index) => (
+                <div key={phase.id}>
+                  <input
+                    type="radio"
+                    name="phase"
+                    value={index}
+                    checked={selectedPhase === index}
+                    onChange={phaseSelection}
+                  />
+                  {phase.label}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
-        <div id="phase_editor_additional" className="w-96 h-40 p-4 overflow-y-auto">
-
-          {selectedPhase !== null && phasesContent(selectedPhase)}
-        
+        <div className="grid grid-cols-1 grid-rows-3">
+          <div
+            id="phase_editor_additional"
+            className="col-span-1 row-span-3 w-96 h-full p-4 overflow-y-auto"
+          >
+            {selectedPhase !== null && (
+              <PhasesForm
+                selectedPhase={selectedPhase} // Pass the selectedPhase
+                setPhaseValues={setPhaseValues}
+                selectedValues={PhaseData}
+               // Pass the setPhaseValues function
+              />
+            )}
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-export default InterventionEditor;
+export default Editor;
