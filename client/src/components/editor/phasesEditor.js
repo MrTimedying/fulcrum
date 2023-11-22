@@ -1,12 +1,20 @@
-import React, { useState } from 'react';
-import { Formik, Form, Field } from 'formik';
+import React, { useEffect, useState, useMemo } from "react";
+import { Formik, Form, Field, ErrorMessage } from "formik";
+import * as Yup from "yup"; // Import Yup for validation
 
-const PhasesForm = ({ selectedPhase, setPhaseValues, selectedValues }) => {
-  const initialFormValues = {
-    weeks: '',
-    dropdown: '',
-    freeText: '',
-  };
+const PhasesForm = ({
+  selectedPhase,
+  setPhaseValues,
+  selectedValues,
+  setViewPhase,
+  timer
+  /* phaseIndex */
+}) => {
+  const initialFormValues = useMemo(() => ({
+    phasename: "",
+    weeksnumber: 0,
+    phasescope: "",
+  }), []);
 
   const [formValues, setFormValues] = useState(initialFormValues);
 
@@ -16,52 +24,122 @@ const PhasesForm = ({ selectedPhase, setPhaseValues, selectedValues }) => {
       ...prevPhaseValues,
       [selectedPhase]: jsonData,
     }));
+    console.log(values);
+    setViewPhase(values);
+
+    /* timer.setWeeksCounter(timer.weeksCounter - values.weeksnumber); */
+    console.log(timer.phaseCounter);
+    console.log(timer.weeksCounter);
+    console.log(timer.weeksHandler());
+
   };
 
-  const loadOldData = () => {
-    if (selectedValues) {
-      const parsedValues = selectedValues;
-      setFormValues(parsedValues);
+  useEffect(() => {
+    if (typeof selectedValues === 'object' && selectedValues !== null && !Array.isArray(selectedValues)) {
+      if (selectedValues !== null && selectedValues !== undefined) {
+        try {
+          const parsedValues = selectedValues;
+          setFormValues(parsedValues);
+          setViewPhase(parsedValues);
+        } catch (error) {
+          console.error('This error has occurred:', error);
+          setFormValues(initialFormValues);
+        }
+      } else {
+        setFormValues(initialFormValues);
+        console.error('I am arrived to the first else!');
+      }
     } else {
-      // If no data is available, reset the form values
+      
+      console.error('I am arrived to the second else!');
       setFormValues(initialFormValues);
+      
+    }
+  }, [selectedPhase, initialFormValues, selectedValues, setViewPhase, setFormValues]);
+
+  const loadOldData = () => {
+    if (typeof selectedValues === 'object' && selectedValues !== null && !Array.isArray(selectedValues)) {
+      if (selectedValues !== null && selectedValues !== undefined) {
+        try {
+          const parsedValues = selectedValues;
+          setFormValues(parsedValues);
+        } catch (error) {
+          console.error('This error has occurred:', error);
+          setFormValues(initialFormValues);
+        }
+      } else {
+        // If no data is available, reset the form values
+        alert('Data could not be retrived!');
+      }
+    } else {
+      alert('There is no data stored!');
+      setFormValues(initialFormValues);
+      
     }
   };
 
+  // Define validation schema using Yup
+  const validationSchema = Yup.object().shape({
+    phasename: Yup.string().required("Name is required"),
+    weeksnumber: Yup.number()
+      .required("Number of weeks is required")
+      .min(4, "Minimum 4 weeks"),
+    phasescope: Yup.string().required("Scope is required"),
+  });
+
   return (
     <Formik
+      key={selectedPhase}
       enableReinitialize={true}
       initialValues={formValues}
       onSubmit={handleFormSubmit}
+      validationSchema={validationSchema} // Add validation schema to Formik
     >
       <Form>
-        <div className="form-group">
-          <label htmlFor="weeks">How many weeks?</label>
-          <Field as="select" name="weeks" id="weeks">
-            <option value="">Select</option>
-            <option value="1">1 week</option>
-            <option value="2">2 weeks</option>
-            <option value="3">3 weeks</option>
-            {/* Add more options as needed */}
-          </Field>
+        <div className="form-group flex flex-col w-full">
+          <label htmlFor="phaseName">Name of the Phase</label>
+          <Field
+            as="input"
+            name="phasename"
+            id="phasename"
+            placeholder="Name the phase"
+          />
+          <ErrorMessage
+            name="phasename"
+            component="div"
+            className="error-message"
+          />
         </div>
-        <div className="form-group">
-          <label htmlFor="dropdown">Dropdown</label>
-          <Field as="select" name="dropdown" id="dropdown">
-            <option value="">Select</option>
-            <option value="option1">Option 1</option>
-            <option value="option2">Option 2</option>
-            <option value="option3">Option 3</option>
-            {/* Add more options as needed */}
-          </Field>
+        <div className="form-group flex flex-col">
+          <label htmlFor="weeksNumber">Number of weeks</label>
+          <Field
+            type="number"
+            name="weeksnumber"
+            id="weeksnumber"
+            step="1"
+            min="4"
+            max={timer.weeksHandler()}
+          />
+          <ErrorMessage
+            name="weeksnumber"
+            component="div"
+            className="error-message"
+          />
         </div>
-        <div className="form-group">
-          <label htmlFor="freeText">Free Text</label>
-          <Field type="text" name="freeText" id="freeText" />
+        <div className="form-group flex-col flex">
+          <label htmlFor="phaseScope">Scope of the phase</label>
+          <Field type="text" name="phasescope" id="phasescope" />
+          <ErrorMessage
+            name="phasescope"
+            component="div"
+            className="error-message"
+          />
         </div>
 
         <button type="submit">Submit</button>
-        <button type="button" onClick={loadOldData}>Load</button>
+        <button type="button" onClick={loadOldData}>
+          Load
+        </button>
       </Form>
     </Formik>
   );

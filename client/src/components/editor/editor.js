@@ -1,81 +1,31 @@
-import React, { useState,useEffect, useCallback } from "react";
-import Timer from ".//time.ts";
+import React, { useState } from "react";
 import PhasesForm from "./phasesEditor.js";
+import { InterventionEditor } from "./interventionEditor.js";
+import { Viewer } from "./viewer.js";
 
 
 function Editor() {
   const [phase, setPhase] = useState([]);
   const [selectedPhase, setSelectedPhase] = useState(null);
   const [interventionStartDate, setInterventionStartDate] = useState(null);
-  const [interventionEndDate, setInterventionEndDate] = useState(null);
-  const [isAccepted, setIsAccepted] = useState(false);
+  const [weeks, setWeeks] = useState(null);
+  const [isAccepted, setIsAccepted] = useState(false); 
   const [timer, setTimer] = useState(null);
   const [numPhases, setNumPhases] = useState(0);
-  const [PhaseValues, setPhaseValues] = useState([]);
-  const [PhaseData, setPhaseData] = useState([]);
+  const [PhaseValues, setPhaseValues] = useState([]); // This one stores the data for all the phases
+  const [PhaseData, setPhaseData] = useState([]); // This one is just for the selection and the operations on a single phase
+  /* const [phaseIndex, setPhaseIndex] = useState(0); */
 
-  // Formik Hook
-
-
-
-  
-  // First part of the Editor functions, handling the date picking logic.
-  const handleAccept = () => {
-    const durationInMilliseconds = interventionEndDate - interventionStartDate;
-    const durationInDays = durationInMilliseconds / (1000 * 60 * 60 * 24);
-    const durationInWeeks = durationInMilliseconds / (1000 * 60 * 60 * 24 * 7);  
-    if (durationInWeeks >= 4 && (durationInWeeks%4) === 0 && (durationInDays%7) === 0 ) {
-      setIsAccepted(true);
-      console.log("Dates are of the correct chronological order!")
-    }
-
-    else {
-      setIsAccepted(false);
-      console.log("You can't setup a start date after the end date bruv!")
-      document.getElementById('startDateInput').value = '';
-      document.getElementById('endDateInput').value = '';
-    }
-    
-  };
-
-  const timerBuilder = useCallback( () => {
-    console.log("Created a new Timer Instance")
-    return new Timer(interventionStartDate, interventionEndDate);
-  }, [interventionStartDate, interventionEndDate]);
-
-  useEffect(() => {
-    if (isAccepted === true) {
-      const newTimer = timerBuilder();
-      setTimer(newTimer);
-    }
-  }, [isAccepted, timerBuilder]);
-
-  const changeInterventionStartDate = (e) => {
-    setInterventionStartDate(new Date(e.target.value));
-    setIsAccepted(false);
-  };
-
-  const changeInterventionEndDate = (e) => {
-    setInterventionEndDate(new Date(e.target.value));
-    setIsAccepted(false);
-  };
-
-  const resetDate = (e) => {
-    setInterventionStartDate(null);
-    setInterventionEndDate(null);
-    setIsAccepted(false);
-    setTimer(null);
-
-    document.getElementById('startDateInput').value = '';
-    document.getElementById('endDateInput').value = '';
-  }
+  //State variables for the Viewer
+  const [viewIntervention, setViewIntervention] = useState();
+  const [viewPhase, setViewPhase] = useState();
 
   // Second part of the Editor functions, handling the CRUD for mesophases.
   const createPhase = () => {
-    console.log(timer.calculateWeeks);
-    console.log(numPhases);
-    if (timer.calculateWeeks%4 === 0 ){
-      if (timer.calculateMonths%1 === 0 && timer.calculateMonths > numPhases){
+    /* console.log(timer.calculateWeeks); */
+    /* console.log(numPhases); */
+    if (timer){
+      if (Math.floor(timer.calculateMonths) > numPhases){
 
         setPhase([
           ...phase,
@@ -83,6 +33,10 @@ function Editor() {
         ]);
     
         setNumPhases(numPhases + 1);
+        timer.setPhaseCounter(timer.phaseCounter + 1);
+        console.log(timer.phaseCounter);
+        console.log(timer.weeksCounter);
+        console.log(timer.weeksHandler());
 
       }
 
@@ -105,148 +59,152 @@ function Editor() {
 
   const deletePhase = () => {
     if (selectedPhase !== null) {
+      // This part removes the index from the array that stores the indexes
       const updatedPhases = phase.filter((_, index) => index !== selectedPhase);
       setPhase(updatedPhases);
       setSelectedPhase(null);
       setNumPhases(numPhases - 1);
+      
+
+      // This is still the logic for deleting the values of the deleted phases
+      const updatedPhasesValues = { ...PhaseValues };
+      if ( updatedPhasesValues[selectedPhase] !== null && updatedPhasesValues[selectedPhase] !== undefined) {
+        const { weeksnumber: weeksNumber } = JSON.parse(updatedPhasesValues[selectedPhase]);
+        console.log(weeksNumber);
+        timer.setPhaseCounter(timer.phaseCounter - 1);
+        /* timer.setWeeksCounter(timer.weeksCounter + weeksNumber); */
+
+        delete updatedPhasesValues[selectedPhase];
+        setPhaseValues(updatedPhasesValues);
+        console.log(timer.phaseCounter);
+        console.log(timer.weeksCounter);
+        console.log(timer.weeksHandler());
+      } else {
+        console.log('I am arrived here, the phase should be deleted without problems');
+        timer.setPhaseCounter(timer.phaseCounter - 1);
+        console.log(timer.phaseCounter);
+        console.log(timer.weeksCounter);
+        console.log(timer.weeksHandler());
+      }  
     }
   };
+  
 
   const phaseSelection = (e) => {
     const selectedPhaseIndex = Number(e.target.value)
     setSelectedPhase(selectedPhaseIndex);
+    /* setPhaseIndex(selectedPhaseIndex); */
 
      if (PhaseValues[selectedPhaseIndex]) {
     // Parse the JSON string into an object and set the form's values
     setPhaseData(JSON.parse(PhaseValues[selectedPhaseIndex]));
-  } 
+  } else  {
+    setPhaseData([]);
+  }
 
   };
 
-
-
-
-
-
   return (
-    <div className="flex flex-col items-center justify-center h-full overflow-y-auto">
-      <div className="w-96 p-6 bg-white rounded-lg shadow-lg">
-        <h2 className="text-xl font-semibold mb-4">Intervention Editor</h2>
-        <div className="mb-4">
-          <label className="text-gray-700 text-sm">
-            <h3>Start of the intervention date</h3>
-            <input
-              id="startDateInput"
-              type="date"
-              placeholder="Start day"
-              onChange={changeInterventionStartDate}
-            ></input>
-            <h3>End of the intervention date</h3>
-            <input
-              id="endDateInput"
-              type="date"
-              placeholder="End day"
-              onChange={changeInterventionEndDate}
-            ></input>
-          </label>
+    <div className="flex flex-row h-full w-full overflow-y-auto" style={{ backgroundColor: '#383838' }}>
+      <div className="flex flex-col h-full w-2/3 overflow-y-auto">
+        <div className="w-96 p-6 rounded-lg shadow-lg" >
+          <h2 className="text-xl text-slate-200 font-semibold mb-4">Intervention Editor</h2>
+
+          <InterventionEditor
+            interventionStartDate={interventionStartDate}
+            weeks={weeks}
+            setInterventionStartDate={setInterventionStartDate}
+            setWeeks={setWeeks}
+            isAccepted= {isAccepted}
+            setIsAccepted={setIsAccepted}
+            timer={timer}
+            setTimer={setTimer}
+            setViewIntervention={setViewIntervention}
+             />
+
         </div>
 
-        <button
-          className="text-white bg-[#24292F] hover:bg-[#24292F]/90 focus:ring-4 focus:outline-none focus:ring-[#24292F]/50 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500 dark:hover:bg-[#050708]/30 mr-2 mb-2"
-          onClick={handleAccept}
-          disabled={
-            !interventionStartDate || !interventionEndDate || isAccepted
-          }
-        >
-          Accept
-        </button>
-        <button
-          className="text-white bg-[#24292F] hover:bg-[#24292F]/90 focus:ring-4 focus:outline-none focus:ring-[#24292F]/50 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500 dark:hover:bg-[#050708]/30 mr-2 mb-2"
-          onClick={resetDate}
-          disabled={
-            !interventionStartDate || !interventionEndDate || !isAccepted
-          }
-        >
-          Reset
-        </button>
-
-        {isAccepted && (
-          <div>
-            <p>
-              Intervention Start Date: {interventionStartDate.toDateString()}
-            </p>
-            <p>Intervention End Date: {interventionEndDate.toDateString()}</p>
-            {/* You can add additional logic here to save or perform further actions */}
+        <div className="flex gap-4 w-192 mt-4 rounded-lg shadow-lg">
+          <div className="flex flex-col">
+            <h2 className="text-lg h-16 text-slate-200 col-span-1 row-span-1 font-semibold mb-2">
+              Phases (or Mesocycles)
+            </h2>
+            <div className="h-16 col-span-1 row-span-1">
+              <button
+                id="createPhase"
+                className="text-white bg-[#24292F] hover:bg-[#24292F]/90 focus:ring-4 focus:outline-none focus:ring-[#24292F]/50 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500 dark:hover:bg-[#050708]/30 mr-2 mb-2"
+                disabled={!timer}
+                onClick={createPhase}
+              >
+                Create
+              </button>
+              <button
+                id="editPhase"
+                className="text-white bg-[#24292F] hover:bg-[#24292F]/90 focus:ring-4 focus:outline-none focus:ring-[#24292F]/50 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500 dark:hover:bg-[#050708]/30 mr-2 mb-2"
+                onClick={editPhase}
+                disabled={selectedPhase === null}
+              >
+                Edit
+              </button>
+              <button
+                id="deletePhase"
+                className="text-white bg-[#24292F] hover:bg-[#24292F]/90 focus:ring-4 focus:outline-none focus:ring-[#24292F]/50 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500 dark:hover:bg-[#050708]/30 mr-2 mb-2"
+                onClick={deletePhase}
+                disabled={selectedPhase === null}
+              >
+                Delete
+              </button>
+            </div>
+            <div
+              id="phase_editor"
+              className="col-span-1 row-span-1 w-96 h-80 p-4 overflow-y-auto"
+            >
+              <div>
+                {phase.map((phase, index) => (
+                  <div key={phase.id}>
+                    <input
+                      type="radio"
+                      name="phase"
+                      value={index}
+                      checked={selectedPhase === index}
+                      onChange={phaseSelection}
+                    />
+                    {phase.label}
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
-        )}
-      </div>
-
-      <div className="flex gap-4 w-192 mt-4 border border-gray-300 rounded-lg shadow-md">
-        <div className="flex flex-col">
-          <h2 className="text-lg h-16 col-span-1 row-span-1 font-semibold mb-2">
-            Phases (or Mesocycles)
-          </h2>
-          <div className="h-16 col-span-1 row-span-1">
-            <button
-              id="createPhase"
-              className="text-white bg-[#24292F] hover:bg-[#24292F]/90 focus:ring-4 focus:outline-none focus:ring-[#24292F]/50 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500 dark:hover:bg-[#050708]/30 mr-2 mb-2"
-              disabled={!timer}
-              onClick={createPhase}
+          <div className="grid grid-cols-1 grid-rows-3">
+            <div
+              id="phase_editor_additional"
+              className="col-span-1 row-span-3 w-96 h-full p-4 overflow-y-auto flex-grow"
             >
-              Create
-            </button>
-            <button
-              id="editPhase"
-              className="text-white bg-[#24292F] hover:bg-[#24292F]/90 focus:ring-4 focus:outline-none focus:ring-[#24292F]/50 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500 dark:hover:bg-[#050708]/30 mr-2 mb-2"
-              onClick={editPhase}
-              disabled={selectedPhase === null}
-            >
-              Edit
-            </button>
-            <button
-              id="deletePhase"
-              className="text-white bg-[#24292F] hover:bg-[#24292F]/90 focus:ring-4 focus:outline-none focus:ring-[#24292F]/50 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500 dark:hover:bg-[#050708]/30 mr-2 mb-2"
-              onClick={deletePhase}
-              disabled={selectedPhase === null}
-            >
-              Delete
-            </button>
-          </div>
-          <div
-            id="phase_editor"
-            className="col-span-1 row-span-1 w-96 h-80 p-4 overflow-y-auto"
-          >
-            <div>
-              {phase.map((phase, index) => (
-                <div key={phase.id}>
-                  <input
-                    type="radio"
-                    name="phase"
-                    value={index}
-                    checked={selectedPhase === index}
-                    onChange={phaseSelection}
-                  />
-                  {phase.label}
-                </div>
-              ))}
+              {selectedPhase !== null && (
+                <PhasesForm
+                  selectedPhase={selectedPhase} // Pass the selectedPhase
+                  setPhaseValues={setPhaseValues}
+                  selectedValues={PhaseData}
+                  timer={timer}
+                  setViewPhase={setViewPhase}
+                  
+                  /* phaseIndex={phaseIndex} */
+                // Pass the setPhaseValues function
+                />
+              )}
             </div>
           </div>
         </div>
-        <div className="grid grid-cols-1 grid-rows-3">
-          <div
-            id="phase_editor_additional"
-            className="col-span-1 row-span-3 w-96 h-full p-4 overflow-y-auto"
-          >
-            {selectedPhase !== null && (
-              <PhasesForm
-                selectedPhase={selectedPhase} // Pass the selectedPhase
-                setPhaseValues={setPhaseValues}
-                selectedValues={PhaseData}
-               // Pass the setPhaseValues function
-              />
-            )}
-          </div>
-        </div>
+        
+      </div>
+      <div className="flex flex-col h-full overflow-y-auto" >
+        <h3 className="text-lg h-16 col-span-1 row-span-1 font-semibold mb-2">Editor Viewer</h3>
+        <Viewer
+          viewIntervention = {viewIntervention}
+          viewPhase = {viewPhase} />
+
+
+
       </div>
     </div>
   );
