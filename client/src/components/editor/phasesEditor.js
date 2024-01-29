@@ -5,9 +5,12 @@ import * as Yup from "yup"; // Import Yup for validation
 const PhasesForm = ({
   selectedPhase,
   setPhaseValues,
+  setPhaseData,
   selectedValues,
   setViewPhase,
+  PhaseValues,
   timer
+  
   /* phaseIndex */
 }) => {
   const initialFormValues = useMemo(() => ({
@@ -18,20 +21,38 @@ const PhasesForm = ({
 
   const [formValues, setFormValues] = useState(initialFormValues);
 
+
   const handleFormSubmit = (values) => {
-    const jsonData = JSON.stringify(values);
-    setPhaseValues((prevPhaseValues) => ({
-      ...prevPhaseValues,
-      [selectedPhase]: jsonData,
-    }));
-    console.log(values);
-    setViewPhase(values);
 
-    /* timer.setWeeksCounter(timer.weeksCounter - values.weeksnumber); */
-    console.log(timer.phaseCounter);
-    console.log(timer.weeksCounter);
-    console.log(timer.weeksHandler());
+    if (PhaseValues[selectedPhase] === null || PhaseValues[selectedPhase] === undefined) {
+      setPhaseValues((prevPhaseValues) => ({
+        ...prevPhaseValues,
+        [selectedPhase]: JSON.stringify(values),
+      }));
 
+      // Here I create the first PhaseData so that at submission of whichever Phase I will already have also a first PhaseData chache to generate ratio buttons from
+      setPhaseData(prevValues => ({
+        ...prevValues, ...values
+      }));
+      
+      /*     setTimer(prevTimer => ({
+        ...prevTimer,
+        weeksCounter: prevTimer.weeksCounter - values.weeksnumber,
+        phaseCounter: prevTimer.phaseCounter - 1
+      }));
+
+      console.log(timer) */
+
+      timer.setWeeksCounter(timer.weeksCounter - values.weeksnumber);
+      timer.setPhaseCounter(timer.phaseCounter - 1);
+      timer.setMirrorWeeksCounter(timer.mirror_weeks_counter + values.weeksnumber);
+
+      /*     console.log(timer.phaseCounter);
+      console.log(timer.weeksCounter); */
+
+      setViewPhase(values); } else {
+        alert("This Phase has already been created! Delete the data if you want to change it.")
+      }
   };
 
   useEffect(() => {
@@ -42,16 +63,16 @@ const PhasesForm = ({
           setFormValues(parsedValues);
           setViewPhase(parsedValues);
         } catch (error) {
-          console.error('This error has occurred:', error);
+          
           setFormValues(initialFormValues);
         }
       } else {
         setFormValues(initialFormValues);
-        console.error('I am arrived to the first else!');
+        
       }
     } else {
       
-      console.error('I am arrived to the second else!');
+      
       setFormValues(initialFormValues);
       
     }
@@ -118,7 +139,7 @@ const PhasesForm = ({
             id="weeksnumber"
             step="1"
             min="4"
-            max={timer.weeksHandler()}
+            max={timer.weeksHandler ? timer.weeksHandler(selectedValues.weeksnumber) : 60}
           />
           <ErrorMessage
             name="weeksnumber"
@@ -145,4 +166,4 @@ const PhasesForm = ({
   );
 };
 
-export default PhasesForm;
+export default React.memo(PhasesForm);

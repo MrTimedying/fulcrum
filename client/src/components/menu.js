@@ -2,16 +2,71 @@ import { Menu, Transition } from '@headlessui/react'
 import { Fragment, useState } from 'react'
 import { ChevronDownIcon } from '@heroicons/react/20/solid'
 import NpForm from './npform'
+import axios from "axios";
 
-export default function MyDropdown() {
+const api = axios.create({
+  baseURL: "http://localhost:8080"
+});
+
+export default function MyDropdown({patientID, formData, setFormData}) {
   const [isNpFormModalOpen, setIsNpFormModalOpen] = useState(false);
+  
 
-  const openNpFormModal = () => {
-    setIsNpFormModalOpen(true);
-  };
 
   const closeNpFormModal = () => {
     setIsNpFormModalOpen(false);
+    setFormData({
+      Name: "",
+      Surname: "",
+      Age: "",
+      Gender: "",
+      BMI: "",
+      Height: "",
+      Weight: "",
+      Status: "",
+    });
+  };
+
+  const handlePatientCreation = () => {
+
+    setIsNpFormModalOpen(true);
+    setFormData({
+      Name: "",
+      Surname: "",
+      Age: "",
+      Gender: "",
+      BMI: "",
+      Height: "",
+      Weight: "",
+      Status: "",
+    });
+
+  }
+
+  const handlePatientEdit = (patientID) => {
+    console.log(patientID);
+    api
+    .get('api/patients', { params: { id: patientID}})
+    .then(function (response){
+      const patientData = response.data.find(patient => patient.ID === parseInt(patientID))
+      setFormData(patientData);
+    }).catch(function (error){
+      console.log(error);
+    })
+    setIsNpFormModalOpen(true);
+  };
+
+  const handlePatientDelete = (patientID) => {
+    const ID = parseInt(patientID) ;
+    console.log(ID);
+    api
+    .delete('api/patients', { params: { ID: ID}})
+    .then(function (response){
+      console.log(response);
+    }).catch(function (error){
+      console.log(error);
+    })
+
   };
 
   return (
@@ -40,7 +95,7 @@ export default function MyDropdown() {
               <Menu.Item>
                 {({ active }) => (
                   <button
-                    onClick={openNpFormModal}
+                    onClick={() => handlePatientCreation()}
                     className={`${
                       active ? 'bg-gray-500 text-white' : 'text-gray-900'
                     } group flex w-full rounded-md px-2 py-2 text-sm`}
@@ -63,6 +118,7 @@ export default function MyDropdown() {
               <Menu.Item>
                 {({ active }) => (
                   <button
+                    onClick={() => handlePatientEdit(patientID)}
                     className={`${
                       active ? 'bg-gray-500 text-white' : 'text-gray-900'
                     } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
@@ -85,6 +141,7 @@ export default function MyDropdown() {
               <Menu.Item>
                 {({ active }) => (
                   <button
+                    onClick={() => handlePatientDelete(patientID)}
                     className={`${
                       active ? 'bg-gray-500 text-white' : 'text-gray-900'
                     } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
@@ -108,7 +165,7 @@ export default function MyDropdown() {
           </Menu.Items>
         </Transition>
       </Menu>
-      <NpForm isOpen={isNpFormModalOpen} closeModal={closeNpFormModal} />
+      <NpForm isOpen={isNpFormModalOpen} closeModal={closeNpFormModal} formData={formData} setFormData={setFormData} />
     </div>
   )
 }

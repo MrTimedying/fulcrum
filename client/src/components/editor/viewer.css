@@ -21,3 +21,27 @@
     background-color: rgb(56, 56, 56);
     transition: background-color 0.15s ease-in-out;
 }
+
+.highlight-micro {
+    background-color: #3498db; /* Use the color you want for the highlight effect */
+    transition: background-color 0.15s ease-in-out;
+     /* Adjust the transition duration */
+}
+
+.downlight-micro {
+    background-color: rgb(56, 56, 56);
+    transition: background-color 0.15s ease-in-out;
+}
+
+
+.highlight-wod {
+    background-color: #3498db; /* Use the color you want for the highlight effect */
+    transition: background-color 0.15s ease-in-out;
+     /* Adjust the transition duration */
+}
+
+.downlight-wod {
+    background-color: rgb(56, 56, 56);
+    transition: background-color 0.15s ease-in-out;
+}
+

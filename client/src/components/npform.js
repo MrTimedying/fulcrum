@@ -1,4 +1,4 @@
-import { Fragment, useState } from "react";
+import { Fragment } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import axios from "axios";
 
@@ -6,18 +6,7 @@ const api = axios.create({
   baseURL: "http://localhost:8080",
 });
 
-function NpForm({ isOpen, closeModal }) {
-
-  const [formData, setFormData] = useState({
-    Name: "",
-    Surname: "",
-    Age: "",
-    Gender: "",
-    BMI: "",
-    Height: "",
-    Weight: "",
-    Status: "",
-  });
+function NpForm({ isOpen, closeModal, formData, setFormData }) {
 
   
   const handleSubmit = async () => {

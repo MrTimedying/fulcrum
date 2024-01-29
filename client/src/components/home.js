@@ -1,21 +1,27 @@
-import React from 'react'
+import React, {useState} from 'react'
 import MainBody from './mainbody'
 import Sidebar from './sidebar'
 import '../App.css';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
-import InterventionEditor from './editor/editor';
+
 
 
 
 function Home() {
+
+  const [patientID, setPatientID] = useState(0);
+  
+
   return (
     <div className="App flex flex-nowrap h-screen">
       <BrowserRouter>
-        <Sidebar />
+        <Sidebar
+          patientID={patientID} 
+          setPatientID={setPatientID}
+           />
         <Routes>
-          <Route path="/patients/:ID" element={<MainBody />} />
+          <Route path="/patients/:ID" element={<MainBody patientID={patientID} />} />
           <Route path="/" element={<MainBody />} />
-          <Route path="/editor" element={<InterventionEditor/>} />
         </Routes>
       </BrowserRouter>
     </div>

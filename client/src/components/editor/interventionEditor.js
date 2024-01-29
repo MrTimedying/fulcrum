@@ -2,18 +2,21 @@ import React, { useEffect, useCallback } from "react";
 import { useFormik } from "formik";
 import Timer from "./time.ts";
 import * as Yup from "yup"; 
-import { format } from 'date-fns';
+import { addWeeks, parseISO } from 'date-fns';
 
 const validationSchema = Yup.object().shape({
   interventionName: Yup.string().required("Name is required"),
   interventionType: Yup.string().required("Type is required"),
   startDate: Yup.date().required("Start date is required"),
   weeks: Yup.number().required("End date is required").min(4, "Interventions must last a minimum of 4 weeks"),
+  globalGoal: Yup.string().required("Global goal is required"),
+  serviceGoal: Yup.string().required("Service goal is required"),
 });
 
-export const InterventionEditor = ({
+export const InterventionEditor = React.memo(({
   interventionStartDate, //check
-  setInterventionStartDate, //check
+  setInterventionStartDate,
+  setInterventionValues, //check
   weeks, //check
   setWeeks, //check
   isAccepted,
@@ -27,6 +30,8 @@ export const InterventionEditor = ({
     interventionType: "Rehabilitation",
     startDate: "",
     weeks: "",
+    globalGoal: "",
+    serviceGoal: "",
   };
 
   const formik = useFormik({
@@ -34,9 +39,16 @@ export const InterventionEditor = ({
     initialValues: initialValues,
     validationSchema: validationSchema,
     onSubmit: (values, actions) => {
+
+      let values_end_date = values;
+      let values_start_date = parseISO(values.startDate);
+
+      values_end_date['endDate'] = addWeeks(values_start_date, values.weeks);
+      
       
       /* console.log("Form submitted:", values); */
-      setViewIntervention(values);
+      setViewIntervention(values_end_date);
+      setInterventionValues(values_end_date);
 
       
 /*       const startDate = new Date(values.startDate);
@@ -46,18 +58,20 @@ export const InterventionEditor = ({
       const durationInDays = durationInMilliseconds / (1000 * 60 * 60 * 24);
       const durationInWeeks =
         durationInMilliseconds / (1000 * 60 * 60 * 24 * 7); */
-     {
+     
         setIsAccepted(true);
-        console.log("Dates are of the correct chronological order!");
+        /* console.log("Dates are of the correct chronological order!"); */
         actions.resetForm({
           values: {
             interventionName: "",
             interventionType: "",
             startDate: "",
             weeks: "",
+            globalGoal: "",
+            serviceGoal: "",
           },
         });
-      } /* else {
+       /* else {
         console.log("You can't set up a start date after the end date, bruv!");
         // Reset the form
         actions.resetForm({
@@ -77,15 +91,17 @@ export const InterventionEditor = ({
 
 
   const timerBuilder = useCallback(() => {
-    console.log("Created a new Timer Instance");
-    return new Timer(interventionStartDate, weeks);
+    /* console.log("Created a new Timer Instance"); */
+    const timerInstance = new Timer(interventionStartDate, weeks);
+    const clonedTimer = Timer.from(timerInstance);
+    return clonedTimer;
   }, [interventionStartDate, weeks]);
 
   useEffect(() => {
     if (isAccepted === true) {
       const newTimer = timerBuilder();
       setTimer(newTimer);
-      console.log(newTimer);
+      /* console.log(newTimer); */
       newTimer.calculateEndDate(); 
     }
   }, [isAccepted, timerBuilder, setTimer]);
@@ -96,25 +112,34 @@ export const InterventionEditor = ({
         interventionName: "",
         interventionType: "Rehabilitation",
         startDate: "",
-        endDate: "",
+        weeks: "",
+        globalGoal: "",
+        serviceGoal: "",
       },
     });
     setIsAccepted(false);
-    setTimer(null);
+    setTimer(new Timer());
   };
 
 
 
   // Return Statement
   return (
-    <div>
+    <div className="flex justify-center">
       <form
         onSubmit={(e) => {
           /* handleAccept(); */
           formik.handleSubmit(e);
         }}
+        className="flex"
       >
+      <div className="w-1/2 pr-4">
+    <div>
+      
         <div className="mb-4">
+        <h2 className="text-xl text-slate-200 font-semibold mb-4">
+            Intervention Editor
+          </h2>
           <label className="text-slate-200 text-sm">
             <h3>Name of the intervention</h3>
             <input
@@ -197,7 +222,39 @@ export const InterventionEditor = ({
             <p>Weeks duration: {weeks}</p>
           </div>
         )}
+      
+    </div></div>
+    <div className="w-1/2">
+    <h2 className="text-xl text-slate-200 font-semibold mb-4">
+    Goal definition and achievement
+          </h2>
+        {/* Right column - Goal definition and achievement */}
+        <div className="mb-4">
+        <h3>Global goal</h3>
+            <input
+              className="text-black"
+              id="globalGoal"
+              type="text"
+              value={formik.values.globalGoal}
+              onChange={(e) => {
+                formik.handleChange(e);
+              }}
+            ></input>
+        <h3>Service program goal</h3>
+            <input
+              className="text-black"
+              id="serviceGoal"
+              type="text"
+              value={formik.values.serviceGoal}
+              onChange={(e) => {
+                formik.handleChange(e);
+              }}
+            ></input>
+          
+          {/* Add your content for the right column here */}
+        </div>
+      </div>
       </form>
     </div>
   );
-};
+});

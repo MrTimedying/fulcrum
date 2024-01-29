@@ -4,12 +4,16 @@ export default class Timer {
   public weeksCounter: number;
   public phaseCounter: number;
   public minWeeks: number;
+  public endDate?: Date;
+  public mirror_weeks_counter: number;
 
   constructor(public begin: Date, public weeks: number) {
     this.begin = begin;
-    this.weeksCounter = weeks;
-    this.phaseCounter = 0;
+    this.endDate = undefined ;
+    this.weeksCounter = Math.max(weeks, 0);
+    this.phaseCounter = Math.max(0, 0);
     this.minWeeks = 4;
+    this.mirror_weeks_counter = 0;
   }
 
   get calculateDays(): number {
@@ -22,8 +26,8 @@ export default class Timer {
 
   calculateEndDate(): Date | null {
     if (this.begin && this.weeks) {
-      const endDate = addWeeks(this.begin, this.weeks);
-      return endDate;
+      this.endDate = addWeeks(this.begin, this.weeks);
+      return this.endDate;
     }
     return null;
   }
@@ -34,16 +38,40 @@ export default class Timer {
     this.weeksCounter = Math.max(value, 0);
   }
 
+  setMirrorWeeksCounter(value: number): void {
+    this.mirror_weeks_counter = Math.max(value, 0);
+  }
+
   setPhaseCounter(value: number): void {
     this.phaseCounter = Math.max(value, 0);
   }
 
-  weeksHandler(): number {
-    if (this.weeksCounter !== 0 && this.phaseCounter !== 0) {
-      let maxWeeks = this.weeksCounter - this.minWeeks * (this.phaseCounter - 1);
-      return maxWeeks;
+  weeksHandler(previousWeeks: number): number {
+    if (previousWeeks === 0 || isNaN(previousWeeks)) {
+      if (this.weeksCounter !== 0 && this.phaseCounter !== 0) {
+        let maxWeeks = this.weeksCounter - this.minWeeks * (this.phaseCounter - 1);
+        return maxWeeks;
+      } else {
+        return this.weeksCounter;
+      }
     } else {
-      return this.weeksCounter;
+      if (this.weeksCounter !== 0 && this.phaseCounter !== 0) {
+        let maxWeeks = (previousWeeks + this.weeksCounter) - this.minWeeks * (this.phaseCounter - 1);
+        return maxWeeks;
+      } else {
+        return (previousWeeks + this.weeksCounter);
+      }
     }
+  }
+
+  static from(other: Timer): Timer {
+    const clonedTimer = new Timer(other.begin, other.weeks);
+
+    clonedTimer.endDate = other.endDate;
+    clonedTimer.weeksCounter = other.weeksCounter;
+    clonedTimer.phaseCounter = other.phaseCounter;
+    clonedTimer.minWeeks = other.minWeeks;
+
+    return clonedTimer;
   }
 }
