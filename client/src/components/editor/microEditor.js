@@ -178,11 +178,11 @@ export const MicroEditor = React.memo(({ setViewMicro, middleware, setMiddleware
           <Form className="space-y-4">
 
             <div className="flex flex-col">
-            <label htmlFor="pattern" className="mb-1 text-white text-sm font-bold" style={{ fontFamily: 'Arial' }} >Pattern</label>
+            <label htmlFor="pattern" className="text-lg my-2 text-slate-200 col-span-1 row-span-1 font-semibold mb-2" style={{ fontFamily: 'Arial' }} >Pattern</label>
               <select 
                 id="sessions" 
                 name="sessions" 
-                className="border rounded-md p-2 bg-gray-900 text-white text-sm focus:outline-none focus:ring focus:border-blue-300" 
+                className="w-full bg-zinc-800 p-2 rounded-md h-8 my-2" 
                 style={{ fontFamily: 'Arial' }} 
                 onChange={e => setSessions(parseInt(e.target.value))}
                 >
@@ -195,7 +195,7 @@ export const MicroEditor = React.memo(({ setViewMicro, middleware, setMiddleware
                 <option value="7">7 Sessions/week</option>
               </select>
 
-              <select id="patterns" name="pattenrs" className="border rounded-md p-2 bg-gray-900 text-white text-sm focus:outline-none focus:ring focus:border-blue-300" style={{ fontFamily: 'Arial' }} onChange={handlePatternChange}>
+              <select id="patterns" name="pattenrs" className="w-full bg-zinc-800 p-2 rounded-md h-8" style={{ fontFamily: 'Arial' }} onChange={handlePatternChange}>
               {getPatternOptions().map(option => (
                 <option key={option.value} value={JSON.stringify(option.value)}>
                  {option.label}
@@ -203,32 +203,32 @@ export const MicroEditor = React.memo(({ setViewMicro, middleware, setMiddleware
                 ))}  
               </select>
 
-              <button type="button" className="border rounded-md p-2 bg-gray-900 text-white text-sm focus:outline-none focus:ring focus:border-blue-300" onClick={() => {
+              <button type="button" className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2 w-16 px-2 py-2 rounded-md cursor-pointer text-sm" onClick={() => {
                 setFieldValue('wods', sessions);
                 committSessions();
-              }}>Committ</button>
+              }}>Commit</button>
 
             </div>
 
             <div className="flex flex-col">
               <label htmlFor="type" className="mb-1 text-white text-sm font-bold" style={{ fontFamily: 'Arial' }}>Type</label>
-              <Field name="type" type="text" className="border rounded-md p-2 bg-gray-900 text-white text-sm focus:outline-none focus:ring focus:border-blue-300" style={{ fontFamily: 'Arial' }} />
+              <Field name="type" type="text" className="w-full bg-zinc-800 p-2 rounded-md h-8" style={{ fontFamily: 'Arial' }} />
               <ErrorMessage name="type" component="div" className="text-red-500 text-xs" style={{ fontFamily: 'Arial' }} />
             </div>
         
             <div className="flex flex-col">
               <label htmlFor="scope" className="mb-1 text-white text-sm font-bold" style={{ fontFamily: 'Arial' }}>Scope</label>
-              <Field name="scope" type="text" className="border rounded-md p-2 bg-gray-900 text-white text-sm focus:outline-none focus:ring focus:border-blue-300" style={{ fontFamily: 'Arial' }} />
+              <Field name="scope" type="text" className="w-full bg-zinc-800 p-2 rounded-md h-8" style={{ fontFamily: 'Arial' }} />
               <ErrorMessage name="scope" component="div" className="text-red-500 text-xs" style={{ fontFamily: 'Arial' }} />
             </div>
         
             <div className="flex flex-col">
               <label htmlFor="wods" className="mb-1 text-white text-sm font-bold" style={{ fontFamily: 'Arial' }}>WoDs</label>
-              <Field name="wods" min="1" max="7" type="number" className="border rounded-md p-2 bg-gray-900 text-white text-sm focus:outline-none focus:ring focus:border-blue-300" style={{ fontFamily: 'Arial' }} />
+              <Field name="wods" min="1" max="7" type="number" className="w-full bg-zinc-800 p-2 rounded-md h-8" style={{ fontFamily: 'Arial' }} />
               <ErrorMessage name="wods" component="div" className="text-red-500 text-xs" style={{ fontFamily: 'Arial' }} />
             </div>
         
-            <button type="submit" className="bg-gray-900 hover:bg-black text-white font-bold py-1 px-2 rounded" style={{ fontFamily: 'Arial' }}>
+            <button type="submit" className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2 w-16 px-2 py-2 rounded-md cursor-pointer text-sm" style={{ fontFamily: 'Arial' }}>
               Submit
             </button>
           </Form>

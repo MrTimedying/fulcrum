@@ -12,6 +12,7 @@ import { CompilerFunction, SplicerFunction, deleteIntervention } from "./utils.j
 import { CalendarParser } from "../calendar/utils";
 import { useEditorContext } from './editorContext';
 import { MicroSelector } from "./microSelector.js";
+import "../../App.css";
 
 
 
@@ -339,41 +340,34 @@ function Editor({ patientID, setEvents }) {
   
 
   return (
-    <div
-      className="flex flex-row h-full w-full overflow-y-auto"
-      style={{ backgroundColor: "#383838" }}
-    >
-      <div className="flex flex-col h-full w-2/3 overflow-y-auto">
-        <div className="w-full p-6 rounded-lg shadow-lg">
-          
+    <div className="flex flex-row h-full w-full overflow-y-auto">
+      <div className="flex flex-col mt-5 h-full w-2/3 overflow-y-auto">
+        <InterventionEditor
+          interventionStartDate={interventionStartDate}
+          weeks={weeks}
+          setInterventionStartDate={setInterventionStartDate}
+          setWeeks={setWeeks}
+          isAccepted={isAccepted}
+          setIsAccepted={setIsAccepted}
+          timer={timer}
+          setTimer={setTimer}
+          setViewIntervention={setViewIntervention}
+          setInterventionValues={setInterventionValues}
+        />
 
-          <InterventionEditor
-            interventionStartDate={interventionStartDate}
-            weeks={weeks}
-            setInterventionStartDate={setInterventionStartDate}
-            setWeeks={setWeeks}
-            isAccepted={isAccepted}
-            setIsAccepted={setIsAccepted}
-            timer={timer}
-            setTimer={setTimer}
-            setViewIntervention={setViewIntervention}
-            setInterventionValues={setInterventionValues}
-          />
-        </div>
-
-        <div className="flex flex-col gap-4 w-192 mt-4 rounded-lg shadow-lg">
+        <div className="flex flex-col gap-4 w-192 mt-4 rounded-lg shadow-lg text-slate-300 font-mono">
           <div className="flex flex-row">
             <div
               id="phasesSelector"
-              className="flex flex-col flex-initial w-1/2"
+              className="flex flex-col flex-initial w-1/2 rounded-lg bg-zinc-900 p-2"
             >
-              <h2 className="text-lg h-16 text-slate-200 col-span-1 row-span-1 font-semibold mb-2">
+              <h2 className="text-lg my-2 text-slate-200 col-span-1 row-span-1 font-semibold mb-2">
                 Phases (or Mesocycles)
               </h2>
-              <div className="h-16 col-span-1 row-span-1">
+              <div className="my-2 col-span-1 row-span-1">
                 <button
                   id="createPhase"
-                  className="text-white bg-[#24292F] hover:bg-[#24292F]/90 focus:ring-4 focus:outline-none focus:ring-[#24292F]/50 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500 dark:hover:bg-[#050708]/30 mr-2 mb-2"
+                  className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2 px-2 py-2 rounded-md cursor-pointer text-sm"
                   disabled={!timer}
                   onClick={createPhase}
                 >
@@ -382,7 +376,7 @@ function Editor({ patientID, setEvents }) {
 
                 <button
                   id="deletePhase"
-                  className="text-white bg-[#24292F] hover:bg-[#24292F]/90 focus:ring-4 focus:outline-none focus:ring-[#24292F]/50 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center dark:focus:ring-gray-500 dark:hover:bg-[#050708]/30 mr-2 mb-2"
+                  className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2 px-2 py-2 rounded-md cursor-pointer text-sm"
                   onClick={deletePhase}
                   disabled={phase === null}
                 >
@@ -399,6 +393,7 @@ function Editor({ patientID, setEvents }) {
                       <input
                         type="radio"
                         name="phase"
+                        class="custom-radio"
                         value={index}
                         checked={selectedPhase === index}
                         onChange={phaseSelection}
@@ -412,8 +407,11 @@ function Editor({ patientID, setEvents }) {
 
             <div
               id="PhasesForm"
-              className="grid grid-cols-1 grid-rows-3 flex-initial w-1/2"
+              className="flex flex-col w-1/2 bg-zinc-900 font-mono text-slate-300 rounded-lg ml-2 px-5 py-2"
             >
+              <h2 className="text-lg my-2 text-slate-200 col-span-1 row-span-1 font-semibold mb-2 h-8">
+                Phases form
+              </h2>
               <div
                 id="phase_editor_additional"
                 className="col-span-1 row-span-3 w-96 h-full p-4 overflow-y-auto flex-grow"
@@ -437,6 +435,10 @@ function Editor({ patientID, setEvents }) {
             </div>
           </div>
           <div className="flex flex-row">
+          <div className="flex flex-col bg-zinc-900 rounded-lg my-2 mr-2 p-2">
+          <h2 className="text-lg my-2 text-slate-200 col-span-1 row-span-1 font-semibold mb-2">
+                Microcycles
+              </h2>
             <div
               id="micro_selector"
               className="flex-initial w-1/2 col-span-1 row-span-1 w-96 h-80 p-4 overflow-y-auto"
@@ -448,25 +450,27 @@ function Editor({ patientID, setEvents }) {
                       index={index}
                       selectedPhase={selectedPhase}
                       middleware={middleware}
-                      microSelection={microSelection} />
+                      microSelection={microSelection}
+                    />
                   ))}
                 </div>
               )}
             </div>
-            
-              <MicroEditor
-                middleware={middleware}
-                setMiddleware={setMiddleware}
-                setViewMicro={setViewMicro}
-                selectedPhase={selectedPhase}
-                time_pipeline={time_pipeline}
-              />
-            
+          </div>
+          <div className="flex flex-col bg-zinc-900 rounded-lg p-2">
+            <MicroEditor
+              middleware={middleware}
+              setMiddleware={setMiddleware}
+              setViewMicro={setViewMicro}
+              selectedPhase={selectedPhase}
+              time_pipeline={time_pipeline}
+            />
+          </div>
           </div>
           <div className="flex flex-row">
             <div
               id="wod_selector"
-              className="flex-initial w-1/2 col-span-1 row-span-1 w-96 h-80 p-4 overflow-y-auto"
+              className="flex flex-col bg-zinc-900 w-96 mr-5 rounded-lg p-2"
             >
               {middleware.microData &&
                 middleware.microData.wods !== undefined &&
@@ -478,6 +482,7 @@ function Editor({ patientID, setEvents }) {
                         <div key={index}>
                           <input
                             type="radio"
+                            class="custom-radio"
                             name={`Micro-${middleware.selectedMicro}-week`}
                             value={index}
                             checked={middleware.selectedWod === index}
@@ -491,32 +496,87 @@ function Editor({ patientID, setEvents }) {
                   </div>
                 )}
             </div>
-            
-              <WodEditor
-                middleware={middleware}
-                setMiddleware={setMiddleware}
-                setViewWod={setViewWod}
-                selectedPhase={selectedPhase}
-                
-              />
-            
+            <div
+              id="wod_editor"
+              className="flex flex-col bg-zinc-900 rounded-lg p-2"
+            >
+            <WodEditor
+              middleware={middleware}
+              setMiddleware={setMiddleware}
+              setViewWod={setViewWod}
+              selectedPhase={selectedPhase}
+            />
+            </div>
           </div>
-          <div className="w-96 p-6 rounded-lg shadow-lg">
-            <button className="bg-gray-900 hover:bg-black text-white font-bold py-1 px-2 rounded" onClick={() => CompilerFunction(intervention_values, PhaseValues, middleware.microValues, middleware.wodValues, time_pipeline, patientID, setInterventionValues, setPhaseValues, setPhaseData, setSplicerFunctionCalled, setMiddleware, setTimer, setViewIntervention, setViewMicro, setViewPhase, setViewWod, setNumPhases, setPhase)}>Save intervention</button>
-            <button className="bg-gray-900 hover:bg-black text-white font-bold py-1 px-2 rounded" onClick={() => deleteIntervention(patientID)}>Delete intervention</button>
-            <button className="bg-gray-900 hover:bg-black text-white font-bold py-1 px-2 rounded" onClick={() => SplicerFunction( patientID, setInterventionValues, setPhaseValues, setPhaseData, setSplicerFunctionCalled, setMiddleware, setTimer, setViewIntervention, setViewMicro, setViewPhase, setViewWod, setNumPhases, setPhase)}>Load Intervention</button>            
+          <div className="flex flex-row p-6 rounded-lg shadow-lg">
+            <button
+              className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2  px-2 py-2 rounded-md cursor-pointer text-sm"
+              onClick={() =>
+                CompilerFunction(
+                  intervention_values,
+                  PhaseValues,
+                  middleware.microValues,
+                  middleware.wodValues,
+                  time_pipeline,
+                  patientID,
+                  setInterventionValues,
+                  setPhaseValues,
+                  setPhaseData,
+                  setSplicerFunctionCalled,
+                  setMiddleware,
+                  setTimer,
+                  setViewIntervention,
+                  setViewMicro,
+                  setViewPhase,
+                  setViewWod,
+                  setNumPhases,
+                  setPhase
+                )
+              }
+            >
+              Save intervention
+            </button>
+            <button
+              className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2  px-2 py-2 rounded-md cursor-pointer text-sm"
+              onClick={() => deleteIntervention(patientID)}
+            >
+              Delete intervention
+            </button>
+            <button
+              className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2  px-2 py-2 rounded-md cursor-pointer text-sm"
+              onClick={() =>
+                SplicerFunction(
+                  patientID,
+                  setInterventionValues,
+                  setPhaseValues,
+                  setPhaseData,
+                  setSplicerFunctionCalled,
+                  setMiddleware,
+                  setTimer,
+                  setViewIntervention,
+                  setViewMicro,
+                  setViewPhase,
+                  setViewWod,
+                  setNumPhases,
+                  setPhase
+                )
+              }
+            >
+              Load Intervention
+            </button>
           </div>
         </div>
       </div>
       <div className="flex flex-col h-full overflow-y-auto">
-        <h3 className="text-lg h-16 col-span-1 row-span-1 font-semibold mb-2">
-          Editor Viewer
-        </h3>
-        <Viewer 
-          viewIntervention={viewIntervention} 
-          viewPhase={viewPhase} 
+      <h2 className="text-xl text-slate-200 mt-5 ml-2 font-semibold mb-4">
+            Intervention Editor
+          </h2>
+        <Viewer
+          viewIntervention={viewIntervention}
+          viewPhase={viewPhase}
           viewMicro={viewMicro}
-          viewWod={viewWod}/>
+          viewWod={viewWod}
+        />
       </div>
     </div>
   );

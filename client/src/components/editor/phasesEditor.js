@@ -124,6 +124,7 @@ const PhasesForm = ({
             name="phasename"
             id="phasename"
             placeholder="Name the phase"
+            className="w-full bg-zinc-800 p-2 rounded-md h-8"
           />
           <ErrorMessage
             name="phasename"
@@ -140,6 +141,7 @@ const PhasesForm = ({
             step="1"
             min="4"
             max={timer.weeksHandler ? timer.weeksHandler(selectedValues.weeksnumber) : 60}
+            className="w-full bg-zinc-800 p-2 rounded-md h-8"
           />
           <ErrorMessage
             name="weeksnumber"
@@ -149,7 +151,7 @@ const PhasesForm = ({
         </div>
         <div className="form-group flex-col flex">
           <label htmlFor="phaseScope">Scope of the phase</label>
-          <Field type="text" name="phasescope" id="phasescope" />
+          <Field type="text" name="phasescope" id="phasescope" className="w-full bg-zinc-800 p-2 rounded-md h-8" />
           <ErrorMessage
             name="phasescope"
             component="div"
@@ -157,8 +159,8 @@ const PhasesForm = ({
           />
         </div>
 
-        <button type="submit">Submit</button>
-        <button type="button" onClick={loadOldData}>
+        <button className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2 px-2 py-2 rounded-md cursor-pointer text-sm" type="submit">Submit</button>
+        <button className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2 px-2 py-2 rounded-md cursor-pointer text-sm" type="button" onClick={loadOldData}>
           Load
         </button>
       </Form>

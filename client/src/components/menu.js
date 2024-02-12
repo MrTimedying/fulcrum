@@ -1,6 +1,7 @@
 import { Menu, Transition } from '@headlessui/react'
 import { Fragment, useState } from 'react'
 import { ChevronDownIcon } from '@heroicons/react/20/solid'
+import { useNavigate } from "react-router-dom";
 import NpForm from './npform'
 import axios from "axios";
 
@@ -8,8 +9,9 @@ const api = axios.create({
   baseURL: "http://localhost:8080"
 });
 
-export default function MyDropdown({patientID, formData, setFormData}) {
+export default function MyDropdown({patientID, setPatientID, formData, setFormData, setFetchingSwitch}) {
   const [isNpFormModalOpen, setIsNpFormModalOpen] = useState(false);
+  const navigate = useNavigate();
   
 
 
@@ -40,7 +42,7 @@ export default function MyDropdown({patientID, formData, setFormData}) {
       Weight: "",
       Status: "",
     });
-
+    
   }
 
   const handlePatientEdit = (patientID) => {
@@ -57,23 +59,33 @@ export default function MyDropdown({patientID, formData, setFormData}) {
   };
 
   const handlePatientDelete = (patientID) => {
-    const ID = parseInt(patientID) ;
+    const ID = parseInt(patientID);
     console.log(ID);
-    api
-    .delete('api/patients', { params: { ID: ID}})
-    .then(function (response){
-      console.log(response);
-    }).catch(function (error){
-      console.log(error);
-    })
 
-  };
+    api
+        .delete("api/patients", { params: { ID: ID } })
+        .then(function (response) {
+            console.log(response);
+            return api.delete(`api/profile?ID=${ID}`);
+        })
+        .then(function (response) {
+            console.log(response);
+        })
+        .catch(function (error) {
+            console.log(error);
+            // Handle errors for patient and profile deletion if needed
+        });
+    setPatientID(0);
+    navigate(`/`)
+    setFetchingSwitch(true);
+};
+
 
   return (
-    <div className="pl-4">
+    <div className="px-2">
       <Menu as="div" className="relative inline-block text-left">
         <div>
-          <Menu.Button className="inline-flex w-full justify-center rounded-md bg-black/20 px-4 py-2 text-sm font-medium text-white hover:bg-black/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/75">
+          <Menu.Button className="inline-flex w-full justify-center rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-slate-300 font-mono hover:bg-black/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/75">
             Options
             <ChevronDownIcon
               className="ml-2 -mr-1 h-5 w-5 text-white"
@@ -90,14 +102,14 @@ export default function MyDropdown({patientID, formData, setFormData}) {
           leaveFrom="transform opacity-100 scale-100"
           leaveTo="transform opacity-0 scale-95"
         >
-          <Menu.Items className="absolute left-0 mt-2 w-56 origin-top-left divide-y divide-gray-100 rounded-md bg-gray-300 shadow-lg ring-1 ring-black/5 focus:outline-none">
+          <Menu.Items className="absolute left-0 mt-2 w-56 origin-top-left divide-y divide-gray-100 rounded-md bg-zinc-900 shadow-lg ring-1 ring-black/5 focus:outline-none">
             <div className="px-1 py-1 ">
               <Menu.Item>
                 {({ active }) => (
                   <button
                     onClick={() => handlePatientCreation()}
                     className={`${
-                      active ? 'bg-gray-500 text-white' : 'text-gray-900'
+                      active ? 'bg-gray-500 text-white' : 'text-slate-300'
                     } group flex w-full rounded-md px-2 py-2 text-sm`}
                   >
                     {active ? (
@@ -120,7 +132,7 @@ export default function MyDropdown({patientID, formData, setFormData}) {
                   <button
                     onClick={() => handlePatientEdit(patientID)}
                     className={`${
-                      active ? 'bg-gray-500 text-white' : 'text-gray-900'
+                      active ? 'bg-gray-500 text-white' : 'text-slate-300'
                     } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
                   >
                     {active ? (
@@ -143,7 +155,7 @@ export default function MyDropdown({patientID, formData, setFormData}) {
                   <button
                     onClick={() => handlePatientDelete(patientID)}
                     className={`${
-                      active ? 'bg-gray-500 text-white' : 'text-gray-900'
+                      active ? 'bg-gray-500 text-white' : 'text-slate-300'
                     } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
                   >
                     {active ? (
@@ -165,7 +177,7 @@ export default function MyDropdown({patientID, formData, setFormData}) {
           </Menu.Items>
         </Transition>
       </Menu>
-      <NpForm isOpen={isNpFormModalOpen} closeModal={closeNpFormModal} formData={formData} setFormData={setFormData} />
+      <NpForm isOpen={isNpFormModalOpen} closeModal={closeNpFormModal} formData={formData} setFormData={setFormData} setFetchingSwitch={setFetchingSwitch} />
     </div>
   )
 }

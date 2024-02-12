@@ -75,6 +75,19 @@ const Profile = ({patientID}) => {
 
   };
 
+  const deleteProfile = (ID) => {
+
+    api
+    .delete(`api/profile?ID=${ID}`)
+    .then(function (response) {
+      console.log(response);
+    })
+    .catch(function (error) {
+      console.log(error);
+    })
+
+  };
+
   const selectionSetter = (item) => {
     setItemSelected(item.category); 
     setItemEdit(item);
@@ -152,7 +165,7 @@ const Profile = ({patientID}) => {
           setTableData={setTableData}
           
         />
-        <button className="bg-indigo-500 text-white px-4 py-2 rounded-md cursor-pointer text-sm" onClick={() => EditItemHandler(itemEdit)}>Edit Item</button>
+        <button className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2 px-2 py-2 rounded-md cursor-pointer text-sm" onClick={() => EditItemHandler(itemEdit)}>Edit Item</button>
       
       <div className="icf-droppables grid grid-cols-4 gap-4">
         <DragDropContext onDragEnd={onDragEnd}>
@@ -163,7 +176,7 @@ const Profile = ({patientID}) => {
                 {...provided.droppableProps}
                 className="icf-column"
               >
-                <h3 className="text-white bg-gray-800 p-2 rounded-t-lg">Body and Structures</h3>
+                <h3 className="text-slate-300 font-mono bg-zinc-900 p-2 rounded-t-lg">Body and Structures</h3>
                 {bodystructures.map((item, index) => (
                   <Draggable key={item.category} draggableId={item.category} index={index}>
                     {(provided) => (
@@ -171,10 +184,10 @@ const Profile = ({patientID}) => {
                         ref={provided.innerRef}
                         {...provided.draggableProps}
                         {...provided.dragHandleProps}
-                        className={`icf-item bg-white p-2 mb-2 rounded ${itemSelected === item.category? 'bg-slate-500' : 'bg-white'}`}
+                        className={`icf-item bg-white p-2 mb-2 text-slate-300 font-mono rounded ${itemSelected === item.category? 'bg-zinc-600' : 'bg-zinc-800'}`}
                         onClick={() => selectionSetter(item)}
                       >
-                        {item.label}
+                        {item.category} - {item.label} - {item.score}
                       </div>
                     )}
                   </Draggable>
@@ -192,7 +205,7 @@ const Profile = ({patientID}) => {
                 {...provided.droppableProps}
                 className="icf-column"
               >
-                <h3 className="text-white bg-gray-800 p-2 rounded-t-lg">Activities and Participation</h3>
+                <h3 className="text-slate-300 font-mono bg-zinc-900 p-2 rounded-t-lg">Activities and Participation</h3>
                 {activities_participation.map((item, index) => (
                   <Draggable key={item.category} draggableId={item.category} index={index}>
                     {(provided) => (
@@ -200,10 +213,10 @@ const Profile = ({patientID}) => {
                         ref={provided.innerRef}
                         {...provided.draggableProps}
                         {...provided.dragHandleProps}
-                        className={`icf-item bg-white p-2 mb-2 rounded ${itemSelected === item.category? 'bg-slate-500' : 'bg-white'}`}
+                        className={`icf-item bg-white p-2 mb-2 text-slate-300 font-mono rounded ${itemSelected === item.category? 'bg-zinc-600' : 'bg-zinc-800'}`}
                         onClick={() => selectionSetter(item)}
                       >
-                        {item.label}
+                        {item.category} - {item.label} - {item.score}
                       </div>
                     )}
                   </Draggable>
@@ -221,7 +234,7 @@ const Profile = ({patientID}) => {
                 {...provided.droppableProps}
                 className="icf-column"
               >
-                <h3 className="text-white bg-gray-800 p-2 rounded-t-lg">Environmental Factors</h3>
+                <h3 className="text-slate-300 font-mono bg-zinc-900 p-2 rounded-t-lg">Environmental Factors</h3>
                 {environmental_factors.map((item, index) => (
                   <Draggable key={item.category} draggableId={item.category} index={index}>
                     {(provided) => (
@@ -229,10 +242,10 @@ const Profile = ({patientID}) => {
                         ref={provided.innerRef}
                         {...provided.draggableProps}
                         {...provided.dragHandleProps}
-                        className={`icf-item bg-white p-2 mb-2 rounded ${itemSelected === item.category? 'bg-slate-500' : 'bg-white'}`}
+                        className={`icf-item bg-white p-2 mb-2 text-slate-300 font-mono rounded ${itemSelected === item.category? 'bg-zinc-600' : 'bg-zinc-800'}`}
                         onClick={() => selectionSetter(item)}
                       >
-                        {item.label}
+                        {item.category} - {item.label} - {item.score}
                       </div>
                     )}
                   </Draggable>
@@ -249,8 +262,9 @@ const Profile = ({patientID}) => {
                 ref={provided.innerRef}
                 {...provided.droppableProps}
                 className="icf-column"
+                
               >
-                <h3 className="text-white bg-gray-800 p-2 rounded-t-lg">Personal Factors</h3>
+                <h3 className="text-slate-300 font-mono bg-zinc-900 p-2 rounded-t-lg">Personal Factors</h3>
                 {personal_factors.map((item, index) => (
                   <Draggable key={item.category} draggableId={item.category} index={index}>
                     {(provided) => (
@@ -258,10 +272,10 @@ const Profile = ({patientID}) => {
                         ref={provided.innerRef}
                         {...provided.draggableProps}
                         {...provided.dragHandleProps}
-                        className={`icf-item bg-white p-2 mb-2 rounded ${itemSelected === item.category? 'bg-slate-500' : 'bg-white'}`}
+                        className={`icf-item bg-white p-2 mb-2 text-slate-300 font-mono rounded ${itemSelected === item.category? 'bg-zinc-600' : 'bg-zinc-800'}`}
                         onClick={() => selectionSetter(item)}
                       >
-                        {item.label}
+                        {item.category} - {item.label} - {item.score}
                       </div>
                     )}
                   </Draggable>
@@ -272,7 +286,8 @@ const Profile = ({patientID}) => {
           </Droppable>
           </DragDropContext>
         </div>
-        <button className="bg-slate-500 hover:bg-slate-700 text-white font-bold py-2 px-4 rounded" onClick={updatingProfileData}>Save Profile</button>
+        <button className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2 px-2 py-2 rounded-md cursor-pointer text-sm" onClick={updatingProfileData}>Save Profile</button>
+        <button className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2 px-2 py-2 rounded-md cursor-pointer text-sm" onClick={deleteProfile(patientID)}>Delete Profile</button>
     </div>
   );
 };

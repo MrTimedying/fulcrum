@@ -1,0 +1,60 @@
+{
+  "name": "fulcrum",
+  "version": "0.9.9",
+  "description": "A person management solution for movement sciences professionals",
+  "main": "electron/main.js",
+  "scripts": {
+    "start": "set NODE_ENV=production && electron electron/main.js",
+    "start-dev": "set NODE_ENV=development && electron electron/main.js",
+    "start-electron": "electron-builder start",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "electron-builder",
+    "start-express": "node server.js"
+  },
+  "keywords": [],
+  "author": "Antonio Logarzo",
+  "license": "CC BY-NC-ND 4.0 Deed",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "sqlite3": "^5.0.0"
+  },
+  "devDependencies": {
+    "electron": "^27.0.2",
+    "electron-builder": "^24.9.1",
+    "nodemon": "^3.0.1"
+  },
+  "build": {
+    "appId": "com.antoniologarzo.fulcrum",
+    "productName": "Fulcrum",
+    "directories": {
+      "output": "fulcrum_dist"
+    },
+    "files": [
+      "client/build/**/*",
+      "server/**/*",
+      "package.json",
+      "electron/main.js",
+      "electron/preload.js",
+      "fulcrum.db"
+    ],
+    "extraFiles": [
+      {
+        "from": "fulcrum.db",
+        "to": ".",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "win": {
+      "target": [
+        "portable"
+      ]
+    },
+    "asar": true,
+    "asarUnpack": [
+      "fulcrum.db"
+    ]
+  }
+}

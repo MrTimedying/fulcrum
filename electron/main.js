@@ -1,34 +1,104 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const url = require('url');
+const { fork } = require('child_process');
+
+/* const sqlite3 = require('sqlite3').verbose(); */
 
 let mainWindow;
+let serverProcess;
 
 function createWindow() {
-  // Create the browser window
-  mainWindow = new BrowserWindow({ width: 800, height: 600 });
 
-  // Load the React app from the development server
-  mainWindow.loadURL('http://localhost:3000'); // Change the URL based on your React app's port
+  mainWindow = new BrowserWindow({
+    width: 800,
+    height: 600,
+    minWidth: 800, 
+    minHeight: 600,
+    frame: false, 
+    webPreferences: {
+      webSecurity: false,
+      devTools: false,
+      preload: path.join(__dirname, 'preload.js'),
+    },
+  });
 
-  // Open the DevTools (remove this line for production)
+/*   const isDevelopment = process.env.NODE_ENV === 'development';
+  const indexPath = isDevelopment
+    ? `http://localhost:3000`
+    : path.join(__dirname, '..', 'client', 'build', 'index.html'); */
+
+  /* const indexPath = `http://localhost:3000`; */
+  const indexPath = path.join(__dirname, '..', 'client', 'build', 'index.html');
+  
+  
+
+  mainWindow.loadURL(indexPath);
   mainWindow.webContents.openDevTools();
 
-  // Event handler when window is closed
+
+
   mainWindow.on('closed', function () {
     mainWindow = null;
+
+    if (serverProcess) {
+      serverProcess.kill();
+    }
   });
 }
 
-// Event handler when Electron has finished initialization and is ready to create browser windows
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  const serverScriptPath = path.join(__dirname, '..', 'server', 'server.js');
+    
 
-// Quit the app when all windows are closed (except on macOS)
-app.on('window-all-closed', function () {
-  if (process.platform !== 'darwin') app.quit();
+  serverProcess = fork(serverScriptPath, [], { 
+    silent: true,
+    detached: true, 
+      stdio: 'ignore',
+      env:{
+        ...process.env,
+        PORT:8080
+      }
+   });
+  
+
+  serverProcess.on('message', (message) => {
+    if (message === 'serverStarted') {
+      // Child process has started successfully
+      createWindow();
+    } else {
+      console.error('Unknown message from child process:', message);
+    }
+  });
+
 });
 
-// Create a new window when the app is activated (on macOS)
+app.on('before-quit', () => {
+  if (serverProcess) {
+    serverProcess.kill();
+  }
+});
+
 app.on('activate', function () {
   if (mainWindow === null) createWindow();
+});
+
+// Log messages for IPC events
+ipcMain.on('minimizeApp', () => {
+  console.log('Received minimizeApp event');
+  mainWindow.minimize();
+});
+
+ipcMain.on('maximizeApp', () => {
+  console.log('Received maximizeApp event');
+  if (mainWindow?.isMaximized()) {
+    mainWindow.unmaximize();
+  } else {
+    mainWindow.maximize();
+  }
+});
+
+ipcMain.on('closeApp', () => {
+  console.log('Received closeApp event');
+  mainWindow.close();
 });

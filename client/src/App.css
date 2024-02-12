@@ -4,3 +4,50 @@
 
 
 
+::-webkit-scrollbar {
+    width: 12px;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background-color: rgb(24 24 27);
+    border-radius: 6px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: transparent; /* Optional: make scrollbar track transparent */
+  }
+
+
+  .custom-radio {
+    /* hiding browser el */
+    appearance: none;
+    /* Safari support */
+    -webkit-appearance: none;
+    height: 12px;
+    width: 12px; /* Change to your desired background color */
+    border-radius: 50%;
+    margin-right: 5px;
+}
+
+input.custom-radio {
+  appearance: none;
+  -webkit-appearance: none; 
+  background: rgb(24 24 27);
+  border: 1px solid rgb(24 24 27);
+  box-shadow: 0 0 0 1px rgb(9 9 11);
+}
+
+input.custom-radio:checked {
+  appearance: none;
+  -webkit-appearance: none; 
+  border-radius: 50%; 
+  background: rgb(9 9 11);
+  border: 1px solid rgb(24 24 27);
+  box-shadow: 0 0 0 1px rgb(9 9 11);
+}
+
+
+
+
+
+

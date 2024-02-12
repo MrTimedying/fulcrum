@@ -175,7 +175,7 @@ export const Test = ({
   return (
     <>
       <button
-        className="bg-indigo-500 text-white px-4 py-2 rounded-md cursor-pointer text-sm"
+        className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2 px-2 py-2 rounded-md cursor-pointer text-sm"
         onClick={() => setIsOpenTest(true)}
       >
         Add Test Day
@@ -190,11 +190,13 @@ export const Test = ({
         <Dialog.Overlay className="fixed inset-0 bg-black opacity-30" />
           <div
             style={{
-              width: "950px",
-              height: "450px",
+              width: "700px",
+              height: "800px",
             }}
-            className="p-6 my-8 text-left align-middle transition-all transform bg-white shadow-xl overflow-y-auto rounded-md"
+            className="p-6 my-8 text-left align-middle transition-all transform text-slate-300 font-mono bg-zinc-900 shadow-xl overflow-y-auto rounded-md"
           >
+            <h3 className="text-slate-300 font-mono py-2 rounded-md cursor-pointer text-xl">Test Composer</h3>
+            <div className="flex flex-row justify-between">
             <Formik
               enableReinitialize={true}
               initialValues={initialFormValues}
@@ -202,7 +204,7 @@ export const Test = ({
               validationSchema={validationSchema}
             >
               {({ values, handleChange, resetForm }) => (
-                <div className="p-4 bg-gray-200 rounded-md mb-4">
+                <div className="p-4 rounded-md mb-4">
                   <div className="mb-3">
                     <label className="block mb-1" htmlFor="name">
                       Name
@@ -213,7 +215,7 @@ export const Test = ({
                       name="name"
                       value={values.name}
                       onChange={handleChange}
-                      className="w-full p-2 border rounded-md"
+                      className="w-full p-2 rounded-md bg-zinc-600 text-slate-300 font-mono"
                     />
                     <ErrorMessage
                       name="name"
@@ -231,7 +233,7 @@ export const Test = ({
                       name="type"
                       value={values.type}
                       onChange={handleChange}
-                      className="w-full p-2 border rounded-md"
+                      className="w-full p-2 rounded-md bg-zinc-600 text-slate-300 font-mono"
                     />
                     <ErrorMessage
                       name="type"
@@ -249,7 +251,7 @@ export const Test = ({
                       name="score"
                       value={values.score}
                       onChange={handleChange}
-                      className="w-full p-2 border rounded-md"
+                      className="w-full p-2 rounded-md bg-zinc-600 text-slate-300 font-mono"
                     />
                     <ErrorMessage
                       name="score"
@@ -267,7 +269,7 @@ export const Test = ({
                       name="date"
                       value={values.date}
                       onChange={handleChange}
-                      className="w-full p-2 border rounded-md"
+                      className="w-full p-2 rounded-md bg-zinc-600 text-slate-300 font-mono"
                     />
                     <ErrorMessage
                       name="date"
@@ -280,14 +282,14 @@ export const Test = ({
                     <button
                       type="button"
                       onClick={() => handleFormSubmit(values, {resetForm})}
-                      className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition duration-300"
+                      className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2 px-2 py-2 rounded-md cursor-pointer text-sm"
                     >
                       Add to Set
                     </button>
                     <button
                       type="button"
                       onClick={() => handleTestPost(values) }
-                      className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition duration-300"
+                      className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2 px-2 py-2 rounded-md cursor-pointer text-sm"
                     >
                       Save template
                     </button>
@@ -295,15 +297,16 @@ export const Test = ({
                 </div>
               )}
             </Formik>
-            <div>
+            <div className="w-1/2 my-10">
               <Select
                 options={searchResults}
                 onChange={handleItemSelection}
                 onInputChange={handleSearchChange}
+                classNamePrefix="bg-zinc-600 font-mono text-slate-300"
               />
-            </div>
-            <Button onClick={addRow}>Add Row</Button>
-            <Button onClick={deleteRow}>Delete Row</Button>
+            </div></div>
+            <button className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2 px-2 py-2 rounded-md cursor-pointer text-sm" onClick={addRow}>Add Row</button>
+            <button className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2 px-2 py-2 rounded-md cursor-pointer text-sm" onClick={deleteRow}>Delete Row</button>
             <TableContainer component={Paper} className="mt-4">
               <Table size="small">
                 <TableHead>
@@ -365,8 +368,8 @@ export const Test = ({
                 </TableBody>
               </Table>
             </TableContainer>
-            <Button onClick={parseTable}>Commit String</Button>
-            <Button onClick={handleClose}>Close</Button>
+            <button className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2 px-2 py-2 rounded-md cursor-pointer text-sm" onClick={parseTable}>Commit String</button>
+            <button className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2 px-2 py-2 rounded-md cursor-pointer text-sm" onClick={handleClose}>Close</button>
           </div>
           {/* </Resizable> */}
           </div>

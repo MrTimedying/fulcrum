@@ -4,3 +4,4 @@
 /electron/node_modules/
 /client/build/
 /server/build/
+node_modules

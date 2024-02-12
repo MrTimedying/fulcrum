@@ -16,6 +16,7 @@ export const MicroSelector = ({ index, selectedPhase, middleware, microSelection
     <div key={index}>
       <input
         type="radio"
+        class="custom-radio"
         name={`phase-${selectedPhase}-week`}
         value={index}
         checked={isChecked}

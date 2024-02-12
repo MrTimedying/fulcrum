@@ -191,7 +191,7 @@ export const Composer = React.memo(({ middleware, setMiddleware }) => {
 
   return (
     <>
-      <button onClick={() => setMiddleware({ ...middleware, isOpen: true })}>
+      <button className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2  px-2 py-2 rounded-md cursor-pointer text-sm" onClick={() => setMiddleware({ ...middleware, isOpen: true })}>
         Manage exercises
       </button>
       <Transition show={middleware.isOpen}>
@@ -226,13 +226,13 @@ export const Composer = React.memo(({ middleware, setMiddleware }) => {
               > */}
               <div
                 style={{
-                  width: "950px",
-                  height: "450px",
+                  width: "700px",
+                  height: "800px",
                 }}
-                className="p-6 my-8 text-left align-middle transition-all transform bg-white shadow-xl overflow-y-auto rounded-md"
+                className="p-6 my-8 text-left align-middle transition-all transform text-slate-300 font-mono bg-zinc-900 shadow-xl overflow-y-auto rounded-md"
               >
-                {" "}
-                {/* This is the styling of the modal */}
+                <h3 className="text-slate-300 font-mono py-2 rounded-md cursor-pointer text-xl">WOD Composer</h3>
+                <div className="flex flex-row">
                 <Formik
                   enableReinitialize={true}
                   initialValues={initialFormValues}
@@ -240,8 +240,8 @@ export const Composer = React.memo(({ middleware, setMiddleware }) => {
                   validationSchema={validationSchema}
                 >
                   {({ values, handleChange, resetForm }) => (
-                    <div className="p-4 bg-gray-200 rounded-md mb-4">
-                      <div className="mb-3">
+                    <div className="p-4 rounded-md mb-4">
+                      <div className="mb-2">
                         <label className="block mb-1" htmlFor="name">
                           Name
                         </label>
@@ -251,7 +251,7 @@ export const Composer = React.memo(({ middleware, setMiddleware }) => {
                           name="name"
                           value={values.name}
                           onChange={handleChange}
-                          className="w-full p-2 border rounded-md"
+                          className="w-full bg-zinc-800 p-2 rounded-md h-8"
                         />
                         <ErrorMessage
                           name="name"
@@ -259,7 +259,7 @@ export const Composer = React.memo(({ middleware, setMiddleware }) => {
                           className="text-red-500"
                         />
                       </div>
-                      <div className="mb-3">
+                      <div className="mb-2">
                         <label className="block mb-1" htmlFor="type">
                           Type
                         </label>
@@ -269,7 +269,7 @@ export const Composer = React.memo(({ middleware, setMiddleware }) => {
                           name="type"
                           value={values.type}
                           onChange={handleChange}
-                          className="w-full p-2 border rounded-md"
+                          className="w-full bg-zinc-800 p-2 rounded-md h-8"
                         />
                         <ErrorMessage
                           name="type"
@@ -277,7 +277,7 @@ export const Composer = React.memo(({ middleware, setMiddleware }) => {
                           className="text-red-500"
                         />
                       </div>
-                      <div className="mb-3">
+                      <div className="mb-2">
                         <label className="block mb-1" htmlFor="volume">
                           Volume
                         </label>
@@ -287,7 +287,7 @@ export const Composer = React.memo(({ middleware, setMiddleware }) => {
                           name="volume"
                           value={values.volume}
                           onChange={handleChange}
-                          className="w-full p-2 border rounded-md"
+                          className="w-full bg-zinc-800 p-2 rounded-md h-8"
                         />
                         <ErrorMessage
                           name="volume"
@@ -295,7 +295,7 @@ export const Composer = React.memo(({ middleware, setMiddleware }) => {
                           className="text-red-500"
                         />
                       </div>
-                      <div className="mb-3">
+                      <div className="mb-2">
                         <label className="block mb-1" htmlFor="repetitions">
                           Repetitions
                         </label>
@@ -305,7 +305,7 @@ export const Composer = React.memo(({ middleware, setMiddleware }) => {
                           name="repetitions"
                           value={values.repetitions}
                           onChange={handleChange}
-                          className="w-full p-2 border rounded-md"
+                          className="w-full bg-zinc-800 p-2 rounded-md h-8"
                         />
                         <ErrorMessage
                           name="repetitions"
@@ -313,7 +313,7 @@ export const Composer = React.memo(({ middleware, setMiddleware }) => {
                           className="text-red-500"
                         />
                       </div>
-                      <div className="mb-3">
+                      <div className="mb-2">
                         <label className="block mb-1" htmlFor="intensity">
                           Intensity
                         </label>
@@ -323,7 +323,7 @@ export const Composer = React.memo(({ middleware, setMiddleware }) => {
                           name="intensity"
                           value={values.intensity}
                           onChange={handleChange}
-                          className="w-full p-2 border rounded-md"
+                          className="w-full bg-zinc-800 p-2 rounded-md h-8"
                         />
                         <ErrorMessage
                           name="intensity"
@@ -335,14 +335,14 @@ export const Composer = React.memo(({ middleware, setMiddleware }) => {
                         <button
                           type="button"
                           onClick= {() => handleFormSubmit(values, {resetForm})}
-                          className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition duration-300"
+                          className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2 px-2 py-2 rounded-md cursor-pointer text-sm"
                         >
                           Add to the WOD
                         </button>
                         <button
                           type="button"
                           onClick={() => handleExercisePost(values)}
-                          className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition duration-300"
+                          className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2 px-2 py-2 rounded-md cursor-pointer text-sm"
                         >
                           Save template
                         </button>
@@ -350,13 +350,15 @@ export const Composer = React.memo(({ middleware, setMiddleware }) => {
                     </div>
                   )}
                 </Formik>
-                <div>
+
+                <div className="my-2 w-96">
                   <Select
                     options={searchResults}
                     onChange={handleExerciseSelection}
                     onInputChange={handleSearchChange}
+                    classNamePrefix="bg-zinc-600 font-mono text-slate-300 h-8"
                   />
-                </div>
+                </div></div>
                 {/* Material-UI Table */}
                 <TableContainer component={Paper} className="mt-4">
                   <Table size="small">
@@ -443,16 +445,16 @@ export const Composer = React.memo(({ middleware, setMiddleware }) => {
                     </TableBody>
                   </Table>
                 </TableContainer>
-                <Button onClick={addRow}>Add Row</Button>
-                <Button onClick={deleteRow}>Delete Row</Button>
-                <Button onClick={parseTable}>Commit String</Button>
-                <Button
+                <button className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2 px-2 py-2 rounded-md cursor-pointer text-sm" onClick={addRow}>Add Row</button>
+                <button className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2 px-2 py-2 rounded-md cursor-pointer text-sm" onClick={deleteRow}>Delete Row</button>
+                <button className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2 px-2 py-2 rounded-md cursor-pointer text-sm" onClick={parseTable}>Commit String</button>
+                <button className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2 px-2 py-2 rounded-md cursor-pointer text-sm"
                   onClick={() =>
                     setMiddleware({ ...middleware, isOpen: false })
                   }
                 >
                   Close
-                </Button>
+                </button>
               </div>
               {/* </Resizable> */}
             </div>

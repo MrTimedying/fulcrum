@@ -56,7 +56,7 @@ const Resume = ({ patientID }) => {
 
   // Render loading state or actual data
   return (
-    <div className="bg-gray-800 p-4 rounded-lg shadow-md flex justify-center space-x-4">
+    <div className="bg-zinc-900 w-1/2 p-4 rounded-lg shadow-md flex justify-center my-5 font-mono text-slate-300 space-x-4">
       {/* Left Column */}
 
       <div className="flex-1">
@@ -80,7 +80,7 @@ const Resume = ({ patientID }) => {
               BMI: {patientDetails.BMI}
             </p>
           ) : (
-            <p className="text-white">Loading patient details...</p>
+            <p className="text-white">No details for current patient</p>
           )}
         </div>
 
@@ -123,7 +123,7 @@ const Resume = ({ patientID }) => {
                 ))}
             </>
           ) : (
-            <p className="text-white">Loading patient details...</p>
+            <p className="text-white">No details for current patient</p>
           )}
         </div>
       </div>

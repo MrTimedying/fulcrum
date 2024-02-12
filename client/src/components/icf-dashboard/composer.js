@@ -19,6 +19,8 @@ import axios from "axios";
 import Select from "react-select";
 /* import { Resizable } from "react-resizable"; */
 import * as R from "ramda";
+import './dashboard.css';
+
 
 const api = axios.create({
   baseURL: "http://localhost:8080",
@@ -193,7 +195,7 @@ export const Composer = ({
   return (
     <>
       <button
-        className="bg-indigo-500 text-white px-4 py-2 rounded-md cursor-pointer text-sm"
+        className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2 px-2 py-2 rounded-md cursor-pointer text-sm"
         onClick={() => setIsOpenComposer(true)}
       >
         Add item
@@ -228,13 +230,15 @@ export const Composer = ({
               > */}
               <div
                 style={{
-                  width: "950px",
-                  height: "450px",
+                  width: "700px",
+                  height: "800px",
                 }}
-                className="p-6 my-8 text-left align-middle transition-all transform bg-white shadow-xl overflow-y-auto rounded-md"
+                className="p-6 my-8 text-left font-mono text-slate-300 align-middle transition-all transform bg-zinc-900 shadow-xl overflow-y-auto rounded-md"
               >
                 {" "}
                 {/* This is the styling of the modal */}
+                <h3 className="text-slate-300 font-mono py-2 rounded-md cursor-pointer text-xl">ICF Items Composer</h3>
+                <div className="flex flex-row justify-between">
                 <Formik
                   enableReinitialize={true}
                   initialValues={initialFormValues}
@@ -242,7 +246,8 @@ export const Composer = ({
                   validationSchema={validationSchema}
                 >
                   {({ values, handleChange, resetForm }) => (
-                    <div className="p-4 bg-gray-200 rounded-md mb-4">
+                    
+                    <div className="p-4 rounded-md mb-4">
                       <div className="mb-3">
                         <label className="block mb-1" htmlFor="name">
                           Category
@@ -253,7 +258,7 @@ export const Composer = ({
                           name="category"
                           value={values.category}
                           onChange={handleChange}
-                          className="w-full p-2 border rounded-md"
+                          className="w-full bg-zinc-800 p-2 rounded-md h-8"
                         />
                         <ErrorMessage
                           name="category"
@@ -271,7 +276,7 @@ export const Composer = ({
                           name="label"
                           value={values.label}
                           onChange={handleChange}
-                          className="w-full p-2 border rounded-md"
+                          className="w-full bg-zinc-800 p-2 rounded-md h-8"
                         />
                         <ErrorMessage
                           name="label"
@@ -289,7 +294,7 @@ export const Composer = ({
                           name="score"
                           value={values.score}
                           onChange={handleChange}
-                          className="w-full p-2 border rounded-md"
+                          className="w-full bg-zinc-800 p-2 rounded-md h-8"
                         />
                         <ErrorMessage
                           name="score"
@@ -302,32 +307,35 @@ export const Composer = ({
                         <button
                           type="button"
                           onClick={() => handleFormSubmit(values, {resetForm})}
-                          className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition duration-300"
+                          className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2 px-2 py-2 rounded-md cursor-pointer text-sm"
                         >
                           Add to Set
                         </button>
                         <button
                           type="button"
                           onClick={() => handleExercisePost(values)}
-                          className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition duration-300"
+                          className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2 px-2 py-2 rounded-md cursor-pointer text-sm"
                         >
                           Save template
                         </button>
                       </div>
-                    </div>
+                      </div>
+                    
                   )}
                 </Formik>
-                <div>
+                <div className="w-1/2" >
                   <Select
                     options={searchResults}
                     onChange={handleItemSelection}
                     onInputChange={handleSearchChange}
+                    classNamePrefix="bg-zinc-800 font-mono text-slate-300"
                   />
                 </div>
+                </div>
                 {/* Material-UI Table */}
-                <Button onClick={addRow}>Add Row</Button>
-                <Button onClick={deleteRow}>Delete Row</Button>
-                <TableContainer component={Paper} className="mt-4">
+                <button className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2 px-2 py-2 rounded-md cursor-pointer text-sm" onClick={addRow}>Add Row</button>
+                <button className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2 px-2 py-2 rounded-md cursor-pointer text-sm" onClick={deleteRow}>Delete Row</button>
+                <TableContainer component={Paper} className="mt-4 font-mono">
                   <Table size="small">
                     <TableHead>
                       <TableRow>
@@ -386,8 +394,8 @@ export const Composer = ({
                     </TableBody>
                   </Table>
                 </TableContainer>
-                <Button onClick={parseTable}>Commit String</Button>
-                <Button onClick={handleClose}>Close</Button>
+                <button className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2 px-2 py-2 rounded-md cursor-pointer text-sm" onClick={parseTable}>Commit String</button>
+                <button className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2 px-2 py-2 rounded-md cursor-pointer text-sm" onClick={handleClose}>Close</button>
               </div>
               {/* </Resizable> */}
             </div>

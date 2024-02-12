@@ -1,31 +1,31 @@
-import React, {useState} from 'react'
-import MainBody from './mainbody'
-import Sidebar from './sidebar'
+import React, { useState, useEffect } from 'react';
+import MainBody from './mainbody';
+import Sidebar from './sidebar';
 import '../App.css';
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
-
-
-
+import { HashRouter as Router, Route, Routes } from 'react-router-dom';
+import CustomFrame from './frame/customFrame';
 
 function Home() {
-
   const [patientID, setPatientID] = useState(0);
-  
+
+  useEffect(() =>{
+    console.log("Trying to re-render the Main Body")
+  },[patientID])
 
   return (
-    <div className="App flex flex-nowrap h-screen">
-      <BrowserRouter>
-        <Sidebar
-          patientID={patientID} 
-          setPatientID={setPatientID}
-           />
+    <Router>
+      <CustomFrame>
+      <div className="App flex flex-nowrap" style={{ height: 'calc(100vh - 18px)' }}>
+        <Sidebar patientID={patientID} setPatientID={setPatientID} />
         <Routes>
-          <Route path="/patients/:ID" element={<MainBody patientID={patientID} />} />
+          <Route path="/patients/:ID" element={<MainBody patientID={patientID} setPatientID={setPatientID} />} />
           <Route path="/" element={<MainBody />} />
         </Routes>
-      </BrowserRouter>
-    </div>
-  )
+      </div>
+      </CustomFrame>
+    </Router>
+  );
 }
 
 export default Home;
+

@@ -125,7 +125,7 @@ export const InterventionEditor = React.memo(({
 
   // Return Statement
   return (
-    <div className="flex justify-center">
+    <div className="flex justify-center font-mono text-slate-300 bg-zinc-900 rounded-lg p-5 mr-2">
       <form
         onSubmit={(e) => {
           /* handleAccept(); */
@@ -143,7 +143,7 @@ export const InterventionEditor = React.memo(({
           <label className="text-slate-200 text-sm">
             <h3>Name of the intervention</h3>
             <input
-              className="text-black"
+              className="w-full bg-zinc-800 p-2 rounded-md h-8"
               id="interventionName"
               type="text"
               value={formik.values.interventionName}
@@ -153,7 +153,7 @@ export const InterventionEditor = React.memo(({
             ></input>
             <h3>Type of the intervention</h3>
             <select
-              className="text-black"
+              className="w-full bg-zinc-800 p-2 rounded-md h-8"
               id="interventionType"
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
@@ -168,7 +168,7 @@ export const InterventionEditor = React.memo(({
             </select>
             <h3>Start of the intervention date</h3>
             <input
-              className="text-black"
+              className="w-full bg-zinc-800 p-2 rounded-md h-8"
               id="startDate"
               type="date"
               value={formik.values.startDate}
@@ -180,7 +180,7 @@ export const InterventionEditor = React.memo(({
             ></input>
             <h3>Number of weeks</h3>
             <input
-              className="text-black"
+              className="w-full bg-zinc-800 p-2 rounded-md h-8"
               id="weeks"
               type="number"
               value={formik.values.weeks}
@@ -232,7 +232,7 @@ export const InterventionEditor = React.memo(({
         <div className="mb-4">
         <h3>Global goal</h3>
             <input
-              className="text-black"
+              className="w-full bg-zinc-800 p-2 rounded-md h-8"
               id="globalGoal"
               type="text"
               value={formik.values.globalGoal}
@@ -242,7 +242,7 @@ export const InterventionEditor = React.memo(({
             ></input>
         <h3>Service program goal</h3>
             <input
-              className="text-black"
+              className="w-full bg-zinc-800 p-2 rounded-md h-8"
               id="serviceGoal"
               type="text"
               value={formik.values.serviceGoal}

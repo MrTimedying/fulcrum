@@ -1,6 +1,71 @@
 @import 'react-big-calendar/lib/sass/styles';
 
 .rbc-calendar {
-    background-color: antiquewhite;
+    background-color: transparent;
+    height: 90% !important;
+    margin-top:20px !important;
+}
 
+.rbc-toolbar {
+    background-color: #18181b;
+    
+    & .rbc-toolbar-label {
+        color: rgb(203 213 225) !important;
+    }
+
+    & button {
+        color: rgb(203 213 225) !important;
+        border: none !important;
+
+    }
+
+    & button.rbc-active {
+        color: rgb(203 213 225) !important;
+        background: #09090b !important;
+        border: none !important;
+        
+    }
+    & button:hover {
+        color: rgb(203 213 225) !important;
+        background: #09090b !important;
+        border: none !important;
+        
+    }
+}
+
+.rbc-month-view {
+    border: none !important;
+    background-color: #18181b;
+
+    & .rbc-row-bg {
+        border: none !important;
+    }
+}
+
+.rbc-header {
+    font-weight: medium;
+    font-family: monospace;
+    font-size: 12px;
+    color: rgb(203 213 225) !important;   
+    border-bottom: none !important;
+}
+
+.rbc-date-cell {
+    color: rgb(203 213 225) !important;
+}
+
+.rbc-off-range-bg {
+    background: #24292f !important;
+}
+
+.rbc-today {
+    background-color: #6e7058 !important;
+}
+
+.rbc-month-row + .rbc-month-row {
+    border-top: none !important;
+}
+
+.rbc-day-bg + .rbc-day-bg {
+    border-left: none !important;
 }

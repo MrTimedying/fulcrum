@@ -7,6 +7,8 @@ const app = express();
 // Enable CORS for all routes
 app.use(cors());
 app.use(express.json());
+const PORT = process.env.PORT || 8080;
+
 
 app.get("/api/patients", (req, res) => {
     db.all("SELECT * FROM Patients", (err, data) => {
@@ -425,6 +427,23 @@ app.get("/api/profile", (req, res) => {
     });
 });
 
+app.delete("/api/profile", (req,res) => {
+
+    const {ID} = req.query;
+
+    const query = `DELETE FROM profile WHERE ID = ?`
+
+    db.run(query, [ID], (err) => {
+        if (err) {
+            console.error(err);
+            res.status(500).json({ error: "Internal Server Error" });
+        } else {
+            // After successful deletion, fetch the updated data
+            res.json({ message: `Patient profile number ${ID} deleted succesfully!`})
+            };
+        });
+
+});
 
 
 app.post("/api/profile", (req, res) => {
@@ -467,7 +486,16 @@ app.post("/api/profile", (req, res) => {
 });
 
 
-
+if (process.send) {
+    app.listen(PORT, () => {
+      console.log(`Server is running on port ${PORT}`);
       
-
-app.listen(8080);
+      // Send a message to the parent process (Electron) indicating that the server has started
+      process.send('serverStarted');
+    });
+  } else {
+    app.listen(PORT, () => {
+      console.log(`Server is running on port ${PORT}`);
+    });
+  }
+  

@@ -135,7 +135,7 @@ export const WodFormBody = React.memo(({middleware, formValues}) => {
               <Field
                 name="type"
                 type="text"
-                className="bg-gray-800 text-white text-sm rounded-md py-1 px-2"
+                className="w-full bg-zinc-800 p-2 rounded-md h-8"
               />
               <ErrorMessage
                 name="type"
@@ -151,7 +151,7 @@ export const WodFormBody = React.memo(({middleware, formValues}) => {
               <Field
                 name="scope"
                 type="text"
-                className="bg-gray-800 text-white text-sm rounded-md py-1 px-2"
+                className="w-full bg-zinc-800 p-2 rounded-md h-8"
               />
               <ErrorMessage
                 name="scope"
@@ -170,7 +170,7 @@ export const WodFormBody = React.memo(({middleware, formValues}) => {
               <Field
                 name="exercises"
                 type="text"
-                className="bg-gray-800 text-white text-sm rounded-md py-1 px-2"
+                className="w-full bg-zinc-800 p-2 rounded-md h-8"
               />
               <ErrorMessage
                 name="exercises"
@@ -181,7 +181,7 @@ export const WodFormBody = React.memo(({middleware, formValues}) => {
 
             <button
               type="submit"
-              className="bg-gray-800 text-white text-sm rounded-md py-1 px-4"
+              className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2  px-2 py-2 rounded-md cursor-pointer text-sm"
             >
               Submit
             </button>

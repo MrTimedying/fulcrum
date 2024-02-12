@@ -44,14 +44,14 @@ const Timeline = ({ cards, setCards}) => {
         tableData={tableData}
         setTableData={setTableData}
       />
-      <button className="bg-indigo-500 text-white px-4 py-2 rounded-md cursor-pointer text-sm" onClick={() => EditItemHandler(testEdit)}>Edit Item</button>
+      <button className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2 px-2 py-2 rounded-md cursor-pointer text-sm" onClick={() => EditItemHandler(testEdit)}>Edit Item</button>
       <DragDropContext onDragEnd={onDragEnd}>
         <Droppable droppableId="timeline" direction="horizontal">
           {(provided) => (
             <div
               ref={provided.innerRef}
               {...provided.droppableProps}
-              className="flex h-48 bg-gray-800 p-4 space-x-6"
+              className="flex h-48 bg-zinc-900 p-4 space-x-6"
             >
               {cards.map((card, index) => (
                 <Draggable
@@ -64,7 +64,7 @@ const Timeline = ({ cards, setCards}) => {
                       ref={provided.innerRef}
                       {...provided.draggableProps}
                       {...provided.dragHandleProps}
-                      className={` p-2 mb-2 w-48 rounded ${testSelected === card.name ? 'bg-slate-500' : 'bg-white'}`}
+                      className={` p-2 mb-2 w-48 rounded font-mono text-slate-300 ${testSelected === card.name ? 'bg-zinc-600' : 'bg-zinc-800'}`}
                       onClick={() => selectionSetter(card)}
                     >
                       <div>

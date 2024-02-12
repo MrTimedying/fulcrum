@@ -58,7 +58,7 @@ export const Viewer = React.memo(({ viewWod, viewMicro, viewPhase, viewIntervent
   }, [viewWod]);
 
   return (
-    <div>
+    <div className="mx-2 ">
       {/* viewIntervention */}
       {viewIntervention && (
         <div className={`viewer ${highlightIntervention ? 'highlight-intervention' : 'downlight-intervention'}`}>
