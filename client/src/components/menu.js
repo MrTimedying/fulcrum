@@ -2,18 +2,18 @@ import { Menu, Transition } from '@headlessui/react'
 import { Fragment, useState } from 'react'
 import { ChevronDownIcon } from '@heroicons/react/20/solid'
 import { useNavigate } from "react-router-dom";
-import NpForm from './npform'
-import axios from "axios";
+import NpForm from './npform';
+import {useDispatch, useSelector} from 'react-redux';
+import {deletePatient} from '../global/slices/patientSlice';
 
-const api = axios.create({
-  baseURL: "http://localhost:8080"
-});
+
 
 export default function MyDropdown({patientID, setPatientID, formData, setFormData, setFetchingSwitch}) {
   const [isNpFormModalOpen, setIsNpFormModalOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const navigate = useNavigate();
-  
-
+  const dispatch = useDispatch();
+  const patientData = useSelector(state => state.patients.find(item => item.id === patientID));
 
   const closeNpFormModal = () => {
     setIsNpFormModalOpen(false);
@@ -45,36 +45,18 @@ export default function MyDropdown({patientID, setPatientID, formData, setFormDa
     
   }
 
-  const handlePatientEdit = (patientID) => {
-    console.log(patientID);
-    api
-    .get('api/patients', { params: { id: patientID}})
-    .then(function (response){
-      const patientData = response.data.find(patient => patient.ID === parseInt(patientID))
-      setFormData(patientData);
-    }).catch(function (error){
-      console.log(error);
-    })
+  const handlePatientEdit = (patientData) => {
+
+    setIsEditing(true);
+    setFormData(patientData);
     setIsNpFormModalOpen(true);
   };
 
   const handlePatientDelete = (patientID) => {
-    const ID = parseInt(patientID);
-    console.log(ID);
+    console.log(patientID);
+    const payload = { id: patientID};
+    dispatch(deletePatient(payload))
 
-    api
-        .delete("api/patients", { params: { ID: ID } })
-        .then(function (response) {
-            console.log(response);
-            return api.delete(`api/profile?ID=${ID}`);
-        })
-        .then(function (response) {
-            console.log(response);
-        })
-        .catch(function (error) {
-            console.log(error);
-            // Handle errors for patient and profile deletion if needed
-        });
     setPatientID(0);
     navigate(`/`)
     setFetchingSwitch(true);
@@ -109,7 +91,7 @@ export default function MyDropdown({patientID, setPatientID, formData, setFormDa
                   <button
                     onClick={() => handlePatientCreation()}
                     className={`${
-                      active ? 'bg-gray-500 text-white' : 'text-slate-300'
+                      active ? "bg-gray-500 text-white" : "text-slate-300"
                     } group flex w-full rounded-md px-2 py-2 text-sm`}
                   >
                     {active ? (
@@ -123,16 +105,16 @@ export default function MyDropdown({patientID, setPatientID, formData, setFormDa
                         aria-hidden="true"
                       />
                     )}
-                    <div className='pl-4 w-full text-left'>New Patient</div>
+                    <div className="pl-4 w-full text-left">New Patient</div>
                   </button>
                 )}
               </Menu.Item>
               <Menu.Item>
                 {({ active }) => (
                   <button
-                    onClick={() => handlePatientEdit(patientID)}
+                    onClick={() => handlePatientEdit(patientData)}
                     className={`${
-                      active ? 'bg-gray-500 text-white' : 'text-slate-300'
+                      active ? "bg-gray-500 text-white" : "text-slate-300"
                     } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
                   >
                     {active ? (
@@ -146,7 +128,7 @@ export default function MyDropdown({patientID, setPatientID, formData, setFormDa
                         aria-hidden="true"
                       />
                     )}
-                    <div className='pl-4 w-full text-left'>Edit Patient</div>
+                    <div className="pl-4 w-full text-left">Edit Patient</div>
                   </button>
                 )}
               </Menu.Item>
@@ -155,7 +137,7 @@ export default function MyDropdown({patientID, setPatientID, formData, setFormDa
                   <button
                     onClick={() => handlePatientDelete(patientID)}
                     className={`${
-                      active ? 'bg-gray-500 text-white' : 'text-slate-300'
+                      active ? "bg-gray-500 text-white" : "text-slate-300"
                     } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
                   >
                     {active ? (
@@ -169,17 +151,25 @@ export default function MyDropdown({patientID, setPatientID, formData, setFormDa
                         aria-hidden="true"
                       />
                     )}
-                    <div className='pl-4 w-full text-left'>Delete Patient</div>
+                    <div className="pl-4 w-full text-left">Delete Patient</div>
                   </button>
                 )}
               </Menu.Item>
-              </div>
+            </div>
           </Menu.Items>
         </Transition>
       </Menu>
-      <NpForm isOpen={isNpFormModalOpen} closeModal={closeNpFormModal} formData={formData} setFormData={setFormData} setFetchingSwitch={setFetchingSwitch} />
+      <NpForm
+        isOpen={isNpFormModalOpen}
+        closeModal={closeNpFormModal}
+        formData={formData}
+        setFormData={setFormData}
+        setFetchingSwitch={setFetchingSwitch}
+        isEditing={isEditing}
+        setIsEditing={setIsEditing}
+      />
     </div>
-  )
+  );
 }
 
 // NewPatientActiveIcon

@@ -1,8 +1,26 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useCallback } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
+import { useEditorContext } from './editorContext';
+import {addWeeks, addDays, parseISO} from 'date-fns';
+import * as R from 'ramda';
 
-export const MicroEditor = React.memo(({ setViewMicro, middleware, setMiddleware, selectedPhase }) => {
+export const MicroEditor = React.memo(() => {
+
+  const {
+    setViewMicro,
+    microValues,
+    setMicroValues,
+    setMicroData,
+    microData,
+    setMicroPattern,
+    selectedMicro,
+    selectedPhase,
+    timer,
+    setTime_Pipeline,
+    microPattern
+  } = useEditorContext();
+
   const initialFormValues = useMemo(
     () => ({
       type: "",
@@ -75,41 +93,34 @@ export const MicroEditor = React.memo(({ setViewMicro, middleware, setMiddleware
   const [selectedPattern, setSelectedPattern] = useState([1, 0, 0, 0, 0, 0, 0]);
 
   const handleFormSubmit = (values) => {
-    const jsonData = /* JSON.stringify(values); */ values;
-  
-    setMiddleware((prevState) => {
-      const updatedMicroValues = { ...prevState.microValues,
-        [selectedPhase]: {
-          ...prevState.microValues[selectedPhase],
-          [prevState.selectedMicro]: jsonData
-        }};
-  
-      
-      
-      let updatedMicroData = [...prevState.microData];
-      updatedMicroData = {...values};
-
-      setViewMicro(values);
-  
-      return {
-        ...prevState,
-        microValues: updatedMicroValues,
-        microData: updatedMicroData
+    let jsonData = /* JSON.stringify(values); */ values;
+    
+    jsonData = { 
+      ...jsonData,
+      phaseID: selectedPhase,
+      microID: selectedMicro,
       };
+          
+    setMicroValues((prevState) => {
+      const isDuplicate = prevState.some((item) => (item.phaseID === jsonData.phaseID && item.microID === jsonData.microID));
+      if (!isDuplicate) {
+
+        const updatedMicroValues = [...prevState, {...jsonData}]
+
+        const sortedMicroValues = R.sortWith([
+          R.ascend(R.prop('phaseID')),
+          R.ascend(R.prop('microID')),
+        ], updatedMicroValues);
+
+        return sortedMicroValues;
+      }
+      return prevState;
     });
+
+    setMicroData(jsonData);
+    setViewMicro(jsonData);
+    
   };
-
-  /*   const handleFormSubmit = (values) => {
-    const jsonData = JSON.stringify(values);
-
-    setMiddleware((prevState) => ({
-      ...prevState.microValues,
-      [selectedMicro]: jsonData 
-    }));
-
-  }; */
-
-  
 
   const handlePatternChange = (e) => {
     setSelectedPattern(JSON.parse(e.target.value));
@@ -120,25 +131,97 @@ export const MicroEditor = React.memo(({ setViewMicro, middleware, setMiddleware
     if (Array.isArray(selectedPattern) && selectedPattern.length > 0) {
       let picked_pattern = selectedPattern;
       /* console.log('I am correctly calling committSessions/n picked_pattern: ', picked_pattern); */
-      setMiddleware((prevState) => ({
-        ...prevState,
-        microPattern: picked_pattern,
-      }));
+      setMicroPattern(picked_pattern);
     } else {
       alert('Please select a pattern!') // Not sure If I wanna keep this error handler here as a pop-up in the complete app.
     }
   };
+
+  const calculateMicroEndDate = useCallback((begin_date, array) => {
+    const startDate = typeof begin_date === 'string' ? parseISO(begin_date) : begin_date;
+    let start_date = startDate;
+    let dateArray = []
+
+    array.forEach(() => {
+      dateArray.push(addWeeks(start_date,1));
+      start_date = addWeeks(start_date, 1);
+
+    })
+
+    dateArray = dateArray.map((date) => date.toISOString());
+
+    return dateArray;   
+  }, []);
+
+  function getDatesFromPattern(begin_date, patternArray) {
+    const result = [];
+    let currentDate = typeof begin_date === 'string' ? parseISO(begin_date) : begin_date;
   
+    patternArray.forEach((value) => {
+      currentDate = addDays(currentDate, 1); 
   
+      if (value === 1) {
+        result.push(currentDate); 
+      }
+    });
+  
+    return result;
+  }
+
+  const Patternizer = useCallback((start_date, patternArray) => {
+    let begin_date = typeof start_date === 'string' ? parseISO(start_date) : start_date;
+    let date_results = [];
+  
+    microValues.forEach(() => {
+      date_results.push(getDatesFromPattern(begin_date, patternArray));
+      begin_date = addWeeks(begin_date, 1);
+    });
+  
+    date_results = date_results.map((array) => array.map((date) => date.toISOString()));
+    return date_results;
+  }, [microValues]);
+  
+  useEffect(() => {
+    // Listeners for the Phase Dates
+
+    /* const overall_weeks = timer.weeksCounter + timer.mirror_weeks_counter; */
+
+    setTime_Pipeline((prevtime_pipeline) => ({
+      ...prevtime_pipeline,
+      micro_date_array: calculateMicroEndDate(timer.start, microValues),
+    }));
+
+    if (microPattern) {
+      setTime_Pipeline((prevtime_pipeline) => ({
+        ...prevtime_pipeline,
+        wod_date_array: Patternizer(timer.start, microPattern),
+      }));
+      console.log(microPattern);
+      
+    } else {
+      console.log("No pattern selected");
+    }
+
+    
+  }, [
+    timer.start,
+    setTime_Pipeline, 
+    calculateMicroEndDate,
+    Patternizer,
+    microPattern,
+    timer.mirror_weeks_counter,
+    timer.weeksCounter,
+    microValues
+  ]); 
 
   useEffect(() => {
-    if (typeof middleware.microData === 'object' && middleware.microData !== null && !Array.isArray(middleware.microData)) {
-      if (middleware.microData !== null && middleware.microData !== undefined) {
+    if (typeof microData === 'object' && microData !== null && !Array.isArray(microData)) {
+      if (microData !== null && microData !== undefined) {
         try {
-          const parsedValues = middleware.microData;
+          const parsedValues = microData;
           setFormValues(parsedValues);
           setViewMicro(parsedValues);
-          /* console.log(selectedPhase); */
+          console.log(parsedValues);
           
         } catch (error) {
           /* console.error('This error has occurred:', error); */
@@ -156,7 +239,7 @@ export const MicroEditor = React.memo(({ setViewMicro, middleware, setMiddleware
       /* console.log(selectedPhase); */
       
     }
-  }, [middleware.microData, initialFormValues, setViewMicro, setFormValues, selectedPhase]);
+  }, [microData, initialFormValues, setViewMicro, setFormValues, selectedPhase]);
 
   const validationSchema = Yup.object().shape({
     type: Yup.string().required("Type is required"),
@@ -167,7 +250,7 @@ export const MicroEditor = React.memo(({ setViewMicro, middleware, setMiddleware
   return (
     <div>
       <Formik
-        key={() => `${middleware.selectedMicro}-${selectedPhase}`}
+        key={() => `${selectedMicro}-${selectedPhase}`}
         enableReinitialize={true}
         initialValues={formValues}
         onSubmit={handleFormSubmit}

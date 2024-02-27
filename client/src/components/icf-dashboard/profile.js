@@ -1,14 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { Composer } from "./composer";
 import  Resume  from "./resume";
 import Timeline from "./timeline";
-import  axios  from "axios";
-
-
-const api = axios.create({
-  baseURL: "http://localhost:8080",
-});
+import { useSelector, useDispatch } from "react-redux";
+import { newProfile, editProfile, deleteProfile } from "../../global/slices/profileSlice";
+import { createSelector } from "reselect";
 
 const Profile = ({patientID}) => {
   const [bodystructures, setBodyStructures] = useState([]);
@@ -21,42 +18,26 @@ const Profile = ({patientID}) => {
   const [itemEdit, setItemEdit] = useState([]);
   const [cards, setCards] = useState([]);
 
+  const dispatch = useDispatch();
+
+  const getProfile = createSelector(
+    state => state.profile,
+    (_,patientID) => patientID,
+    (profile,patientID) => profile?.find(profile => profile.id === patientID)
+  );
+  
+  const profile = useSelector(state => getProfile(state,patientID));
+  
+
+  // suspended temporarely due to multiple interventions per patient implementation
+
+
   console.log("Profile Component Rendered");
-
-  useEffect(() => {
-    const fetchingProfileData = () => {
-      api.get(`api/profile?name=${patientID}`)
-        .then(function (response) {
-          const profileData = response.data;
-  
-          setCards(profileData.timeline);
-          setBodyStructures(profileData.body);
-          setActivitiesParticipation(profileData.activities);
-          setEnvironmentalFactors(profileData.environment);
-          setPersonalFactors(profileData.personal);
-        })
-        .catch(function (error) {
-          // Handle the error, e.g., log it or set default values
-          console.log(error);
-  
-          // Set default values or clear the state
-          setCards([]);
-          setBodyStructures([]);
-          setActivitiesParticipation([]);
-          setEnvironmentalFactors([]);
-          setPersonalFactors([]);
-        });
-    };
-  
-    fetchingProfileData();
-    // eslint-disable-next-line
-  }, [patientID]);
-
 
   const updatingProfileData = () => {
 
     const values = {
-      ID: patientID,
+      id: patientID,
       timeline: JSON.stringify(cards),
       body: JSON.stringify(bodystructures),
       activities: JSON.stringify(activities_participation),
@@ -64,28 +45,15 @@ const Profile = ({patientID}) => {
       personal: JSON.stringify(personal_factors)
     };
 
-    api
-    .post("api/profile", values)
-    .then(function (response) {
-      console.log(response);
-    })
-    .catch(function (error) {
-      console.log(error);
-    });
-
+    if (profile === undefined) {
+      dispatch(newProfile(values));
+    } else {
+      dispatch(editProfile(values));
+    }    
   };
 
-  const deleteProfile = (ID) => {
-
-    api
-    .delete(`api/profile?ID=${ID}`)
-    .then(function (response) {
-      console.log(response);
-    })
-    .catch(function (error) {
-      console.log(error);
-    })
-
+  const eliminateProfile = (patientID) => {
+  dispatch(deleteProfile({id:patientID}));
   };
 
   const selectionSetter = (item) => {
@@ -287,7 +255,7 @@ const Profile = ({patientID}) => {
           </DragDropContext>
         </div>
         <button className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2 px-2 py-2 rounded-md cursor-pointer text-sm" onClick={updatingProfileData}>Save Profile</button>
-        <button className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2 px-2 py-2 rounded-md cursor-pointer text-sm" onClick={deleteProfile(patientID)}>Delete Profile</button>
+        <button className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2 px-2 py-2 rounded-md cursor-pointer text-sm" onClick={() => eliminateProfile(patientID)}>Delete Profile</button>
     </div>
   );
 };

@@ -1,17 +1,13 @@
 import React, { useState, useEffect } from "react";
-import axios from "axios";
 import { Link } from "react-router-dom"; // Import the Link component
 import MyDropdown from "./menu";
-
-const api = axios.create({
-  baseURL: "http://localhost:8080",
-});
+import {useSelector} from 'react-redux';
 
 function Sidebar({ patientID, setPatientID }) {
   const [clientList, setClientList] = useState([]);
   const [filteredClientList, setFilteredClientList] = useState([]);
   const [query, setQuery] = useState("");
-  const [patientSelected, setPatientSelected] = useState(1);
+  const [patientSelected, setPatientSelected] = useState('');
   const [fetchingSwitch, setFetchingSwitch] = useState(false);
   const [formData, setFormData] = useState({
     Name: "",
@@ -23,19 +19,14 @@ function Sidebar({ patientID, setPatientID }) {
     Weight: "",
     Status: "",
   });
+  const patientValues = useSelector(state => state.patients);
 
   useEffect(() => {
-    api.get('/api/patients')
-      .then(function (response) {
-        setClientList(response.data);
-        setFilteredClientList(response.data);
-      })
-      .catch(function (error) {
-        console.log(error);
-      });
-      console.log("Hello, the switch is being triggered!");
-      setFetchingSwitch(false);
-  }, [fetchingSwitch]);
+
+    setClientList(patientValues);
+    setFilteredClientList(patientValues);
+    setFetchingSwitch(false);
+  }, [fetchingSwitch, patientValues]);
 
   const handleListParsing = (event) => {
     const inputValue = event.target.value;
@@ -53,10 +44,12 @@ function Sidebar({ patientID, setPatientID }) {
   };
 
   const handleSelection = (selectedClient) => {
-    const patientID = selectedClient.ID;
-    setPatientID(patientID);
+    const patientID = selectedClient.id;
+    setPatientID(patientID); // Core patient slection mechanism.
+    console.log(patientID);
+    console.log(selectedClient);
     
-    setPatientSelected(patientID === patientSelected ? 0 : patientID);
+    setPatientSelected(patientID === patientSelected ? '' : patientID);
   };
   
   
@@ -79,9 +72,9 @@ function Sidebar({ patientID, setPatientID }) {
         <h2 className="text-slate-300 bg-zinc-900 pl-2 text-m font-mono text-xs py-2" style={{borderBottom: "solid 1px #1c1c1c"}}>Patients List</h2>
         <ul className="bg-zinc-900 p-5 rounded-lg mt-2 mx-2 h-full" style={{borderBottom: "solid 2px rgb(53 51 51)"}}>
           {filteredClientList.map((client) => (
-            <li key={client.ID} className={` ${patientSelected === client.ID ? 'text-slate-600 text-s' : 'text-stone-200 text-xs '} `} onClick={() => handleSelection(client)}>
+            <li key={client.id} className={` ${patientSelected === client.id ? 'text-slate-600 text-s' : 'text-stone-200 text-xs '} `} onClick={() => handleSelection(client)}>
               {/* Create a Link for each patient */}
-              <Link to={`/patients/${client.ID}`}>
+              <Link to={patientSelected === client.id ? '/' : `/patients/${client.id}`}>
                 {client.Name} {client.Surname}
               </Link>
             </li>

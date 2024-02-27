@@ -1,0 +1,21 @@
+/* Additional custom styles for the Calndar */
+
+.rbc-calendar {
+    background-color: transparent;
+    height: 85% !important;
+    margin-top: 5px !important;
+}
+
+#calendar-load {
+    --tw-bg-opacity: 1;
+    background-color: rgb(24 24 27);
+    --tw-text-opacity: 1;
+    color: rgb(203 213 225);
+    text-transform: none;
+
+}
+
+.MuiPaper-root {
+    background-color: rgb(24 24 27) !important;
+    color: rgb(203 213 225) !important;
+}

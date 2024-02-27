@@ -3,6 +3,7 @@ import "./viewer.css";
 import JsonView from 'react18-json-view';
 import 'react18-json-view/src/style.css';
 
+
 export const Viewer = React.memo(({ viewWod, viewMicro, viewPhase, viewIntervention }) => {
   const [highlightPhase, setHighlightPhase] = useState(false);
   const [highlightIntervention, setHighlightIntervention] = useState(false);
@@ -58,6 +59,7 @@ export const Viewer = React.memo(({ viewWod, viewMicro, viewPhase, viewIntervent
   }, [viewWod]);
 
   return (
+
     <div className="mx-2 ">
       {/* viewIntervention */}
       {viewIntervention && (
@@ -95,5 +97,6 @@ export const Viewer = React.memo(({ viewWod, viewMicro, viewPhase, viewIntervent
         </div>
       )}
     </div>
+    
   );
 });

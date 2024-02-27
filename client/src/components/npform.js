@@ -1,44 +1,41 @@
 import { Fragment } from "react";
 import { Dialog, Transition } from "@headlessui/react";
-import axios from "axios";
+import {useDispatch} from 'react-redux';
+import { newPatient, editPatient} from '../global/slices/patientSlice';
 
-const api = axios.create({
-  baseURL: "http://localhost:8080",
-});
 
-function NpForm({ isOpen, closeModal, formData, setFormData, setFetchingSwitch }) {
+function NpForm({ isOpen, closeModal, formData, setFormData, setFetchingSwitch, isEditing, setIsEditing }) {
+  
+  const dispatch = useDispatch();
+
   const handleSubmit = async () => {
-    const heightInMeters = formData.Height / 100;
-    const weight = formData.Weight;
-    const bmi = (weight / (heightInMeters * heightInMeters)).toFixed(2);
+    
 
-    const formDataWithBMI = { ...formData, BMI: bmi };
+    if (!isEditing){
+      const heightInMeters = formData.Height / 100;
+      const weight = formData.Weight;
+      const bmi = (weight / (heightInMeters * heightInMeters)).toFixed(2);
 
-    try {
-      const response = await api.post("/api/patients", formDataWithBMI, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+      const formDataWithBMI = { ...formData, BMI: bmi };
 
-      if (response.status === 201) {
-        setFormData({
-          Name: "",
-          Surname: "",
-          Age: "",
-          Gender: "",
-          BMI: "",
-          Height: "",
-          Weight: "",
-          Status: "",
-        });
+      try {
+        await dispatch(newPatient(formDataWithBMI));
         setFetchingSwitch(true);
         closeModal();
-      } else {
-        console.error("Error creating a new patient.");
+
+      } 
+      catch (error) {
+        console.error("Error adding a new patient:", error); 
       }
-    } catch (error) {
-      console.error("Error creating a new patient:", error);
+    } else {
+      try {
+        await dispatch(editPatient(formData));
+        setFetchingSwitch(true);
+        setIsEditing(false);
+        closeModal();
+      } catch (error) {
+        console.error("Couldn't edit the patient due to", error);
+      }
     }
   };
 
@@ -234,7 +231,7 @@ function NpForm({ isOpen, closeModal, formData, setFormData, setFetchingSwitch }
                     onClick={handleSubmit}
                     className="inline-flex w-full justify-center rounded-md bg-zinc-950 px-2 py-2 text-sm font-medium text-slate-300 font-mono hover:bg-black/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/75"
                   >
-                    Create
+                    Save
                   </button>
                 </div>
                 <div className="mt-4 justify-start">

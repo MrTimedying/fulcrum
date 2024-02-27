@@ -1,22 +1,22 @@
-import React, { useEffect, useCallback} from "react";
+import React, { useEffect } from "react";
 import PhasesForm from "./phasesEditor.js";
 import { InterventionEditor } from "./interventionEditor.js";
 import { Viewer } from "./viewer.js";
 import { MicroEditor } from "./microEditor.js";
-/* import MicroMiddleware from "./microMiddleware.ts"; */
 import { WodEditor } from "./wodEditor.js";
 import * as R from 'ramda';
-import { addWeeks, addDays, set } from 'date-fns';
-/* import Timer from "./time.ts"; */
-import { CompilerFunction, SplicerFunction, deleteIntervention } from "./utils.js";
-import { CalendarParser } from "../calendar/utils";
+import { CompilerFunction, SplicerFunction } from "./utils.js";
 import { useEditorContext } from './editorContext';
 import { MicroSelector } from "./microSelector.js";
 import "../../App.css";
+import { InterventionLoad } from "./interventionLoad.js";
+import { useDispatch, useSelector } from "react-redux";
 
 
 
-function Editor({ patientID, setEvents }) {
+
+
+function Editor({ patientID, isExpanded }) {
 
   const { 
     phase, setPhase,
@@ -29,91 +29,111 @@ function Editor({ patientID, setEvents }) {
     selectedPhase, setSelectedPhase,
     PhaseValues, setPhaseValues,
     PhaseData, setPhaseData,
-    middleware, setMiddleware,
+    microValues, setMicroValues,
+    microData, setMicroData,
+    selectedMicro, setSelectedMicro,
+    setMicroPattern,
+    wodValues, setWodValues,
+    setWodData,
+    selectedWod, setSelectedWod,
     viewIntervention, setViewIntervention,
     viewPhase, setViewPhase,
     viewMicro, setViewMicro,
     viewWod, setViewWod,
-    time_pipeline, setTime_Pipeline,
-    splicerFunctionCalled, setSplicerFunctionCalled,
+    setIsLoading,
+    time_pipeline, 
     
     
  } = useEditorContext();
 
+ 
+ const dispatch = useDispatch();
+ const loadedData = useSelector(state => {
+  const interventions = state.intervention[patientID];
+  return interventions ? interventions[0] : undefined;
+});
 
-  const calculatePhaseEndDate = useCallback((begin_date, number_weeks) => {
-    let accumulatedValue = 0;
+const CleanerFunction = () => {
 
-    const accumulatedArray = number_weeks.map((element) => {
-      accumulatedValue += element;
-      return accumulatedValue;
-    });
+  setPhase([]);
+  setInterventionValues({});
+  setInterventionStartDate(null);
+  setWeeks(null);
+  setIsAccepted(false);
+  setNumPhases(0);
+  setSelectedPhase(null);
+  setPhaseValues([]);
+  setPhaseData([]);
+  setSelectedMicro(null);
+  setMicroValues([]);
+  setMicroData([]);
+  setSelectedWod(null);
+  setWodValues([]);
+  setWodData([]);
+  setMicroPattern([]);
+  setViewIntervention();
+  setViewPhase();
+  setViewMicro();
+  setViewWod();
+  setTimer({
+    start: new Date(2024, 1, 1),
+    end: new Date(2024,1,1),
+    weeks: 0,
+    weeksCounter: Math.max(0,0), // A max needs to be set in the consuming logic
+    phaseCounter: Math.max(0,0), // A max needs to be set in the consuming logic
+    minWeeks: 4,
+    mirror_weeks_counter: 0
+  })
 
-    const endDate = R.map(
-      (weeks) => addWeeks(begin_date, weeks),
-      accumulatedArray
-    );
+}
 
-    return endDate;
-  }, []);
+ useEffect(() => {
+  const fetchData = async () => {
+    try {
+      const splicerCheck = await SplicerFunction(
+        patientID,
+        setInterventionValues,
+        setPhaseValues,
+        setPhaseData,
+        setMicroValues,
+        setWodValues,
+        setTimer,
+        setViewIntervention,
+        setViewPhase,
+        setViewMicro,
+        setViewWod,
+        setNumPhases,
+        setPhase,
+        loadedData
+      );
 
-  const calculateMicroEndDate = useCallback((begin_date, number_weeks) => {
-    let accumulatedValue = number_weeks;
-    let dateArray = []
-
-    for(let i = 0; i <= accumulatedValue; i++) {
-      dateArray.push(addWeeks(begin_date,i))
-    }   
-    return dateArray;   
-  }, []);
-
-  function getDatesFromPattern(beginDate, patternArray) {
-    const result = [];
-    let currentDate = beginDate;
-  
-    patternArray.forEach((value) => {
-      currentDate = addDays(currentDate, 1); 
-  
-      if (value === 1) {
-        result.push(currentDate); 
+      if (splicerCheck === false) {
+        // Reset state if SplicerFunction fails
+        CleanerFunction();
       }
-    });
-  
-    return result;
-  }
-
-  const Patternizer = useCallback((start_date, patternArray) => {
-    let begin_date = start_date;
-    let date_results = [];
-  
-    for (let j = 0; j < Object.keys(middleware.microValues).length; j++) {
-      const microValuesJ = middleware.microValues[j];
-      
-      if (microValuesJ && typeof microValuesJ === 'object') {
-        for (let i = 0; i < Object.keys(microValuesJ).length; i++) {
-          date_results.push(getDatesFromPattern(begin_date, patternArray));
-          begin_date = addWeeks(begin_date, 1);
-        }
-      }
+    } catch (error) {
+      console.error("Error fetching data:", error);
     }
-  
-    console.log(date_results);
-    return date_results;
-  }, [middleware.microValues]);
-  
+  };
+  fetchData();
+  // eslint-disable-next-line 
+}, [patientID]);
 
 
 
-  // Second part of the Editor functions, handling the CRUD for mesophases.
+ // Second part of the Editor functions, handling the CRUD for mesophases.
   const createPhase = () => {
-    if (timer){
-      if (Math.floor(timer.calculateMonths) > numPhases){
+    if (timer.weeks !== 0){
+      if (Math.floor(timer.weeks/4) > numPhases){
         setPhase([
           ...phase,
           { id: phase.length, label: `Phase ${phase.length + 1}` },
         ]);    
         setNumPhases(numPhases + 1);
-        timer.setPhaseCounter(timer.phaseCounter + 1);
+        setTimer(prevTimer => ({
+          ...prevTimer,
+          phaseCounter: prevTimer.phaseCounter + 1,
+        }));
       }
       else {
         console.log("You can't create more phases for the intervention duration you've set!")
@@ -132,216 +152,123 @@ function Editor({ patientID, setEvents }) {
     if (timer.weeksCounter === 0) { //Potentially this part of the code is useless too. Explaination is in devlog 048 
       const totalWeeksNumber = R.pipe(
         R.values,
-        R.map(R.pipe(JSON.parse, R.prop('weeksnumber'))),
+        R.map(R.prop('weeksnumber')),
         R.sum
       )(PhaseValues);
-  
-      timer.setWeeksCounter(totalWeeksNumber);
-      timer.setMirrorWeeksCounter(0);
-      
-      setMiddleware(prevState => ({
-        ...prevState,
-        microValues: [],
-        wodValues: []
-      }))
+
+      setTimer(prevTimer => ({
+        ...prevTimer,
+        weeksCounter: totalWeeksNumber,
+        mirror_weeks_counter: 0,
+      }));
+
+      setMicroValues([]);
+      setWodValues([]);
 
       console.log('Total weeks number at the first if:', totalWeeksNumber);
     } else if (timer.mirror_weeks_counter !== null && timer.mirror_weeks_counter !== undefined) {
-  
-      timer.setWeeksCounter(timer.weeksCounter + timer.mirror_weeks_counter);
-      timer.setMirrorWeeksCounter(0);
-      /* console.log('Total weeks number at the second if:', totalWeeksNumber); */
+
+      setTimer(prevTimer => ({
+        ...prevTimer,
+        weeksCounter: timer.weeksCounter + timer.mirror_weeks_counter,
+        mirror_weeks_counter: 0,
+      }));
+     
     }
-  
-    timer.setPhaseCounter(0);
+    setTimer(prevTimer => ({
+      ...prevTimer,
+      phaseCounter: 0,
+    }));
     setNumPhases(0);
     setPhaseValues(() => []);
   };
   
   
-// Let's try this async fake trigger
-  useEffect(() => {
-    // This effect will run when the component mounts and when splicerFunctionCalled changes
+
+/*   useEffect(() => {
     if (splicerFunctionCalled) {
-      const selectedIndex = 0;
-      phaseSelection({ target: { value: selectedIndex } });
-
-      
-      microSelection({ target: { value: selectedIndex } });
-
-      // Reset the state variable after the effect runs
+      const selectedIndex = 2;
+      phaseSelection({ target: { value: selectedIndex } });     
+      microSelection({ target: { value: selectedIndex } });     
       setSplicerFunctionCalled(false);
       
     }
     // eslint-disable-next-line 
-  }, [splicerFunctionCalled]);
+  }, [splicerFunctionCalled]); */
 
   
 // Selection handlers
   const phaseSelection = (e) => {
     const selectedPhaseIndex = Number(e.target.value);
+    console.log(selectedPhaseIndex);
+    const defaultIndex = 0;
 
     setSelectedPhase(selectedPhaseIndex);
 
-    if (PhaseValues[selectedPhaseIndex]) {
-      setPhaseData(JSON.parse(PhaseValues[selectedPhaseIndex])); //Not only you update your own cache based on selected indexing
-    } else {
-      setPhaseData([]);
+    setPhaseData(() => {
+      const currentPhaseData = PhaseValues.find((item) => (item.phaseID === selectedPhaseIndex));
+      console.log(currentPhaseData);
+      return currentPhaseData ? currentPhaseData : {
+        phasename: "",
+        weeksnumber: 0,
+        phasescope: "",
+      };
+    });
+    
+    if (microValues){
+      
+      microSelection({ target: { value: defaultIndex.toString() } });
+
+      if (wodValues){
+        wodSelection({ target: { value: defaultIndex.toString() } });
+      }
+
     }
-    console.log(selectedPhaseIndex);
-    console.log(PhaseValues);
-    console.log(PhaseData);
+
   };
 
   const microSelection = (e) => {
     const selectedMicroIndex = Number(e.target.value);
+
+    setSelectedMicro(selectedMicroIndex);
     
-  
-    setMiddleware(prevState => {
-      const updatedState = { ...prevState, 
-        microData: prevState.microValues[selectedPhase]?.[selectedMicroIndex]
-          ? prevState.microValues[selectedPhase][selectedMicroIndex]
-          : [],
-        selectedMicro: selectedMicroIndex || 0,
-      } 
-      return updatedState;
+    setMicroData(() => {
+
+      const currentMicroData = microValues.find((item) => (
+       item.phaseID === selectedPhase && item.microID === selectedMicroIndex
+      ));
+      return currentMicroData ? currentMicroData : {
+        type: "",
+        scope: "",
+        wods: "",
+      };
     });
 
-    console.log('Hi! Ive been called by the microSelection function!');
+    
   };
 
   const wodSelection = (e) => {
     const selectedWodIndex = Number(e.target.value);
-  
-    setMiddleware(prevState => {
-      const updatedWodData = prevState.wodValues[selectedPhase]?.[prevState.selectedMicro]?.[selectedWodIndex] || {};
-      console.log(updatedWodData);
-      return {
-        ...prevState,
-        selectedWod: selectedWodIndex,
-        wodData: updatedWodData  // Assign the nested object directly to wodData
+
+    setSelectedWod(selectedWodIndex);
+    
+    setWodData(() => {
+      const currentWodData = wodValues.find((item)=> (item.phaseID === selectedPhase && item.microID === selectedMicro && item.wodID === selectedWodIndex));
+      return currentWodData ? currentWodData : {
+        type: "",
+        scope: "",
+        exercises: "",
       };
-    });
+    })
+
   };
 
-  useEffect(() => {
-    const selectedMicroIndex = middleware.microSelection;
-    const selectedWodIndex = middleware.wodSelection;
-    
-    setMiddleware(prevState => { // You also update your own first lower tier cache based on its own selection, which is unchanged
-      const updatedState = { ...prevState, 
-        microData: prevState.microValues[selectedPhase]?.[selectedMicroIndex]
-          ? prevState.microValues[selectedPhase][selectedMicroIndex]
-          : [],
-        selectedMicro: selectedMicroIndex
-      } 
-      return updatedState;
-    });
 
-    setMiddleware(prevState => { // You also update a tier lower cache too 
-      const updatedWodData = prevState.wodValues[selectedPhase]?.[prevState.selectedMicro]?.[selectedWodIndex] || {};
-      const adjustdWodData = R.prop('wodValues', updatedWodData);;
-      return {
-        ...prevState,
-        selectedWod: selectedWodIndex,
-        wodData: adjustdWodData  
-      };
-    });
-    // eslint-disable-next-line 
-  }, [selectedPhase, middleware.microSelection, middleware.wodSelection]);
-
-  useEffect(() => { 
-    const selectedWodIndex = middleware.wodSelection;   
-
-    setMiddleware(prevState => { // You also update a tier lower cache too 
-      const updatedWodData = prevState.wodValues[selectedPhase]?.[prevState.selectedMicro]?.[selectedWodIndex] || {};
-      const adjustdWodData = R.prop('wodValues', updatedWodData);;
-      return {
-        ...prevState,
-        selectedWod: selectedWodIndex,
-        wodData: adjustdWodData  
-      };
-    });
-    // eslint-disable-next-line 
-  }, [middleware.selectedMicro, middleware.wodSelection, selectedPhase]);
-  
-  
-
-
-  useEffect(() => {
-    // Listeners for the Phase Dates
-    const updatedPhaseWeeks = R.values(PhaseValues).map((value) => {
-      const parsedValue = JSON.parse(value);
-      return parsedValue.weeksnumber;
-    });
-    const overall_weeks = timer.weeksCounter + timer.mirror_weeks_counter;
-
-    setTime_Pipeline((prevtime_pipeline) => ({
-      ...prevtime_pipeline,
-      phase_weeks_array: updatedPhaseWeeks,
-    }));
-
-    setTime_Pipeline((prevtime_pipeline) => ({
-      ...prevtime_pipeline,
-      phase_date_array: calculatePhaseEndDate(timer.begin, updatedPhaseWeeks),
-    }));
-
-    setTime_Pipeline((prevtime_pipeline) => ({
-      ...prevtime_pipeline,
-      micro_date_array: calculateMicroEndDate(timer.begin, overall_weeks),
-    }));
-
-    if (middleware.microPattern) {
-      setTime_Pipeline((prevtime_pipeline) => ({
-        ...prevtime_pipeline,
-        wod_date_array: Patternizer(timer.begin, middleware.microPattern),
-      }));
-      console.log(middleware.microPattern);
-      
-    } else {
-      console.log("No pattern selected");
-    }
-
-    
-  }, [
-    PhaseValues,
-    timer.begin,
-    setTime_Pipeline,
-    calculatePhaseEndDate,
-    calculateMicroEndDate,
-    Patternizer,
-    middleware.microPattern,
-    timer.mirror_weeks_counter,
-    timer.weeksCounter,
-    middleware.microValues
-  ]);
-
-
-
-
-  useEffect(() => {
-
-    if (!intervention_values || !PhaseValues || !middleware){
-      return;
-    }
-
-    setEvents(() => CalendarParser(intervention_values, PhaseValues, middleware));
-
-
-    /* let events = [];
-    events = CalendarParser(intervention_values, PhaseValues, middleware);
-    setEvents(...prevEvents => [...prevEvents, ...events]); */
-    
-
-  // eslint-disable-next-line  
-  },[intervention_values, PhaseValues, middleware]);
-  
-  
   
 
   return (
-    <div className="flex flex-row h-full w-full overflow-y-auto">
-      <div className="flex flex-col mt-5 h-full w-2/3 overflow-y-auto">
+    <div id="wrapper" className="flex flex-row h-full overflow-y-auto">
+      <div id="left-block" className="flex flex-col mt-5 h-full w-full overflow-y-auto">
         <InterventionEditor
           interventionStartDate={interventionStartDate}
           weeks={weeks}
@@ -393,7 +320,7 @@ function Editor({ patientID, setEvents }) {
                       <input
                         type="radio"
                         name="phase"
-                        class="custom-radio"
+                        className="custom-radio"
                         value={index}
                         checked={selectedPhase === index}
                         onChange={phaseSelection}
@@ -421,7 +348,7 @@ function Editor({ patientID, setEvents }) {
                     selectedPhase={selectedPhase}
                     PhaseValues={PhaseValues} // Pass the selectedPhase
                     setPhaseValues={setPhaseValues}
-                    selectedValues={PhaseData}
+                    PhaseData={PhaseData}
                     setPhaseData={setPhaseData}
                     timer={timer}
                     setTimer={setTimer}
@@ -444,27 +371,18 @@ function Editor({ patientID, setEvents }) {
               className="flex-initial w-1/2 col-span-1 row-span-1 w-96 h-80 p-4 overflow-y-auto"
             >
               {PhaseValues !== null && (
-                <div>
-                  {Array.from({ length: PhaseData.weeksnumber }, (_, index) => (
+                <div key="micro_selector"> 
+                  
                     <MicroSelector
-                      index={index}
-                      selectedPhase={selectedPhase}
-                      middleware={middleware}
                       microSelection={microSelection}
                     />
-                  ))}
+                  
                 </div>
               )}
             </div>
           </div>
           <div className="flex flex-col bg-zinc-900 rounded-lg p-2">
-            <MicroEditor
-              middleware={middleware}
-              setMiddleware={setMiddleware}
-              setViewMicro={setViewMicro}
-              selectedPhase={selectedPhase}
-              time_pipeline={time_pipeline}
-            />
+            <MicroEditor />
           </div>
           </div>
           <div className="flex flex-row">
@@ -472,20 +390,20 @@ function Editor({ patientID, setEvents }) {
               id="wod_selector"
               className="flex flex-col bg-zinc-900 w-96 mr-5 rounded-lg p-2"
             >
-              {middleware.microData &&
-                middleware.microData.wods !== undefined &&
-                middleware.microValues !== null && (
+              {microData &&
+                microData.wods !== undefined &&
+                microValues !== null && (
                   <div>
                     {Array.from(
-                      { length: middleware.microData.wods },
+                      { length: microData.wods },
                       (_, index) => (
                         <div key={index}>
                           <input
                             type="radio"
-                            class="custom-radio"
-                            name={`Micro-${middleware.selectedMicro}-week`}
+                            className="custom-radio"
+                            name={`Micro-${selectedMicro}-week`}
                             value={index}
-                            checked={middleware.selectedWod === index}
+                            checked={selectedWod === index}
                             onChange={wodSelection}
                             // Add your onChange event handler here if needed
                           />
@@ -501,8 +419,6 @@ function Editor({ patientID, setEvents }) {
               className="flex flex-col bg-zinc-900 rounded-lg p-2"
             >
             <WodEditor
-              middleware={middleware}
-              setMiddleware={setMiddleware}
               setViewWod={setViewWod}
               selectedPhase={selectedPhase}
             />
@@ -515,61 +431,30 @@ function Editor({ patientID, setEvents }) {
                 CompilerFunction(
                   intervention_values,
                   PhaseValues,
-                  middleware.microValues,
-                  middleware.wodValues,
+                  microValues,
+                  wodValues,
                   time_pipeline,
                   patientID,
-                  setInterventionValues,
-                  setPhaseValues,
-                  setPhaseData,
-                  setSplicerFunctionCalled,
-                  setMiddleware,
-                  setTimer,
-                  setViewIntervention,
-                  setViewMicro,
-                  setViewPhase,
-                  setViewWod,
-                  setNumPhases,
-                  setPhase
+                  dispatch
                 )
               }
             >
               Save intervention
             </button>
+
             <button
               className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2  px-2 py-2 rounded-md cursor-pointer text-sm"
-              onClick={() => deleteIntervention(patientID)}
+              onClick={() => setIsLoading(true)}
             >
-              Delete intervention
+              Manage interventions
             </button>
-            <button
-              className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2  px-2 py-2 rounded-md cursor-pointer text-sm"
-              onClick={() =>
-                SplicerFunction(
-                  patientID,
-                  setInterventionValues,
-                  setPhaseValues,
-                  setPhaseData,
-                  setSplicerFunctionCalled,
-                  setMiddleware,
-                  setTimer,
-                  setViewIntervention,
-                  setViewMicro,
-                  setViewPhase,
-                  setViewWod,
-                  setNumPhases,
-                  setPhase
-                )
-              }
-            >
-              Load Intervention
-            </button>
+            <InterventionLoad patientID={patientID} />
           </div>
         </div>
       </div>
-      <div className="flex flex-col h-full overflow-y-auto">
+      <div id="right-block" className={`flex flex-col h-full overflow-y-auto collapsable-div ${isExpanded ? 'expanded' : 'collapsed'}`}>
       <h2 className="text-xl text-slate-200 mt-5 ml-2 font-semibold mb-4">
-            Intervention Editor
+            Intervention structure visualizer
           </h2>
         <Viewer
           viewIntervention={viewIntervention}
@@ -579,6 +464,7 @@ function Editor({ patientID, setEvents }) {
         />
       </div>
     </div>
+    
   );
 }
 

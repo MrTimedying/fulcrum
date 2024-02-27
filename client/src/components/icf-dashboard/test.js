@@ -15,13 +15,11 @@ import {
 import { RemoveCircleOutline } from "@mui/icons-material";
 import React, { useMemo, useState } from "react";
 import * as Yup from "yup";
-import axios from "axios";
 import Select from "react-select";
 import * as R from "ramda";
+import { useDispatch, useSelector } from "react-redux";
+import { addTest } from "../../global/slices/testSlice";
 
-const api = axios.create({
-  baseURL: "http://localhost:8080",
-});
 
 export const Test = ({
   isOpenTest,
@@ -32,6 +30,9 @@ export const Test = ({
   setTableData
 }) => {
   const [searchResults, setSearchResults] = useState([]);
+
+  const dispatch = useDispatch();
+  const items = useSelector(state => state.test);
 
   const initialFormValues = useMemo(
     () => ({
@@ -71,58 +72,45 @@ export const Test = ({
 
   const handleTestPost = (values) => {
     console.log(values);
-
-    api
-      .post("api/test", values)
-      .then(function (response) {
-        console.log(response);
-      })
-      .catch(function (error) {
-        console.log(error);
-      });
+    dispatch(addTest(values));
   };
 
   const handleSearchChange = (inputValue) => {
-    api
-      .get(`api/test?name=${inputValue}`)
-      .then(function (response) {
-        const itemOptions = response.data.map((item) => ({
-          value: item.ID,
-          label: item.Name,
-        }));
-        setSearchResults(itemOptions);
-        console.log(itemOptions);
-      })
-      .catch(function (error) {
-        console.log(error);
-      });
+
+    const input = inputValue.toLowerCase().split('');
+    
+    if (typeof items !== 'undefined') {
+      const itemOptions = items.filter((item) =>
+        input.every((word) =>
+          (item.name.toLowerCase()).includes(word)
+        )
+      );
+      setSearchResults(itemOptions);
+      console.log(itemOptions);
+    } else {
+
+      console.warn('Input value is undefined.');
+    }
   };
+  
 
   const handleItemSelection = (selectedOption) => {
-    const selectedItemName = selectedOption.label; 
-    console.log(selectedOption);
+    const selectedItemName = selectedOption.name;
+    console.log(selectedItemName);
+    const itemDetails = items.find(item => item.name === selectedItemName) // Access the label of the selected option
+    if (itemDetails) {
+              // Create a new row object with exercise details
+              const newRow = {
+                name: itemDetails.name,
+                type: itemDetails.type,
+                score: itemDetails.score,
+                date: itemDetails.date,
+              };
+    
 
-    api
-      .get(`api/test/details?name=${selectedItemName}`)
-      .then(function (response) {
-        const itemDetails = response.data;
-        console.log(itemDetails);
-        if (itemDetails) {
-          
-          const newRow = {
-            name: itemDetails.Name,
-            type: itemDetails.Type,
-            score: itemDetails.Score,
-            date: itemDetails.Date,
-          };
-
-          
-          setTableData([...tableData, newRow]);
-        }
-      })
-      .catch(function (error) {
-        console.log(error);
-      });
+              // Add the new row to the tableData array
+              setTableData([...tableData, newRow]);
+            }
   };
 
   const handleClose = () => {
@@ -302,6 +290,7 @@ export const Test = ({
                 options={searchResults}
                 onChange={handleItemSelection}
                 onInputChange={handleSearchChange}
+                getOptionLabel={(option) => option.name}
                 classNamePrefix="bg-zinc-600 font-mono text-slate-300"
               />
             </div></div>

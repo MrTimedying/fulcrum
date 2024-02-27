@@ -1,57 +1,26 @@
-import React, { useState, useEffect } from "react";
-import axios from "axios";
-
-const api = axios.create({
-  baseURL: "http://localhost:8080",
-});
+import React from "react";
+import { useSelector } from "react-redux";
+import { createSelector } from "reselect";
 
 const Resume = ({ patientID }) => {
-  const [patientDetails, setPatientDetails] = useState(null);
-  const [interventionDetails, setInterventionDetails] = useState(null);
 
-  useEffect(() => {
-    const fetchPatientDetails = async () => {
-      try {
-        console.log("Patient ID in the fetching function", patientID);
-        const response = await api.get("/api/patientsDetails", {
-          params: { ID: patientID },
-        });
-        const fetchedPatientDetails = response.data;
-        console.log(
-          "Patient Details retrieved from the backend",
-          fetchedPatientDetails
-        );
-  
-        // Reset the state variable with the new data
-        setPatientDetails(fetchedPatientDetails);
-      } catch (error) {
-        console.error("Error fetching patient details", error);
-        // Handle errors as needed
-      }
-    };
-  
-    const fetchInterventionDetails = async () => {
-      try {
-        const response = await api.get("/api/patientsIntervention", {
-          params: { ID: patientID },
-        });
-        const { Intervention } = response.data[0];
-        console.log(
-          "This is the intervention fetched from the profile!",
-          Intervention
-        );
-        const parsedIntervention = JSON.parse(Intervention);
-  
-        // Reset the state variable with the new data
-        setInterventionDetails(parsedIntervention);
-      } catch (error) {
-        console.error("Error fetching intervention details", error);
-      }
-    };
-  
-    fetchPatientDetails();
-    fetchInterventionDetails();
-  }, [patientID]);
+  const getPatient = createSelector(
+    state => state.patients,
+    (_,patientID) => patientID,
+    (patient, patientID) => patient?.find(item => item.id === patientID) 
+  )
+  const patientDetails = useSelector (state => getPatient(state,patientID));
+
+
+  const getIntervention = createSelector(
+    state => state.intervention,
+    (_,patientID) => patientID,
+    (intervention,patientID) => {return intervention[patientID] ? intervention[patientID][0] : [];}
+  )
+  const interventionDetails = useSelector (state => getIntervention(state,patientID));
+
+
+
   
 
   // Render loading state or actual data

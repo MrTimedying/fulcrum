@@ -13,3 +13,10 @@ contextBridge.exposeInMainWorld('electron', {
   },
 });
 
+contextBridge.exposeInMainWorld('electronAPI', {
+  // Existing method for requesting state...
+  requestState: () => ipcRenderer.invoke('request-state'),
+  // Method to save state
+  saveState: (state) => ipcRenderer.invoke('save-state', state),
+});
+

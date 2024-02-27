@@ -1,12 +1,14 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const url = require('url');
-const { fork } = require('child_process');
+const fs = require('fs');
+const crypto = require('crypto');
+const { encrypt, decrypt, ensureEncryptionKey} = require('./encryptionUtils');
 
 /* const sqlite3 = require('sqlite3').verbose(); */
 
 let mainWindow;
-let serverProcess;
+
 
 function createWindow() {
 
@@ -23,14 +25,15 @@ function createWindow() {
     },
   });
 
-/*   const isDevelopment = process.env.NODE_ENV === 'development';
-  const indexPath = isDevelopment
-    ? `http://localhost:3000`
-    : path.join(__dirname, '..', 'client', 'build', 'index.html'); */
+  const isDevelopment = process.env.NODE_ENV === 'development';
 
-  /* const indexPath = `http://localhost:3000`; */
-  const indexPath = path.join(__dirname, '..', 'client', 'build', 'index.html');
-  
+  const indexPath = isDevelopment
+    ? 'http://localhost:3000' // Development URL
+    : url.format({ // Production path
+        pathname: path.join(__dirname, '..', 'client', 'build', 'index.html'),
+        protocol: 'file:',
+        slashes: true,
+      });
   
 
   mainWindow.loadURL(indexPath);
@@ -40,48 +43,64 @@ function createWindow() {
 
   mainWindow.on('closed', function () {
     mainWindow = null;
-
-    if (serverProcess) {
-      serverProcess.kill();
-    }
   });
 }
 
-app.whenReady().then(() => {
-  const serverScriptPath = path.join(__dirname, '..', 'server', 'server.js');
-    
+app.whenReady().then(createWindow);
 
-  serverProcess = fork(serverScriptPath, [], { 
-    silent: true,
-    detached: true, 
-      stdio: 'ignore',
-      env:{
-        ...process.env,
-        PORT:8080
-      }
-   });
-  
-
-  serverProcess.on('message', (message) => {
-    if (message === 'serverStarted') {
-      // Child process has started successfully
-      createWindow();
-    } else {
-      console.error('Unknown message from child process:', message);
-    }
-  });
-
-});
-
-app.on('before-quit', () => {
-  if (serverProcess) {
-    serverProcess.kill();
+app.on('window-all-closed', () => {
+  if (process.platform !== 'darwin') {
+    app.quit();
   }
 });
 
-app.on('activate', function () {
-  if (mainWindow === null) createWindow();
+app.on('activate', () => {
+  if (BrowserWindow.getAllWindows().length === 0) {
+    createWindow();
+  }
 });
+
+let secretKeyPromise = ensureEncryptionKey();
+
+async function saveState(state) {
+  const secretKey = await secretKeyPromise;
+  const encryptedState = encrypt(JSON.stringify(state), secretKey);
+  const userDataPath = app.getPath('userData');
+  const filePath = path.join(userDataPath, 'state', 'state.json');
+  fs.mkdirSync(path.dirname(filePath), { recursive: true });
+  fs.writeFileSync(filePath, JSON.stringify(encryptedState)); 
+  return true;
+}
+
+
+async function loadState() {
+  const secretKey = await secretKeyPromise;
+  const userDataPath = app.getPath('userData');
+  const filePath = path.join(userDataPath, 'state', 'state.json');
+  if (fs.existsSync(filePath)) {
+    const encryptedState = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    const decryptedState = decrypt(encryptedState, secretKey);
+    return JSON.parse(decryptedState); 
+  }
+  return {}; 
+}
+
+
+ipcMain.handle('save-state', async (event, state) => {
+ return await saveState(state);
+});
+
+ipcMain.handle('request-state', async (event) => {
+  try {
+    const loadedState = await loadState(); // Ensure this function is correctly imported or defined
+    return loadedState; // This will be sent back to the renderer process
+  } catch (error) {
+    console.error("Failed to load state:", error);
+    // Handle error appropriately, potentially sending back an empty object or error message
+    return {};
+  }
+});
+
 
 // Log messages for IPC events
 ipcMain.on('minimizeApp', () => {

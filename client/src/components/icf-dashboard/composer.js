@@ -15,16 +15,13 @@ import {
 import { RemoveCircleOutline } from "@mui/icons-material";
 import React, { useMemo, useState } from "react";
 import * as Yup from "yup";
-import axios from "axios";
 import Select from "react-select";
-/* import { Resizable } from "react-resizable"; */
 import * as R from "ramda";
 import './dashboard.css';
+import { useDispatch, useSelector } from "react-redux";
+import { addItem, editItem, deleteItem } from "../../global/slices/itemsSlice";
 
 
-const api = axios.create({
-  baseURL: "http://localhost:8080",
-});
 
 export const Composer = ({
   setBodyStructures,
@@ -37,7 +34,11 @@ export const Composer = ({
   setTableData
 }) => {
   const [searchResults, setSearchResults] = useState([]);
-  /* const [category, setCategory] = useState(""); */
+  
+  const dispatch = useDispatch();
+  const items = useSelector(state => state.item);
+ 
+
 
   const initialFormValues = useMemo(
     () => ({
@@ -79,55 +80,44 @@ export const Composer = ({
   };
 
   const handleExercisePost = (values) => {
+    dispatch(addItem(values));
     console.log(values);
-
-    api
-      .post("api/icfitems", values)
-      .then(function (response) {
-        console.log(response);
-      })
-      .catch(function (error) {
-        console.log(error);
-      });
   };
 
   const handleSearchChange = (inputValue) => {
-    api
-      .get(`api/icfitems?name=${inputValue}`)
-      .then(function (response) {
-        const itemOptions = response.data.map((item) => ({
-          value: item.category,
-          label: item.label,
-        }));
-        setSearchResults(itemOptions);
-      })
-      .catch(function (error) {
-        console.log(error);
-      });
+
+    const input = inputValue.toLowerCase().split('');
+    console.log(input);
+    
+    if (typeof items !== 'undefined') {
+      const itemOptions = items.filter((item) =>
+        input.every((word) =>
+          (item.label.toLowerCase() + item.category.toLowerCase()).includes(word)
+        )
+      );
+      setSearchResults(itemOptions);
+      console.log(itemOptions);
+    } else {
+
+      console.warn('Input value is undefined.');
+    }
   };
+  
 
   const handleItemSelection = (selectedOption) => {
-    const selectedItemName = selectedOption.label; // Access the label of the selected option
+    const selectedItemName = selectedOption.label;
+    const itemDetails = items.find(item => item.label === selectedItemName) // Access the label of the selected option
+    if (itemDetails) {
+              // Create a new row object with exercise details
+              const newRow = {
+                category: itemDetails.category,
+                label: itemDetails.label,
+                score: itemDetails.score,
+              };
 
-    api
-      .get(`api/icfitems/details?name=${selectedItemName}`)
-      .then(function (response) {
-        const itemDetails = response.data;
-        if (itemDetails) {
-          // Create a new row object with exercise details
-          const newRow = {
-            category: itemDetails.category,
-            label: itemDetails.label,
-            score: itemDetails.score,
-          };
-
-          // Add the new row to the tableData array
-          setTableData([...tableData, newRow]);
-        }
-      })
-      .catch(function (error) {
-        console.log(error);
-      });
+              // Add the new row to the tableData array
+              setTableData([...tableData, newRow]);
+            }
   };
 
   // Function to add a new row
@@ -328,6 +318,8 @@ export const Composer = ({
                     options={searchResults}
                     onChange={handleItemSelection}
                     onInputChange={handleSearchChange}
+                    getOptionLabel={option => option.label}
+                    getOptionValue={option => option.category}
                     classNamePrefix="bg-zinc-800 font-mono text-slate-300"
                   />
                 </div>

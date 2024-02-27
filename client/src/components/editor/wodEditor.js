@@ -2,14 +2,14 @@ import React, { useMemo, useEffect, useState } from "react";
 import { Formik, Form, Field, ErrorMessage, useFormikContext } from "formik";
 import * as Yup from "yup";
 import { Composer } from "./composer";
+import { useEditorContext } from "./editorContext";
+import * as R from 'ramda';
 
 
 
-export const WodEditor = React.memo(({ 
-  selectedPhase,
-  setViewWod, 
-  middleware, 
-  setMiddleware }) => {
+export const WodEditor = React.memo(() => {
+
+    const { selectedPhase, selectedMicro, setViewWod, setWodValues, wodData, setWodData, selectedWod } = useEditorContext();
   
     const initialValues = useMemo(
     () => ({
@@ -23,46 +23,48 @@ export const WodEditor = React.memo(({
   const [formValues, setFormValues] = useState(initialValues);
 
   const handleFormSubmit = (values) => {
-    const jsonData = values;
+    let jsonData = values;
+
+    jsonData = {...jsonData,
+    phaseID: selectedPhase,
+    microID: selectedMicro,
+    wodID: selectedWod,
+    };
+
+    setWodValues((prevState) => {
+      const isDuplicate = prevState.some((item) => ( item.phaseID === jsonData.phaseID && item.microID === jsonData.microID && item.wodID === jsonData.wodID ));
+      if(!isDuplicate){
+        
+        const updatedWodValues = [...prevState, {...jsonData}];
+
+        const adjustedWodValues = R.sortWith([
+          R.ascend(R.prop('phaseID')),
+          R.ascend(R.prop('microID')),
+          R.ascend(R.prop('wodID')),
+        ], updatedWodValues);
+
+        return adjustedWodValues;
+      }
+      return prevState;
+    })
     
-
-    setMiddleware((prevState) => {
-
-      const updated_wod_values = {
-        ...prevState.wodValues,
-        [selectedPhase]: {
-          ...prevState.wodValues[selectedPhase],
-          [prevState.selectedMicro]: {
-            ...prevState.wodValues[selectedPhase]?.[prevState.selectedMicro],
-            [prevState.selectedWod]: jsonData,
-          },
-        },
-      };
-
-      setViewWod(values);
-
-
-      return {
-        ...prevState,
-        wodValues: updated_wod_values,
-        wodData: jsonData, // Assign jsonData directly to wodData
-      };
-    });
+    setWodData(values);
+    setViewWod(values);
   };
 
   useEffect(() => {
     if (
-      typeof middleware.wodData === "object" &&
-      middleware.wodData !== null &&
-      !Array.isArray(middleware.wodData)
+      typeof wodData === "object" &&
+      wodData !== null &&
+      !Array.isArray(wodData)
     ) {
-      if (middleware.wodData !== null && middleware.wodData !== undefined && Object.keys(middleware.wodData).length !== 0) {
+      if (wodData !== null && wodData !== undefined && Object.keys(wodData).length !== 0) {
         try {
           const parsedValues =
-            middleware.wodData;
+            wodData;
           setFormValues(parsedValues);
           setViewWod(parsedValues);
-          console.log("IM HERE!")
+          
         } catch (error) {
           /* console.error('This error has occurred:', error); */
           setFormValues(initialValues);
@@ -76,9 +78,9 @@ export const WodEditor = React.memo(({
       setFormValues(initialValues);
     }
   }, [
-    middleware.selectedWod,
+    selectedWod,
     initialValues,
-    middleware.wodData,
+    wodData,
     setViewWod,
     setFormValues,
   ]);
@@ -92,32 +94,35 @@ export const WodEditor = React.memo(({
   return (
     <div>
       <Formik
-        key={middleware.selectedWod}
+        key={selectedWod}
         enableReinitialize={true}
         initialValues={formValues}
         onSubmit={handleFormSubmit}
         validationSchema={validationSchema}
       >
-        <WodFormBody middleware={middleware} setMiddleware={setMiddleware} />
+        <WodFormBody  />
       </Formik>
-      <Composer middleware={middleware} setMiddleware={setMiddleware} />
+      <Composer  />
     </div>
   );
 });
 
-export const WodFormBody = React.memo(({middleware, formValues}) => {
+export const WodFormBody = React.memo(({formValues}) => {
+
+  const { tableString } = useEditorContext();
+
 
   const {setFieldValue, setValues} = useFormikContext();
 
   useEffect(() => {
-    if (middleware.table_data !== null && middleware.table_data !== undefined){
-      const exercises_string = {...middleware.table_data};
+    if (tableString !== null && tableString !== undefined){
+      const exercises_string = {...tableString};
       setFieldValue("exercises", '');
       setFieldValue("exercises", JSON.stringify(exercises_string) );
     } else {
       setFieldValue("exercises", "");
     }
-  }, [middleware.table_data, setFieldValue]);
+  }, [tableString, setFieldValue]);
 
   useEffect(() => {
     if (formValues !== null && formValues !== undefined){

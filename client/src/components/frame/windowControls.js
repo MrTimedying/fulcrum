@@ -1,7 +1,11 @@
-import React, {useEffect} from 'react';
+import React from 'react';
 import "../../App.css"
+import { useSelector } from 'react-redux';
+
+
 
 const WindowControls = () => {
+  const state = useSelector(state => state);
   const minimizeWindow = () => {
     window.electron.ipcRenderer.sendMessage('minimizeApp', ['minimizeApp']);
   };
@@ -10,14 +14,12 @@ const WindowControls = () => {
     window.electron.ipcRenderer.sendMessage('maximizeApp', ['maximizeApp']);
   };
 
-  const closeWindow = () => {
+  async function closeWindow() {
+    const response = await window.electronAPI.saveState(state);
+    console.log(response);
     window.electron.ipcRenderer.sendMessage('closeApp', ['closeApp']);
   };
 
-/*   useEffect(() => {
-    // Accessing electron-drag through context bridge
-    window.electron.drag('#custom-frame');
-  }, []); */
 
   return (
     <div id="custom-frame" className="bg-zinc-900 flex flex-row justify-between text-slate-300 items-end pr-2" style={{height:"18px"}}>

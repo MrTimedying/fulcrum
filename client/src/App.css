@@ -46,8 +46,21 @@ input.custom-radio:checked {
   box-shadow: 0 0 0 1px rgb(9 9 11);
 }
 
+.collapsable-div{
+  width: 0px;
+  transition: width 0.3s ease;
+}
 
+#wrapper::-webkit-scrollbar {
+  display: none;
+}
 
+.expanded {
+  width: 50%;
+}
 
+.collapsed {
+  width:0px;
+}
 
 

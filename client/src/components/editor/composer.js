@@ -8,29 +8,28 @@ import {
   TableHead,
   TableRow,
   Paper,
-  Button,
   TextField,
   IconButton,
 } from "@mui/material";
 import { RemoveCircleOutline } from "@mui/icons-material";
 import React, { useMemo, useState } from "react";
 import * as Yup from "yup";
-import axios from "axios";
 import Select from "react-select";
-/* import { Resizable } from "react-resizable"; */
+import { useEditorContext } from "./editorContext";
 import * as R from "ramda";
+import { useDispatch, useSelector } from "react-redux";
+import { addExercise } from "../../global/slices/exercisesSlice";
 
-const api = axios.create({
-  baseURL: "http://localhost:8080",
-});
 
-export const Composer = React.memo(({ middleware, setMiddleware }) => {
+
+export const Composer = React.memo(() => {
   const [tableData, setTableData] = useState([]);
   const [searchResults, setSearchResults] = useState([]);
-  /*   const [modalDimensions, setModalDimensions] = useState({
-    width: 600,
-    height: 600,
-  }); */
+  const {isOpen, setIsOpen, setExerciseValues, setTableString} = useEditorContext();
+
+  const dispatch = useDispatch();
+  const exerciseState = useSelector(state => state.exercise);
+
 
   const initialFormValues = useMemo(
     () => ({
@@ -58,9 +57,9 @@ export const Composer = React.memo(({ middleware, setMiddleware }) => {
   });
 
   const handleFormSubmit = (values, { resetForm }) => {
-    const dataJSON = JSON.stringify(values);
+    const dataJSON = values;
 
-    setMiddleware((prevState) => ({ ...prevState, exerciseValues: dataJSON }));
+    setExerciseValues(dataJSON);
 
     const newRow = {
       name: values.name,
@@ -77,56 +76,50 @@ export const Composer = React.memo(({ middleware, setMiddleware }) => {
 
   const handleExercisePost = (values) => {
     console.log(values);
-
-    api
-      .post("api/exercises", values)
-      .then(function (response) {
-        console.log(response);
-      })
-      .catch(function (error) {
-        console.log(error);
-      });
+    dispatch(addExercise(values));
   };
 
   const handleSearchChange = (inputValue) => {
-    api
-      .get(`api/exercises?name=${inputValue}`)
-      .then(function (response) {
-        const exerciseOptions = response.data.map((exercise) => ({
-          value: exercise.ID,
-          label: exercise.name,
-        }));
-        setSearchResults(exerciseOptions);
-      })
-      .catch(function (error) {
-        console.log(error);
-      });
+
+    const input = inputValue.toLowerCase().split('');
+
+    if (typeof exerciseState !== 'undefined') {
+      const exerciseOptions = exerciseState
+        .map(action=>action.payload)
+        .filter((exercise) =>
+          input.every(word => exercise.name.toLowerCase().includes(word)));
+
+      
+    
+    setSearchResults(exerciseOptions);
+    } else {
+      console.warn('Input value is undefined');
+    }
+
   };
 
   const handleExerciseSelection = (selectedOption) => {
-    const selectedExerciseName = selectedOption.label; // Access the label of the selected option
+    const selectedExerciseName = selectedOption.name; 
+    console.log(selectedExerciseName);
 
-    api
-      .get(`api/exercises/details?name=${selectedExerciseName}`)
-      .then(function (response) {
-        const exerciseDetails = response.data;
-        if (exerciseDetails) {
-          // Create a new row object with exercise details
-          const newRow = {
-            name: exerciseDetails.name,
-            type: exerciseDetails.type,
-            volume: exerciseDetails.volume,
-            repetitions: exerciseDetails.repetitions,
-            intensity: exerciseDetails.intensity,
-          };
+    const exerciseDetails = exerciseState.map(action => action.payload).find((exercise) => 
+      exercise.name === selectedExerciseName);
 
-          // Add the new row to the tableData array
-          setTableData([...tableData, newRow]);
-        }
-      })
-      .catch(function (error) {
-        console.log(error);
-      });
+    console.log(exerciseDetails);
+
+    if (exerciseDetails) {
+      const newRow = {
+        name: exerciseDetails.name,
+        type: exerciseDetails.type,
+        volume: exerciseDetails.volume,
+        repetitions: exerciseDetails.repetitions,
+        intensity: exerciseDetails.intensity,
+      };
+
+      setTableData([...tableData, newRow]);
+    }
+
+
   };
 
   // Function to add a new row
@@ -172,58 +165,30 @@ export const Composer = React.memo(({ middleware, setMiddleware }) => {
       {},
       tableData
     );
-    console.log(obj_table_data);
 
-    setMiddleware((prevMiddleware) => ({
-      ...prevMiddleware,
-      table_data: obj_table_data,
-    }));
+    setTableString(obj_table_data);
+    setIsOpen(false);
   };
 
-  //Function for the resize
-  /*   const onResize = (event, { size }) => {
-    setModalDimensions((prevDimensions) => ({
-      ...prevDimensions,
-      width: size.width,
-      height: size.height,
-    }));
-  }; */
 
   return (
     <>
-      <button className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2  px-2 py-2 rounded-md cursor-pointer text-sm" onClick={() => setMiddleware({ ...middleware, isOpen: true })}>
+      <button className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2  px-2 py-2 rounded-md cursor-pointer text-sm" onClick={() => (setIsOpen(true))}>
         Manage exercises
       </button>
-      <Transition show={middleware.isOpen}>
+      <Transition show={isOpen}>
         <Dialog
           as="div"
-          onClose={() => setMiddleware({ ...middleware, isOpen: false })}
+          onClose={() => setIsOpen(false)}
         >
           <div className="fixed inset-0 z-10 overflow-y-auto">
             {" "}
-            {/* This is the styling of the modal */}
+            
             <div className="flex items-center justify-center">
               {" "}
-              {/* This is the styling of the modal */}
+              
               <Dialog.Overlay className="fixed inset-0 bg-black opacity-30" />
-              {/* <Resizable
-                width={modalDimensions.width}
-                height={modalDimensions.height}
-                onResize={onResize}
-                minConstraints={[300, 300]}
-                maxConstraints={[800, 800]}
-                resizeHandles={["sw"]}
-                handle={
-                  <div
-                    style={{
-                      width: "10px",
-                      height: "10px",
-                      backgroundColor: "#007bff",
-                      cursor: "se-resize",
-                    }}
-                  />
-                }
-              > */}
+             
               <div
                 style={{
                   width: "700px",
@@ -356,6 +321,7 @@ export const Composer = React.memo(({ middleware, setMiddleware }) => {
                     options={searchResults}
                     onChange={handleExerciseSelection}
                     onInputChange={handleSearchChange}
+                    getOptionLabel={option => option.name}
                     classNamePrefix="bg-zinc-600 font-mono text-slate-300 h-8"
                   />
                 </div></div>
@@ -449,9 +415,7 @@ export const Composer = React.memo(({ middleware, setMiddleware }) => {
                 <button className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2 px-2 py-2 rounded-md cursor-pointer text-sm" onClick={deleteRow}>Delete Row</button>
                 <button className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2 px-2 py-2 rounded-md cursor-pointer text-sm" onClick={parseTable}>Commit String</button>
                 <button className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2 px-2 py-2 rounded-md cursor-pointer text-sm"
-                  onClick={() =>
-                    setMiddleware({ ...middleware, isOpen: false })
-                  }
+                  onClick={() => setIsOpen(false)}
                 >
                   Close
                 </button>

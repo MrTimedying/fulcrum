@@ -1,34 +1,51 @@
-import React, { useEffect, useCallback } from "react";
+import React, { useState } from "react";
 import { useFormik } from "formik";
-import Timer from "./time.ts";
+import { useEditorContext } from "./editorContext.js";
 import * as Yup from "yup"; 
 import { addWeeks, parseISO } from 'date-fns';
+import Snackbar from '@mui/material/Snackbar';
+import IconButton from '@mui/material/IconButton';
+import CloseIcon from '@mui/icons-material/Close';
+import Slide from '@mui/material/Slide';
 
 const validationSchema = Yup.object().shape({
   interventionName: Yup.string().required("Name is required"),
   interventionType: Yup.string().required("Type is required"),
-  startDate: Yup.date().required("Start date is required"),
+  start: Yup.date().required("Start date is required"),
   weeks: Yup.number().required("End date is required").min(4, "Interventions must last a minimum of 4 weeks"),
   globalGoal: Yup.string().required("Global goal is required"),
   serviceGoal: Yup.string().required("Service goal is required"),
 });
 
-export const InterventionEditor = React.memo(({
-  interventionStartDate, //check
-  setInterventionStartDate,
-  setInterventionValues, //check
-  weeks, //check
-  setWeeks, //check
-  isAccepted,
-  setIsAccepted,
-  setTimer, 
-  setViewIntervention,
-}) => {
+export const InterventionEditor = React.memo(() => {
+
+  // Context consuming
+  const {
+    interventionStartDate, //check
+    setInterventionStartDate,
+    setInterventionValues, //check
+    weeks, //check
+    setWeeks, //check
+    isAccepted,
+    setIsAccepted,
+    setTimer, 
+    setViewIntervention,
+  } = useEditorContext();
+
+  const [toastOpen, setToastOpen] = useState(false);
+
+  const handleToastClose = (event, reason) =>{
+    if (reason === 'clickaway') {
+      return;
+    }
+    setToastOpen(false);
+  }
+
   // Formik Initialization
   const initialValues = {
     interventionName: "",
     interventionType: "Rehabilitation",
-    startDate: "",
+    start: "",
     weeks: "",
     globalGoal: "",
     serviceGoal: "",
@@ -41,85 +58,79 @@ export const InterventionEditor = React.memo(({
     onSubmit: (values, actions) => {
 
       let values_end_date = values;
-      let values_start_date = parseISO(values.startDate);
+      console.log("values at face value", values);
+      let values_start_date = parseISO(values.start);
 
-      values_end_date['endDate'] = addWeeks(values_start_date, values.weeks);
+      values_end_date['end'] = addWeeks(values_start_date, values.weeks);
+      values_end_date.start = values_start_date.toISOString();
+      values_end_date.end = values_end_date.end.toISOString();
+      console.log(values_end_date);
       
-      
-      /* console.log("Form submitted:", values); */
       setViewIntervention(values_end_date);
       setInterventionValues(values_end_date);
 
+      setTimer(prevTimer => ({
+        ...prevTimer,
+        start: values_end_date['start'],
+        end: values_end_date['end'],
+        weeks: Math.max(values.weeks,0),
+        weeksCounter: Math.max(values.weeks,0)
+      }))
       
-/*       const startDate = new Date(values.startDate);
-      const endDate = new Date(values.endDate);
 
-      const durationInMilliseconds = endDate.getTime() - startDate.getTime();
-      const durationInDays = durationInMilliseconds / (1000 * 60 * 60 * 24);
-      const durationInWeeks =
-        durationInMilliseconds / (1000 * 60 * 60 * 24 * 7); */
-     
-        setIsAccepted(true);
-        /* console.log("Dates are of the correct chronological order!"); */
-        actions.resetForm({
-          values: {
-            interventionName: "",
-            interventionType: "",
-            startDate: "",
-            weeks: "",
-            globalGoal: "",
-            serviceGoal: "",
-          },
-        });
-       /* else {
-        console.log("You can't set up a start date after the end date, bruv!");
-        // Reset the form
-        actions.resetForm({
-          values: {
-            interventionName: "",
-            interventionType: "",
-            startDate: "",
-            weeks: "",
-          },
-        });
-      } */
+      setIsAccepted(true);
+
+      actions.resetForm({
+        values: {
+          interventionName: "",
+          interventionType: "",
+          start: "",
+          weeks: "",
+          globalGoal: "",
+          serviceGoal: "",
+        },
+      });
+
     },
   });
 
-  //Component's methods
 
-
-
-  const timerBuilder = useCallback(() => {
-    /* console.log("Created a new Timer Instance"); */
-    const timerInstance = new Timer(interventionStartDate, weeks);
-    const clonedTimer = Timer.from(timerInstance);
-    return clonedTimer;
-  }, [interventionStartDate, weeks]);
-
-  useEffect(() => {
-    if (isAccepted === true) {
-      const newTimer = timerBuilder();
-      setTimer(newTimer);
-      /* console.log(newTimer); */
-      newTimer.calculateEndDate(); 
-    }
-  }, [isAccepted, timerBuilder, setTimer]);
 
   const resetDate = () => {
     formik.resetForm({
       values: {
         interventionName: "",
         interventionType: "Rehabilitation",
-        startDate: "",
+        start: "",
         weeks: "",
         globalGoal: "",
         serviceGoal: "",
       },
     });
     setIsAccepted(false);
-    setTimer(new Timer());
+    setTimer({
+      start: new Date(2024, 1, 1),
+      end: new Date(2024,1,1),
+      weeks: 0,
+      weeksCounter: Math.max(0,0), // A max needs to be set in the consuming logic
+      phaseCounter: 0, // A max needs to be set in the consuming logic
+      minWeeks: 4,
+      mirror_weeks_counter: 0
+    });
   };
+
+  const action = (
+    <React.Fragment>
+      <IconButton
+        size="small"
+        aria-label="close"
+        color="inherit"
+        onClick={handleToastClose}
+      >
+        <CloseIcon fontSize="small" />
+      </IconButton>
+    </React.Fragment>
+  );
 
 
 
@@ -169,12 +180,12 @@ export const InterventionEditor = React.memo(({
             <h3>Start of the intervention date</h3>
             <input
               className="w-full bg-zinc-800 p-2 rounded-md h-8"
-              id="startDate"
+              id="start"
               type="date"
-              value={formik.values.startDate}
+              value={formik.values.start}
               onChange={(e) => {
                 formik.handleChange(e);
-                setInterventionStartDate(new Date(e.target.value));
+                setInterventionStartDate(e.target.value);
                 setIsAccepted(false);
               }}
             ></input>
@@ -199,6 +210,7 @@ export const InterventionEditor = React.memo(({
           disabled={
             !interventionStartDate || !weeks || isAccepted
           }
+          onClick={() => setToastOpen(true)}
         >
           Accept
         </button>
@@ -214,14 +226,14 @@ export const InterventionEditor = React.memo(({
           Reset
         </button>
 
-        {isAccepted && (
-          <div>
-            <p>
-              Intervention Start Date: {interventionStartDate.toDateString()}
-            </p>
-            <p>Weeks duration: {weeks}</p>
-          </div>
-        )}
+        <Snackbar
+          open={toastOpen}
+          autoHideDuration={3000}
+          onClose={handleToastClose}
+          message="Intervention data has been created successfully"
+          action={action}
+          TransitionComponent={Slide}
+        />
       
     </div></div>
     <div className="w-1/2">

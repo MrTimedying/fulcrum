@@ -1,29 +1,30 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
+import { useEditorContext } from './editorContext';
 
-export const MicroSelector = ({ index, selectedPhase, middleware, microSelection }) => {
-  const [isChecked, setIsChecked] = useState(false);
+export const MicroSelector = ({microSelection}) => {
+  
+ 
+  const { selectedPhase, selectedMicro, PhaseData} = useEditorContext();
 
-  useEffect(() => {
-    // Update isChecked when middleware.selectedMicro changes
-    setIsChecked(
-      middleware.selectedMicro === undefined || middleware.selectedMicro === null
-        ? index === 2
-        : middleware.selectedMicro === index
-    );
-  }, [middleware.selectedMicro, index]);
 
-  return (
+  // Create an array using Array.from outside the return statement
+  const microElements = Array.from({ length: PhaseData.weeksnumber }, (_, index) => (
     <div key={index}>
       <input
         type="radio"
-        class="custom-radio"
+        className="custom-radio"
         name={`phase-${selectedPhase}-week`}
         value={index}
-        checked={isChecked}
+        checked={selectedMicro === index}
         onChange={microSelection}
         // Add your onChange event handler here if needed
       />
       Week {index + 1}
     </div>
+  ));
+
+  return (
+    <>{microElements}</> // Render the array of elements here
   );
 };
+

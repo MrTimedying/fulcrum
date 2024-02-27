@@ -1,25 +1,24 @@
 {
   "name": "fulcrum",
-  "version": "0.9.9",
+  "version": "1.0.0",
   "description": "A person management solution for movement sciences professionals",
   "main": "electron/main.js",
   "scripts": {
-    "start": "set NODE_ENV=production && electron electron/main.js",
-    "start-dev": "set NODE_ENV=development && electron electron/main.js",
+    "start": "cross-env NODE_ENV=production electron electron/main.js",
+    "start-dev": "cross-env NODE_ENV=development electron electron/main.js",
     "start-electron": "electron-builder start",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "electron-builder",
-    "start-express": "node server.js"
+    "build": "electron-builder"
   },
   "keywords": [],
   "author": "Antonio Logarzo",
   "license": "CC BY-NC-ND 4.0 Deed",
   "dependencies": {
     "cors": "^2.8.5",
-    "express": "^4.18.2",
-    "sqlite3": "^5.0.0"
+    "keytar": "^7.9.0"
   },
   "devDependencies": {
+    "cross-env": "^7.0.3",
     "electron": "^27.0.2",
     "electron-builder": "^24.9.1",
     "nodemon": "^3.0.1"
@@ -32,29 +31,19 @@
     },
     "files": [
       "client/build/**/*",
-      "server/**/*",
       "package.json",
       "electron/main.js",
       "electron/preload.js",
-      "fulcrum.db"
+      "electron/encryptionUtils.js"
     ],
     "extraFiles": [
-      {
-        "from": "fulcrum.db",
-        "to": ".",
-        "filter": [
-          "**/*"
-        ]
-      }
     ],
     "win": {
       "target": [
         "portable"
-      ]
+      ],
+      "icon": "build/icons/icon.ico"
     },
-    "asar": true,
-    "asarUnpack": [
-      "fulcrum.db"
-    ]
+    "asar": true
   }
 }
