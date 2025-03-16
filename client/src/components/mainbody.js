@@ -73,7 +73,7 @@ function MainBody({ patientID }) {
                   { isExpanded ? < FormatIndentIncreaseRoundedIcon /> : < FormatIndentDecreaseRoundedIcon /> }  
                 </button> : null}
                 </div> 
-        <Tab.Panels className="h-full overflow-y-hidden">
+        <Tab.Panels className="h-full overflow-y-auto">
           <Tab.Panel key="calendar">
             <CalendarDash patientID={patientID} />
           </Tab.Panel>

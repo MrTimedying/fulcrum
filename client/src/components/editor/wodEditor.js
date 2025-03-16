@@ -9,7 +9,7 @@ import * as R from 'ramda';
 
 export const WodEditor = React.memo(() => {
 
-    const { selectedPhase, selectedMicro, setViewWod, setWodValues, wodData, setWodData, selectedWod } = useEditorContext();
+    const { selectedPhase, selectedMicro, setViewWod, setWodValues, wodData, setWodData, selectedWod, setToastPayload, setToastIsOpen } = useEditorContext();
   
     const initialValues = useMemo(
     () => ({
@@ -33,9 +33,10 @@ export const WodEditor = React.memo(() => {
 
     setWodValues((prevState) => {
       const isDuplicate = prevState.some((item) => ( item.phaseID === jsonData.phaseID && item.microID === jsonData.microID && item.wodID === jsonData.wodID ));
+      let updatedWodValues;
       if(!isDuplicate){
         
-        const updatedWodValues = [...prevState, {...jsonData}];
+        updatedWodValues = [...prevState, {...jsonData}];
 
         const adjustedWodValues = R.sortWith([
           R.ascend(R.prop('phaseID')),
@@ -44,9 +45,25 @@ export const WodEditor = React.memo(() => {
         ], updatedWodValues);
 
         return adjustedWodValues;
+      } else if (isDuplicate) {
+
+        updatedWodValues = prevState.filter(item => ( item.phaseID !== jsonData.phaseID && item.microID !== jsonData.microID && item.wodID !== jsonData.wodIR));
+
+        updatedWodValues = [...updatedWodValues, {...jsonData}];
+
+        const adjustedWodValues = R.sortWith([
+          R.ascend(R.prop('phaseID')),
+          R.ascend(R.prop('microID')),
+          R.ascend(R.prop('wodID')),
+        ], updatedWodValues);
+
+        return adjustedWodValues;
+
       }
-      return prevState;
     })
+
+    setToastPayload( { type:"success", message:`WOD added succesfully of the type: ${jsonData.type}`});
+    setToastIsOpen(true);
     
     setWodData(values);
     setViewWod(values);

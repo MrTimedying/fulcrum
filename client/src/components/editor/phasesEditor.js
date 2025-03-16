@@ -18,6 +18,8 @@ const {
     weeksHandler,
     setTime_Pipeline,
     calculatePhaseEndDate,
+    setToastPayload,
+    setToastIsOpen
   } = useEditorContext();
 
   const initialFormValues = useMemo(() => ({
@@ -36,18 +38,33 @@ const {
 
     setPhaseValues((prevState) => {
       const isDuplicate = prevState.some((item)=> (item.phaseID === jsonData.phaseID));
+      let updatedPhaseValues;
       if (!isDuplicate) {
 
-        const updatedPhaseValues = [...prevState, {...jsonData}]
+        updatedPhaseValues = [...prevState, {...jsonData}]
         const sortedPhaseValues = R.sortBy(R.prop('phaseID'), updatedPhaseValues );
        
         return sortedPhaseValues;
+      } else if (isDuplicate) {
+
+        updatedPhaseValues = prevState.filter(item => (item.phaseID!== jsonData.phaseID));
+
+        updatedPhaseValues = [...updatedPhaseValues, {...jsonData}];
+
+        const sortedPhaseValues = R.sortBy(R.prop('phaseID'), updatedPhaseValues);
+
+        return sortedPhaseValues;
+
+
       }
-      return prevState;
+      
     });
 
     setPhaseData(jsonData);
-    setViewPhase(values); 
+    setViewPhase(values);
+    
+    setToastPayload({type:"success", message:`Phase successfully created with the name: ${values.phasename} `});
+    setToastIsOpen(true);
     
     console.log(PhaseValues);
 
@@ -67,28 +84,34 @@ const {
 
   };
 
+  const isValidDate = (date) => {
+    return date instanceof Date && !isNaN(date);
+  };
+
   useEffect(() => {
 
-    const sortedPhaseValues = R.sortBy(R.prop('phaseID'), PhaseValues);
+    if (!isValidDate(timer.start) && !isValidDate(timer.end)) {
+      const sortedPhaseValues = R.sortBy(R.prop('phaseID'), PhaseValues);
 
-    const updatedPhaseWeeks = sortedPhaseValues.map((value) => {
-      const parsedValue = value;
-      return parsedValue.weeksnumber;
-    });
-    
-    setTime_Pipeline((prevtime_pipeline) => ({
-      ...prevtime_pipeline,
-      phase_weeks_array: updatedPhaseWeeks,
-    }));
+      const updatedPhaseWeeks = sortedPhaseValues.map((value) => {
+        const parsedValue = value;
+        return parsedValue.weeksnumber;
+      });
+      
+      setTime_Pipeline((prevtime_pipeline) => ({
+        ...prevtime_pipeline,
+        phase_weeks_array: updatedPhaseWeeks,
+      }));
 
-    setTime_Pipeline((prevtime_pipeline) => ({
-      ...prevtime_pipeline,
-      phase_date_array: calculatePhaseEndDate(timer.start, updatedPhaseWeeks),
-    }));
+      setTime_Pipeline((prevtime_pipeline) => ({
+        ...prevtime_pipeline,
+        phase_date_array: calculatePhaseEndDate(timer.start, updatedPhaseWeeks),
+      }));
 
-    console.log(sortedPhaseValues);
-    console.log(PhaseValues);
-
+      console.log(sortedPhaseValues);
+      console.log(PhaseValues);
+    }
+    // eslint-disable-next-line
   },[PhaseValues, calculatePhaseEndDate, setTime_Pipeline, timer.start])
 
   useEffect(() => {

@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect} from "react";
 import PhasesForm from "./phasesEditor.js";
 import { InterventionEditor } from "./interventionEditor.js";
 import { Viewer } from "./viewer.js";
@@ -11,8 +11,7 @@ import { MicroSelector } from "./microSelector.js";
 import "../../App.css";
 import { InterventionLoad } from "./interventionLoad.js";
 import { useDispatch, useSelector } from "react-redux";
-
-
+import { Toaster } from "./toaster.js";
 
 
 
@@ -41,12 +40,14 @@ function Editor({ patientID, isExpanded }) {
     viewMicro, setViewMicro,
     viewWod, setViewWod,
     setIsLoading,
-    time_pipeline, 
+    time_pipeline,
+ 
     
     
  } = useEditorContext();
 
- 
+ // Additional options
+
  const dispatch = useDispatch();
  const loadedData = useSelector(state => {
   const interventions = state.intervention[patientID];
@@ -120,7 +121,6 @@ const CleanerFunction = () => {
 }, [patientID]);
 
 
-
  // Second part of the Editor functions, handling the CRUD for mesophases.
   const createPhase = () => {
     if (timer.weeks !== 0){
@@ -182,20 +182,6 @@ const CleanerFunction = () => {
     setNumPhases(0);
     setPhaseValues(() => []);
   };
-  
-  
-
-/*   useEffect(() => {
-    if (splicerFunctionCalled) {
-      const selectedIndex = 2;
-      phaseSelection({ target: { value: selectedIndex } });     
-      microSelection({ target: { value: selectedIndex } });     
-      setSplicerFunctionCalled(false);
-      
-    }
-    // eslint-disable-next-line 
-  }, [splicerFunctionCalled]); */
-
   
 // Selection handlers
   const phaseSelection = (e) => {
@@ -264,11 +250,14 @@ const CleanerFunction = () => {
   };
 
 
+
   
 
   return (
     <div id="wrapper" className="flex flex-row h-full overflow-y-auto">
       <div id="left-block" className="flex flex-col mt-5 h-full w-full overflow-y-auto">
+        <Toaster />
+
         <InterventionEditor
           interventionStartDate={interventionStartDate}
           weeks={weeks}
@@ -282,11 +271,12 @@ const CleanerFunction = () => {
           setInterventionValues={setInterventionValues}
         />
 
-        <div className="flex flex-col gap-4 w-192 mt-4 rounded-lg shadow-lg text-slate-300 font-mono">
+        <div className="flex flex-col gap-4 w-192 mt-4 rounded-lg shadow-lg text-slate-300 font-mono" >
           <div className="flex flex-row">
             <div
               id="phasesSelector"
               className="flex flex-col flex-initial w-1/2 rounded-lg bg-zinc-900 p-2"
+              style={{borderBottom: `2px solid rgb(53, 51, 51)`}}
             >
               <h2 className="text-lg my-2 text-slate-200 col-span-1 row-span-1 font-semibold mb-2">
                 Phases (or Mesocycles)
@@ -335,6 +325,7 @@ const CleanerFunction = () => {
             <div
               id="PhasesForm"
               className="flex flex-col w-1/2 bg-zinc-900 font-mono text-slate-300 rounded-lg ml-2 px-5 py-2"
+              style={{borderBottom: `2px solid rgb(53, 51, 51)`}}
             >
               <h2 className="text-lg my-2 text-slate-200 col-span-1 row-span-1 font-semibold mb-2 h-8">
                 Phases form
@@ -362,13 +353,14 @@ const CleanerFunction = () => {
             </div>
           </div>
           <div className="flex flex-row">
-          <div className="flex flex-col bg-zinc-900 rounded-lg my-2 mr-2 p-2">
+          <div className="flex flex-col bg-zinc-900 rounded-lg my-2 mr-2 p-2" style={{borderBottom: `2px solid rgb(53, 51, 51)`}}>
           <h2 className="text-lg my-2 text-slate-200 col-span-1 row-span-1 font-semibold mb-2">
                 Microcycles
               </h2>
             <div
               id="micro_selector"
               className="flex-initial w-1/2 col-span-1 row-span-1 w-96 h-80 p-4 overflow-y-auto"
+              
             >
               {PhaseValues !== null && (
                 <div key="micro_selector"> 
@@ -381,7 +373,7 @@ const CleanerFunction = () => {
               )}
             </div>
           </div>
-          <div className="flex flex-col bg-zinc-900 rounded-lg p-2">
+          <div className="flex flex-col bg-zinc-900 rounded-lg p-2" style={{borderBottom: `2px solid rgb(53, 51, 51)`}}>
             <MicroEditor />
           </div>
           </div>
@@ -389,6 +381,7 @@ const CleanerFunction = () => {
             <div
               id="wod_selector"
               className="flex flex-col bg-zinc-900 w-96 mr-5 rounded-lg p-2"
+              style={{borderBottom: `2px solid rgb(53, 51, 51)`}}
             >
               {microData &&
                 microData.wods !== undefined &&
@@ -417,6 +410,7 @@ const CleanerFunction = () => {
             <div
               id="wod_editor"
               className="flex flex-col bg-zinc-900 rounded-lg p-2"
+              style={{borderBottom: `2px solid rgb(53, 51, 51)`}}
             >
             <WodEditor
               setViewWod={setViewWod}

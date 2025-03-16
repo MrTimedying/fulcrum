@@ -52,6 +52,8 @@ export const EditorContextProvider = ({ children }) => {
   const [tableString, setTableString] = useState({});
   const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [toastIsOpen, setToastIsOpen] = useState(false);
+  const [toastPayload, setToastPayload] = useState({});
 
   // Viewer memory options
 
@@ -153,6 +155,8 @@ export const EditorContextProvider = ({ children }) => {
         tableString, setTableString,
         isOpen, setIsOpen,
         isLoading, setIsLoading,
+        toastIsOpen, setToastIsOpen,
+        toastPayload, setToastPayload,
         exerciseValues, setExerciseValues,
         exerciseData, setExerciseData,
         selectedExercise, setSelectedExercise,

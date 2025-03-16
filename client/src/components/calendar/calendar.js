@@ -8,6 +8,7 @@ import  DayView  from './DayView';
 import BasicMenu from './menu';
 import { useEditorContext } from '../editor/editorContext';
 import { useUpdateEffect } from './utils';
+import CustomToolbar from './CustomToolbar';
 
 
 
@@ -78,7 +79,7 @@ const CalendarDash = ({patientID}) => {
  
 
   return (
-    <div className='flex flex-col items-center' style={{ height: '900px' }}>
+    <div className='flex flex-col items-center' style={{ height: '1100px' }}>
       <BasicMenu patientID={patientID} />
       <h1 className="justify-self-center text-xl font-mono text-slate-300 h-6">{title.interventionName}</h1>
       <Calendar
@@ -92,7 +93,8 @@ const CalendarDash = ({patientID}) => {
         views={{ month: true, day: DayViewInjector }}
         style={{ margin: '10px', width: '90%', height: '90%' }}
         components={{
-          event: CustomEvent
+          event: CustomEvent,
+          toolbar: CustomToolbar
         }}
         
       />

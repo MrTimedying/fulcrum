@@ -8,7 +8,6 @@ import {
   TableHead,
   TableRow,
   Paper,
-  Button,
   TextField,
   IconButton,
 } from "@mui/material";
@@ -24,7 +23,6 @@ import { addTest } from "../../global/slices/testSlice";
 export const Test = ({
   isOpenTest,
   setIsOpenTest,
-  cards,
   setCards,
   tableData,
   setTableData
@@ -162,12 +160,12 @@ export const Test = ({
 
   return (
     <>
-      <button
+{/*       <button
         className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2 px-2 py-2 rounded-md cursor-pointer text-sm"
         onClick={() => setIsOpenTest(true)}
       >
         Add Test Day
-      </button>
+      </button> */}
 
       <Transition show={isOpenTest}>
         <Dialog as="div" onClose={() => setIsOpenTest(false)}>
@@ -205,11 +203,11 @@ export const Test = ({
                       onChange={handleChange}
                       className="w-full p-2 rounded-md bg-zinc-600 text-slate-300 font-mono"
                     />
-                    <ErrorMessage
+{/*                     <ErrorMessage
                       name="name"
                       component="div"
                       className="text-red-500"
-                    />
+                    /> */}
                   </div>
                   <div className="mb-3">
                     <label className="block mb-1" htmlFor="type">
@@ -223,11 +221,11 @@ export const Test = ({
                       onChange={handleChange}
                       className="w-full p-2 rounded-md bg-zinc-600 text-slate-300 font-mono"
                     />
-                    <ErrorMessage
+{/*                     <ErrorMessage
                       name="type"
                       component="div"
                       className="text-red-500"
-                    />
+                    /> */}
                   </div>
                   <div className="mb-3">
                     <label className="block mb-1" htmlFor="score">
@@ -241,11 +239,11 @@ export const Test = ({
                       onChange={handleChange}
                       className="w-full p-2 rounded-md bg-zinc-600 text-slate-300 font-mono"
                     />
-                    <ErrorMessage
+{/*                     <ErrorMessage
                       name="score"
                       component="div"
                       className="text-red-500"
-                    />
+                    /> */}
                   </div>
                   <div className="mb-3">
                     <label className="block mb-1" htmlFor="date">
@@ -259,11 +257,11 @@ export const Test = ({
                       onChange={handleChange}
                       className="w-full p-2 rounded-md bg-zinc-600 text-slate-300 font-mono"
                     />
-                    <ErrorMessage
+{/*                     <ErrorMessage
                       name="date"
                       component="div"
                       className="text-red-500"
-                    />
+                    /> */}
                   </div>
 
                   <div className="flex justify-between">

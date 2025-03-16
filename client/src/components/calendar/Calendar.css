@@ -2,7 +2,7 @@
 
 .rbc-calendar {
     background-color: transparent;
-    height: 85% !important;
+    height: 100% !important;
     margin-top: 5px !important;
 }
 
@@ -18,4 +18,40 @@
 .MuiPaper-root {
     background-color: rgb(24 24 27) !important;
     color: rgb(203 213 225) !important;
+}
+
+.rbc-btn {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    margin: 0 5px;
+  }
+
+.rbc-btn-back {
+    background-color: rgb(24 24 27) !important;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    margin: 0 5px;
+}
+
+.rbc-btn-today {
+    background-color: rgb(24 24 27) !important;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    margin: 0 5px;
+}
+
+.rbc-btn-next {
+    background-color: rgb(24 24 27) !important;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    cursor: pointer;
+    margin: 0 5px;
 }

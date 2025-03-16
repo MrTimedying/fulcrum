@@ -5,21 +5,20 @@ import { Test } from "./test";
 const Timeline = ({ cards, setCards}) => {
   const [isOpenTest, setIsOpenTest] = useState(false);
   const [tableData, setTableData] = useState([]);
-  const [testSelected, setTestSelected] = useState([]);
-  const [testEdit, setTestEdit] = useState([]);
+
+
 
   
 
-  const selectionSetter = (item) => {
+/*   const selectionSetter = (item) => {
     setTestSelected(item.name);
     console.log(testSelected);
     setTestEdit(item);
-  };
+  }; */
 
-  const EditItemHandler = (item) => {
-    console.log(item);
-    const newRow = item;
-    setTableData([...tableData, newRow]);  
+  const EditItemHandler = (cards) => {
+    console.log(cards);
+    setTableData(cards);  
     setIsOpenTest(true);
 
   };
@@ -44,7 +43,7 @@ const Timeline = ({ cards, setCards}) => {
         tableData={tableData}
         setTableData={setTableData}
       />
-      <button className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2 px-2 py-2 rounded-md cursor-pointer text-sm" onClick={() => EditItemHandler(testEdit)}>Edit Item</button>
+      <button className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2 px-2 py-2 rounded-md cursor-pointer text-sm" onClick={() => EditItemHandler(cards)}>Edit Timeline</button>
       <DragDropContext onDragEnd={onDragEnd}>
         <Droppable droppableId="timeline" direction="horizontal">
           {(provided) => (
@@ -64,8 +63,8 @@ const Timeline = ({ cards, setCards}) => {
                       ref={provided.innerRef}
                       {...provided.draggableProps}
                       {...provided.dragHandleProps}
-                      className={` p-2 mb-2 w-48 rounded font-mono text-slate-300 ${testSelected === card.name ? 'bg-zinc-600' : 'bg-zinc-800'}`}
-                      onClick={() => selectionSetter(card)}
+                      className={` p-2 mb-2 w-48 rounded font-mono text-slate-300 bg-zinc-800`}
+                      
                     >
                       <div>
                         <strong>Name:</strong> {card.name}

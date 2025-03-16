@@ -25,7 +25,7 @@ import { addExercise } from "../../global/slices/exercisesSlice";
 export const Composer = React.memo(() => {
   const [tableData, setTableData] = useState([]);
   const [searchResults, setSearchResults] = useState([]);
-  const {isOpen, setIsOpen, setExerciseValues, setTableString} = useEditorContext();
+  const {isOpen, setIsOpen, setExerciseValues, setTableString, microData} = useEditorContext();
 
   const dispatch = useDispatch();
   const exerciseState = useSelector(state => state.exercise);
@@ -147,6 +147,14 @@ export const Composer = React.memo(() => {
     setTableData(updatedTableData);
   };
 
+  function handleComposerOpen(isOpen) {
+    if (microData !== null && microData !== undefined){
+      setIsOpen(isOpen);
+    } else {
+      console.log('There is no micro data cache to justify this action!');
+    }
+  };
+
   // Function to handle cell edits
   const handleCellEdit = (newValue, index, field) => {
     const updatedData = [...tableData];
@@ -173,7 +181,7 @@ export const Composer = React.memo(() => {
 
   return (
     <>
-      <button className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2  px-2 py-2 rounded-md cursor-pointer text-sm" onClick={() => (setIsOpen(true))}>
+      <button className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2  px-2 py-2 rounded-md cursor-pointer text-sm" onClick={() => (handleComposerOpen(true))}>
         Manage exercises
       </button>
       <Transition show={isOpen}>
@@ -218,11 +226,11 @@ export const Composer = React.memo(() => {
                           onChange={handleChange}
                           className="w-full bg-zinc-800 p-2 rounded-md h-8"
                         />
-                        <ErrorMessage
+                        {/* <ErrorMessage
                           name="name"
                           component="div"
                           className="text-red-500"
-                        />
+                        /> */}
                       </div>
                       <div className="mb-2">
                         <label className="block mb-1" htmlFor="type">
@@ -236,11 +244,11 @@ export const Composer = React.memo(() => {
                           onChange={handleChange}
                           className="w-full bg-zinc-800 p-2 rounded-md h-8"
                         />
-                        <ErrorMessage
+                        {/* <ErrorMessage
                           name="type"
                           component="div"
                           className="text-red-500"
-                        />
+                        /> */}
                       </div>
                       <div className="mb-2">
                         <label className="block mb-1" htmlFor="volume">
