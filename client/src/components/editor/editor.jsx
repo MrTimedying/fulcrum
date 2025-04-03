@@ -33,7 +33,14 @@ const InterventionNode = ({ data, selected }) => (
       transition: 'all 0.2s ease'
     }}
   >
-    <strong>{data.label}</strong>
+    <strong>{data.label}</strong>   
+    <ul>
+      <li>Intervention ID: {data.id || "Not defined yet"}</li>
+      <li>Intervention Name: {data.name || "Not defined yet"}</li>
+      <li>Intervention Type: {data.type || "Not defined yet"}</li>
+      <li>Intervention Description: {data.description || "Not defined yet"}</li>
+    </ul>
+    
     <Handle type="source" position="bottom" style={{ background: selected ? '#6366F1' : 'black' }} />
   </div>
 );
@@ -127,7 +134,7 @@ function Editor() {
 
   const handleNodeClick = useCallback((event, node) => {
     event.stopPropagation();
-    if (selectedNodeId === node.id && node.selected) {
+    if (selectedNodeId.id === node.id && node.selected) {
       // Deselect the node by manually triggering onNodesChange
       onNodesChange([
         {
@@ -160,7 +167,7 @@ function Editor() {
       
       // Apply all changes
       onNodesChange([...deselectChanges, selectChange]);
-      setSelectedNodeId(node.id);
+      setSelectedNodeId({id: node.id, type: node.type});
     }
   }, [selectedNodeId, nodes, onNodesChange]);
 
@@ -275,7 +282,7 @@ function Editor() {
     const newNode = {
       id,
       position: canvasPosition,
-      data: { label: `Node ${type}` },
+      data: { patientId: patientId, [`${type}_id`]: "", name: "", description: "", global: "", service: "" },
       type: type,
     };
     setNodes((nds) => [...nds, newNode]);

@@ -5,6 +5,7 @@ const useFlowStore = create((set, get) => ({
   flowStates: {},
   selectedNodeId: [],
   columnsLayout: [],
+  rowsData: [],
   
   // Save flow state for a specific patient
   saveFlowState: (patientId, nodes, edges) => set((state) => ({
@@ -29,6 +30,8 @@ const useFlowStore = create((set, get) => ({
   setSelectedNodeId: (nodeId) => set((state) => ({ ...state, selectedNodeId: nodeId})),
 
   setColumnsLayout: (layout) => set((state) => ({... state, columnsLayout: layout})),
+
+  setRowsData: (data) => set((state) => ({... state, rowsData: data})),
 
 }));
 
