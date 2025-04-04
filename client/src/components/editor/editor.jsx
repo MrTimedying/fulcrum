@@ -1,4 +1,5 @@
 import React, { useRef, useCallback, useState, useMemo, useEffect } from "react";
+import { useShallow } from 'zustand/react/shallow';
 import { debounce } from "../utils";
 import {
   useReactFlow,
@@ -19,81 +20,7 @@ import PaneMenu from "./paneMenu"; // Specific Node Context Menu
 import { v4 as uuidv4 } from "uuid";
 import useFlowStore from "../../state/flowState";
 import useTransientStore from "../../state/transientState";
-
-
-// Nodes
-const InterventionNode = ({ data, selected }) => (
-  <div 
-    style={{ 
-      padding: 10, 
-      border: `1px solid ${selected ? '#32a852' : 'white'}`,
-      borderRadius: 5,
-      boxShadow: selected ? '0 0 10px #32a852' : 'none',
-      backgroundColor: selected ? 'rgba(127, 94, 163, 0.5)' : 'rgba(127, 94, 163, 0.5)',
-      transition: 'all 0.2s ease'
-    }}
-  >
-    <strong>{data.label}</strong>   
-    <ul>
-      <li>Intervention ID: {data.id || "Not defined yet"}</li>
-      <li>Intervention Name: {data.name || "Not defined yet"}</li>
-      <li>Intervention Type: {data.type || "Not defined yet"}</li>
-      <li>Intervention Description: {data.description || "Not defined yet"}</li>
-    </ul>
-    
-    <Handle type="source" position="bottom" style={{ background: selected ? '#6366F1' : 'black' }} />
-  </div>
-);
-
-const PhaseNode = ({ data, selected }) => (
-  <div 
-    style={{ 
-      padding: 10, 
-      border: `1px solid ${selected ? '#32a852' : 'white'}`,
-      borderRadius: 5,
-      boxShadow: selected ? '0 0 10px #32a852' : 'none',
-      backgroundColor: selected ? 'rgba(99, 102, 241, 0.1)' : 'transparent',
-      transition: 'all 0.2s ease'
-    }}
-  >
-    <Handle type="target" position="top" style={{ background: selected ? '#6366F1' : 'black' }} />
-    <strong>{data.label}</strong>
-    <Handle type="source" position="bottom" style={{ background: selected ? '#6366F1' : 'black' }} />
-  </div>
-);
-
-const MicroNode = ({ data, selected }) => (
-  <div 
-    style={{ 
-      padding: 10, 
-      border: `1px solid ${selected ? '#32a852' : 'white'}`,
-      borderRadius: 5,
-      boxShadow: selected ? '0 0 10px #32a852' : 'none',
-      backgroundColor: selected ? 'rgba(99, 102, 241, 0.1)' : 'transparent',
-      transition: 'all 0.2s ease'
-    }}
-  >
-    <Handle type="target" position="top" style={{ background: selected ? '#6366F1' : 'black' }} />
-    <strong>{data.label}</strong>
-    <Handle type="source" position="bottom" style={{ background: selected ? '#6366F1' : 'black' }} />
-  </div>
-);
-
-const SessionNode = ({ data, selected }) => (
-  <div 
-    style={{ 
-      padding: 10, 
-      border: `1px solid ${selected ? '#32a852' : 'white'}`,
-      borderRadius: 5,
-      boxShadow: selected ? '0 0 10px #32a852' : 'none',
-      backgroundColor: selected ? 'rgba(99, 102, 241, 0.1)' : 'transparent',
-      transition: 'all 0.2s ease'
-    }}
-  >
-    <Handle type="target" position="top" style={{ background: selected ? '#6366F1' : 'black' }} />
-    <strong>{data.label}</strong>
-  </div>
-);
+import {InterventionNode, PhaseNode, MicroNode, SessionNode} from "./nodes";
 
 // COLUMNS FOR THE COMPOSER
 
@@ -119,23 +46,73 @@ const columnTemplates = {
   ],
 };
 
+const dataTemplates = {
+  intervention: () => ({
+    id: uuidv4(),
+    name: "Intervention Name",
+    description: "Intervention Description",
+    global: "",
+    service: "",
+  }),
+  phase: () => ({
+    id: uuidv4(),
+    name: "Phase Name",
+    scope: "Phase Scope",
+  }),
+  micro: () => ({
+    id: uuidv4(),
+    name: "Micro Name",
+    scope: "Micro Scope",
+  }),
+  session: () => ({
+    id: uuidv4(),
+    name: "Session Name",
+    scope: "Session Scope",
+  }),
+};
+
+
+const selector = (state) => ({
+  nodes: state.nodes,
+  edges: state.edges,
+  setNodes: state.setNodes,
+  setEdges: state.setEdges,
+  onNodesChange: state.onNodesChange,
+  onEdgesChange: state.onEdgesChange,
+  selectedNodeId: state.selectedNodeId,
+  setSelectedNodeId: state.setSelectedNodeId,
+  columnsLayout: state.columnsLayout,
+  setColumnsLayout: state.setColumnsLayout,
+});
+
 function Editor() {
   // STATE MANAGEMENT
-  const { getFlowState, saveFlowState, selectedNodeId, setSelectedNodeId, columnsLayout, setColumnsLayout } = useFlowStore();
   const { patientId } = useTransientStore();
-  const initialFlowState = getFlowState(patientId);
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialFlowState.nodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialFlowState.edges);
+  const {
+    nodes,
+    edges,
+    setNodes,
+    setEdges,
+    onNodesChange,
+    onEdgesChange,
+    selectedNodeId,
+    setSelectedNodeId,
+    columnsLayout,
+    setColumnsLayout,
+  } = useFlowStore(useShallow(selector));
+ 
 
-  const debouncedSave = useMemo(
-    () => debounce((n, e) => saveFlowState(patientId, n, e), 1000),
-    [patientId]
-  );
+  // const debouncedSave = useMemo(
+  //   () => debounce((n, e) => saveFlowState(patientId, n, e), 1000),
+  //   [patientId]
+  // );
+
+
 
   const handleNodeClick = useCallback((event, node) => {
     event.stopPropagation();
-    if (selectedNodeId.id === node.id && node.selected) {
-      // Deselect the node by manually triggering onNodesChange
+    if (selectedNodeId?.id === node.id && node.selected) {
+      console.log("Data of the node", node.data);
       onNodesChange([
         {
           id: node.id,
@@ -188,8 +165,8 @@ function Editor() {
   }, [setSelectedNodeId, setColumnsLayout]);
   
   useEffect(() =>{
-    console.log("Columns Layout previously was:", columnsLayout);
-  },[columnsLayout]);
+    console.log(nodes[selectedNodeId?.id]?.data);
+  },[nodes]);
 
 
   const [nodeMenu, setNodeMenu] = useState({
@@ -277,12 +254,12 @@ function Editor() {
 
   const addNode = (position, type) => {
     const canvasPosition = reactFlowInstance.screenToFlowPosition(position);
-
+    const generatedData = dataTemplates[type]();
     const id = uuidv4();
     const newNode = {
       id,
       position: canvasPosition,
-      data: { patientId: patientId, [`${type}_id`]: "", name: "", description: "", global: "", service: "" },
+      data: generatedData,
       type: type,
     };
     setNodes((nds) => [...nds, newNode]);

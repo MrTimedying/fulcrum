@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { applyNodeChanges, applyEdgeChanges } from "@xyflow/react";
 
 const useFlowStore = create((set, get) => ({
   // Map to store flow states by patientId
@@ -6,26 +7,47 @@ const useFlowStore = create((set, get) => ({
   selectedNodeId: [],
   columnsLayout: [],
   rowsData: [],
-  
-  // Save flow state for a specific patient
-  saveFlowState: (patientId, nodes, edges) => set((state) => ({
-    flowStates: {
-      ...state.flowStates,
-      [patientId]: { nodes, edges }
-    }
-  })),
-  
-  // Get flow state for a specific patient
-  getFlowState: (patientId) => {
-    const state = get();
-    return state.flowStates[patientId] || { nodes: [], edges: [] };
+  nodes: [],  // Global nodes
+  edges: [],  // Global edges
+
+  onNodesChange: (changes) => {
+    set((state) => ({
+      nodes: applyNodeChanges(changes, state.nodes),
+    }));
+  },
+  onEdgesChange: (changes) => {
+    set((state) => ({
+      edges: applyEdgeChanges(changes, state.edges),
+    }));
   },
   
-  // Clear flow state for a specific patient
-  clearFlowState: (patientId) => set((state) => {
-    const { [patientId]: _, ...rest } = state.flowStates;
-    return { flowStates: rest };
-  }),
+  setNodes: (payload) => {
+    set((state) => ({
+      nodes: typeof payload === "function" ? payload(state.nodes) : payload,
+    }));
+  },
+  // `setEdges` Implementation
+  setEdges: (payload) => {
+    set((state) => ({
+      edges: typeof payload === "function" ? payload(state.edges) : payload,
+    }));
+  },
+  
+  
+  initializeFlowState: (patientId) => {
+    const flowState = get().flowStates[patientId] || { nodes: [], edges: [] };
+    set({ nodes: flowState.nodes, edges: flowState.edges });
+  },
+
+  saveFlowState: (patientId) => {
+    const { nodes, edges } = get();
+    set((state) => ({
+      flowStates: {
+        ...state.flowStates,
+        [patientId]: { nodes, edges },
+      },
+    }));
+  },
 
   setSelectedNodeId: (nodeId) => set((state) => ({ ...state, selectedNodeId: nodeId})),
 
