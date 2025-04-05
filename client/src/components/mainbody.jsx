@@ -135,7 +135,7 @@ function MainBody() {
           </Tab.Panel>
           <Tab.Panel key="internvetionEditor" className="h-full">
             <ReactFlowProvider>
-              <Editor isExpanded={isExpanded} />
+              <Editor isExpanded={isExpanded} isModalOpen={isModalOpen} />
             </ReactFlowProvider>
           </Tab.Panel>
         </Tab.Panels>

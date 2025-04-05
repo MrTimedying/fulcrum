@@ -26,11 +26,12 @@ import {InterventionNode, PhaseNode, MicroNode, SessionNode} from "./nodes";
 
 const columnTemplates = {
   intervention: [
-    { title: "ID", field: "id", width: 100 },
-    { title: "Name", field: "name", width: 150 },
-    { title: "Description", field: "description", width: 200 },
-    { title: "Global", field: "global", width: 100 },
-    { title: "Service", field: "service", width: 100 },
+    { title: "ID", field: "id", width: 100, editor: "textarea" },
+    { title: "Name", field: "name", width: 150, editor: "textarea" },
+    { title: "Type", field: "type", width: 150, editor: "textarea" },
+    { title: "Description", field: "description", width: 200, editor: "textarea" },
+    { title: "Global", field: "global", width: 100, editor: "textarea" },
+    { title: "Service", field: "service", width: 100, editor: "textarea" },
   ],
   phase: [
     { title: "ID", field: "id", width: 100 },
@@ -42,15 +43,16 @@ const columnTemplates = {
   ],
   session: [
     { title: "ID", field: "id", width: 100 },
-    { title: "Scope", field: "scope", width: 150 },
+    { title: "Scope", field: "scope", width: 150, editor: "textarea" },
   ],
 };
 
 const dataTemplates = {
   intervention: () => ({
     id: uuidv4(),
-    name: "Intervention Name",
-    description: "Intervention Description",
+    name: "",
+    type: "",
+    description: "",
     global: "",
     service: "",
   }),
@@ -68,7 +70,23 @@ const dataTemplates = {
     id: uuidv4(),
     name: "Session Name",
     scope: "Session Scope",
+    exercises: [{}],
   }),
+};
+
+const nodeTemplates = {
+  intervention: {
+    type: "intervention",    
+  },
+  phase: {
+    type: "phase",
+  },
+  micro: {
+    type: "micro",
+  },
+  session: {
+    type: "session",
+  },
 };
 
 
@@ -85,9 +103,9 @@ const selector = (state) => ({
   setColumnsLayout: state.setColumnsLayout,
 });
 
-function Editor() {
+function Editor({isModalOpen}) {
   // STATE MANAGEMENT
-  const { patientId } = useTransientStore();
+  const { patientId, setToaster } = useTransientStore();
   const {
     nodes,
     edges,
@@ -100,6 +118,10 @@ function Editor() {
     columnsLayout,
     setColumnsLayout,
   } = useFlowStore(useShallow(selector));
+
+  useEffect(() => {
+    console.log("Is the modal open?", isModalOpen);
+  },[isModalOpen]);
  
 
   // const debouncedSave = useMemo(
@@ -113,6 +135,7 @@ function Editor() {
     event.stopPropagation();
     if (selectedNodeId?.id === node.id && node.selected) {
       console.log("Data of the node", node.data);
+      console.log("Node structure", node);
       onNodesChange([
         {
           id: node.id,
@@ -164,9 +187,6 @@ function Editor() {
     }
   }, [setSelectedNodeId, setColumnsLayout]);
   
-  useEffect(() =>{
-    console.log(nodes[selectedNodeId?.id]?.data);
-  },[nodes]);
 
 
   const [nodeMenu, setNodeMenu] = useState({
@@ -252,18 +272,34 @@ function Editor() {
   // ACTION HANDLERS FOR MENUS
   const reactFlowInstance = useReactFlow();
 
+  const validateNodeAddition = (type, nodes) => {
+    if (type === "intervention" && nodes.some((n) => n.type === "intervention")) {
+      return false; // Prevent adding multiple "intervention" nodes
+    }
+    return true; // Other node types can be added without restriction
+  };
+
   const addNode = (position, type) => {
     const canvasPosition = reactFlowInstance.screenToFlowPosition(position);
-    const generatedData = dataTemplates[type]();
+  
+    // Validate node addition for types like "intervention"
+    if (!validateNodeAddition(type, nodes)) {
+      setToaster({ type: "error", message: "Only one intervention node is allowed", show: true });
+      return;
+    }
+  
+    // Dynamically create node based on type
     const id = uuidv4();
     const newNode = {
       id,
       position: canvasPosition,
-      data: generatedData,
-      type: type,
+      data: dataTemplates[type]?.() || {}, // Generate node data dynamically
+      ...(nodeTemplates[type] || { type, data: {} }), // Use template or fallback
     };
+  
+    // Add the new node to the flow
     setNodes((nds) => [...nds, newNode]);
-    closeMenus();
+    closeMenus(); // Close any open context menus
   };
 
   const zoomToFit = () => {
