@@ -44,6 +44,7 @@ const columnTemplates = {
   session: [
     { title: "ID", field: "id", width: 100 },
     { title: "Scope", field: "scope", width: 150, editor: "textarea" },
+    { title: "Day", field: "day", width: 150, editor: "date" },
   ],
 };
 
@@ -70,7 +71,7 @@ const dataTemplates = {
     id: uuidv4(),
     name: "Session Name",
     scope: "Session Scope",
-    exercises: [{}],
+    exercises: [],
   }),
 };
 
