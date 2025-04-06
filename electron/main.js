@@ -19,8 +19,8 @@ function createWindow() {
     minHeight: 600,
     frame: false, 
     webPreferences: {
-      webSecurity: false,
-      devTools: false,
+      webSecurity: true,
+      devTools: true,
       preload: path.join(__dirname, 'preload.js'),
     },
   });
@@ -46,6 +46,44 @@ function createWindow() {
   });
 }
 
+ipcMain.on('open-specific-component', (event) => {
+  // Create component window if it doesn't exist
+  if (!componentWindow) {
+    componentWindow = new BrowserWindow({
+      width: 800,
+      height: 600,
+      minWidth: 800,
+      minHeight: 600,
+      frame: false,
+      webPreferences: {
+        nodeIntegration: false,
+        contextIsolation: true,
+        webSecurity: true,
+        devTools: true,
+        preload: path.join(__dirname, 'preload.js'),
+      },
+    });
+
+    componentWindow.webContents.openDevTools();
+
+    const isDevelopment = process.env.NODE_ENV === 'development';
+    const indexPath = isDevelopment
+      ? 'http://localhost:3000'
+      : url.format({
+          pathname: path.join(__dirname, '..', 'client', 'build', 'index.html'),
+          protocol: 'file:',
+          slashes: true,
+        });
+
+    componentWindow.loadURL(`${indexPath}/#/composer`);
+
+    // Clean up reference when window is closed
+    componentWindow.on('closed', () => {
+      componentWindow = null;
+    });
+  }
+});
+
 app.whenReady().then(createWindow);
 
 app.on('window-all-closed', () => {
@@ -59,6 +97,8 @@ app.on('activate', () => {
     createWindow();
   }
 });
+
+
 
 let secretKeyPromise = ensureEncryptionKey();
 
@@ -120,4 +160,25 @@ ipcMain.on('maximizeApp', () => {
 ipcMain.on('closeApp', () => {
   console.log('Received closeApp event');
   mainWindow.close();
+});
+
+// Here I close the component window
+
+ipcMain.on('minimizeComponent', () => {
+  console.log('Received minimizeComponent event');
+  componentWindow?.minimize();
+});
+
+ipcMain.on('maximizeComponent', () => {
+  console.log('Received maximizeComponent event');
+  if (componentWindow?.isMaximized()) {
+    componentWindow.unmaximize();
+  } else {
+    componentWindow.maximize();
+  }
+});
+
+ipcMain.on('closeComponent', () => {
+  console.log('Received closeComponent event');
+  componentWindow?.close();
 });
