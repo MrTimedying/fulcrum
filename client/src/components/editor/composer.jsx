@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React, { useState } from "react";
 import { ReactTabulator } from "react-tabulator";
 import "tabulator-tables/dist/css/tabulator.min.css"; // Tabulator styles
 import useFlowStore from "../../state/flowState";
@@ -31,7 +31,6 @@ export const Composer = () => {
     return selectedNode.data.exercises; // Returns the exercises array
   })();
 
-
   // Handle cell edits for node data
   const handleNodeDataEdit = (cell) => {
     const field = cell.getField();
@@ -57,20 +56,21 @@ export const Composer = () => {
 
     // Update the node structure immutably
     setNodes((prevNodes) =>
-      prevNodes.map((node) =>
-        node.id === selectedNodeId.id
-          ? {
-              ...node,
-              data: {
-                ...node.data,
-                exercises: node.data.exercises.map((exercise) =>
-                  exercise.id === rowData.id
-                    ? { ...exercise, [field]: value } // Update the specific exercise immutably
-                    : exercise
-                ),
-              },
-            }
-          : node // Keep other nodes unchanged
+      prevNodes.map(
+        (node) =>
+          node.id === selectedNodeId.id
+            ? {
+                ...node,
+                data: {
+                  ...node.data,
+                  exercises: node.data.exercises.map((exercise) =>
+                    exercise.id === rowData.id
+                      ? { ...exercise, [field]: value } // Update the specific exercise immutably
+                      : exercise
+                  ),
+                },
+              }
+            : node // Keep other nodes unchanged
       )
     );
   };
@@ -78,25 +78,26 @@ export const Composer = () => {
   // Add new exercise to the selected node
   const handleAddExercise = () => {
     setNodes((prevNodes) =>
-      prevNodes.map((node) =>
-        node.id === selectedNodeId.id
-          ? {
-              ...node,
-              data: {
-                ...node.data,
-                exercises: [
-                  ...node.data.exercises,
-                  {
-                    id: uuidv4(), // Generate a unique ID
-                    name: "New Exercise", // Default values
-                    duration: "0s",
-                    reps: 0,
-                    intensity: "low",
-                  },
-                ],
-              },
-            }
-          : node // Keep other nodes unchanged
+      prevNodes.map(
+        (node) =>
+          node.id === selectedNodeId.id
+            ? {
+                ...node,
+                data: {
+                  ...node.data,
+                  exercises: [
+                    ...node.data.exercises,
+                    {
+                      id: uuidv4(), // Generate a unique ID
+                      name: "New Exercise", // Default values
+                      duration: "0s",
+                      reps: 0,
+                      intensity: "low",
+                    },
+                  ],
+                },
+              }
+            : node // Keep other nodes unchanged
       )
     );
   };
@@ -110,7 +111,7 @@ export const Composer = () => {
       return;
     }
 
-    const selectedExerciseIds = selectedRows.map((row) => row.id); 
+    const selectedExerciseIds = selectedRows.map((row) => row.id);
 
     // Remove selected exercises from the node
     setNodes((prevNodes) =>
@@ -132,24 +133,26 @@ export const Composer = () => {
     setSelectedRows([]); // Clear selected rows
   };
 
-    // Handle row selection
-    const handleRowSelected = (row) => {
-      const rowData = row.getData(); // Get the data of the selected row
-      setSelectedRows((prev) => [...prev, rowData]); // Add to selected rows
-    };
-  
-    // Handle row deselection
-    const handleRowDeselected = (row) => {
-      const rowData = row.getData();
-      setSelectedRows((prev) =>
-        prev.filter((selected) => selected.id !== rowData.id) // Remove deselected row
-      );
-    };
+  // Handle row selection
+  const handleRowSelected = (row) => {
+    const rowData = row.getData(); // Get the data of the selected row
+    setSelectedRows((prev) => [...prev, rowData]); // Add to selected rows
+  };
+
+  // Handle row deselection
+  const handleRowDeselected = (row) => {
+    const rowData = row.getData();
+    setSelectedRows(
+      (prev) => prev.filter((selected) => selected.id !== rowData.id) // Remove deselected row
+    );
+  };
 
   console.log("Selected Rows:", selectedRows);
   console.log("Exercises Data:", exercisesData);
-  console.log("Selected node exercise data", nodes[selectedNodeId]?.data?.exercises);
-  
+  console.log(
+    "Selected node exercise data",
+    nodes[selectedNodeId]?.data?.exercises
+  );
 
   // Predefined columns for the exercises table
   const exercisesColumns = [
@@ -182,34 +185,35 @@ export const Composer = () => {
 
         <hr className="my-4 border-gray-700" />
 
-        <div className="flex justify-between mb-4">
-          <button
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
-            onClick={handleAddExercise}
-          >
-            Add Exercise
-          </button>
-          <button
-            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
-            onClick={handleDeleteExercises}
-          >
-            Delete Selected Exercises
-          </button>
-        </div>
-
         {/* Conditional Tabulator for 'session' nodes */}
         {selectedNodeId.type === "session" && (
-          <ReactTabulator
-            data={exercisesData} // Use the exercises array as the data source
-            columns={exercisesColumns} // Predefined columns for exercises
-            layout="fitData"
-            selectableRows={true} // Enable row selection
-            cellEdited={handleExerciseDataEdit}
-            events={{
-              rowSelected: handleRowSelected, // Add row selection event
-              rowDeselected: handleRowDeselected, // Add row deselection event
-            }} 
-          />
+          <>
+            <div className="flex justify-between mb-4">
+              <button
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+                onClick={handleAddExercise}
+              >
+                Add Exercise
+              </button>
+              <button
+                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
+                onClick={handleDeleteExercises}
+              >
+                Delete Selected Exercises
+              </button>
+            </div>
+            <ReactTabulator
+              data={exercisesData} // Use the exercises array as the data source
+              columns={exercisesColumns} // Predefined columns for exercises
+              layout="fitData"
+              selectableRows={true} // Enable row selection
+              cellEdited={handleExerciseDataEdit}
+              events={{
+                rowSelected: handleRowSelected, // Add row selection event
+                rowDeselected: handleRowDeselected, // Add row deselection event
+              }}
+            />
+          </>
         )}
       </div>
     </div>

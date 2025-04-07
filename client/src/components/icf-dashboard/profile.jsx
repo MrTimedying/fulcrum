@@ -6,13 +6,8 @@ import {
   ReactFlow,
   Controls,
   Background,
-  useNodesState,
-  useEdgesState,
   reconnectEdge,
   addEdge,
-  Handle,
-  applyEdgeChanges,
-  applyNodeChanges,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import NodeMenu from "../editor/NodeMenu";
@@ -21,6 +16,7 @@ import { v4 as uuidv4 } from "uuid";
 import useFlowStore from "../../state/flowState";
 import useTransientStore from "../../state/transientState";
 import {ProfileNode, BodyStructureNode, ActivitiesNode, ParticipationNode} from "./nodes";
+import Dagre from '@dagrejs/dagre';
 
 // COLUMNS FOR THE COMPOSER
 
@@ -90,7 +86,8 @@ const selector = (state) => ({
 
 function Profile({isModalOpen}) {
   // STATE MANAGEMENT
-  const { patientId, setToaster } = useTransientStore();
+  const { setToaster } = useTransientStore();
+  const { patientId, activeTab, setProfileState } = useFlowStore();
   const {
     nodes,
     edges,
@@ -103,16 +100,17 @@ function Profile({isModalOpen}) {
     columnsLayout,
     setColumnsLayout,
   } = useFlowStore(useShallow(selector));
-
-  useEffect(() => {
-    console.log("Is the modal open?", isModalOpen);
-  },[isModalOpen]);
  
 
   // const debouncedSave = useMemo(
-  //   () => debounce((n, e) => saveFlowState(patientId, n, e), 1000),
+  //   () => debounce((nodes, edges) => setProfileState(patientId, nodes, edges), 1000),
   //   [patientId]
   // );
+
+  // useEffect(() => {
+  //   debouncedSave(nodes, edges);
+  //   console.log("Save is being fired!")
+  // }, [nodes, edges, debouncedSave]);
 
 
 
@@ -223,9 +221,7 @@ function Profile({isModalOpen}) {
   
       // Rule 2: Ensure hierarchical structure
       const validConnections = {
-        intervention: ["phase"], // Intervention can only connect to Phase
-        phase: ["micro"],        // Phase can only connect to Micro
-        micro: ["session"],      // Micro can only connect to Session
+        profile: ["bodyStructure", "activities", "participation"], 
       };
   
       // Get the type of source and target nodes
@@ -258,34 +254,80 @@ function Profile({isModalOpen}) {
   const reactFlowInstance = useReactFlow();
 
   const validateNodeAddition = (type, nodes) => {
-    if (type === "intervention" && nodes.some((n) => n.type === "intervention")) {
-      return false; // Prevent adding multiple "intervention" nodes
+    if (
+      (type === "profile" || 
+       type === "bodyStructure" || 
+       type === "activities" || 
+       type === "participation") && 
+      nodes.some((n) => n.type === type)
+    ) {
+      return false; 
     }
-    return true; // Other node types can be added without restriction
+  
+    return true; 
   };
 
   const addNode = (position, type) => {
     const canvasPosition = reactFlowInstance.screenToFlowPosition(position);
   
-    // Validate node addition for types like "intervention"
+    // Validate node addition for certain types
     if (!validateNodeAddition(type, nodes)) {
-      setToaster({ type: "error", message: "Only one intervention node is allowed", show: true });
+      setToaster({
+        type: "error",
+        message: `A ${type} node is already present because a profile has been already initialized!`,
+        show: true,
+      });
       return;
     }
   
-    // Dynamically create node based on type
-    const id = uuidv4();
-    const newNode = {
-      id,
+    // Create child nodes for "profile" type or add a simple node
+    if (type === "profile") {
+      createProfileWithChildren(canvasPosition);
+    } else {
+      addSingleNode(canvasPosition, type);
+    }
+  
+    closeMenus();
+  };
+  
+  // Helper function to create "profile" and child nodes
+  const createProfileWithChildren = (canvasPosition) => {
+    const spacingX = 200; // Constant spacing for child nodes
+    const childTypes = ["bodyStructure", "activities", "participation"];
+  
+    const profileNode = {
+      id: uuidv4(),
       position: canvasPosition,
-      data: dataTemplates[type]?.() || {}, // Generate node data dynamically
-      ...(nodeTemplates[type] || { type, data: {} }), // Use template or fallback
+      type: "profile",
+      data: dataTemplates["profile"]?.() || {},
     };
   
-    // Add the new node to the flow
-    setNodes((nds) => [...nds, newNode]);
-    closeMenus(); // Close any open context menus
+    const childNodes = childTypes.map((childType, index) => ({
+      id: uuidv4(),
+      position: {
+        x: canvasPosition.x + spacingX * (index + 1),
+        y: canvasPosition.y,
+      },
+      type: childType,
+      data: dataTemplates[childType]?.() || {},
+    }));
+  
+    setNodes((nds) => [...nds, profileNode, ...childNodes]);
   };
+  
+  // Helper function to add a generic single node
+  const addSingleNode = (canvasPosition, type) => {
+    const newNode = {
+      id: uuidv4(),
+      position: canvasPosition,
+      type,
+      data: dataTemplates[type]?.() || {},
+      ...(nodeTemplates[type] || { type, data: {} }),
+    };
+  
+    setNodes((nds) => [...nds, newNode]);
+  };
+  
 
   const zoomToFit = () => {
     console.log("Zooming to fit graph...");

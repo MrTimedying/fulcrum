@@ -2,11 +2,14 @@ import { Fragment } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import persistentStore from "../state/persistentState";
 import { v4 as uuidv4 } from 'uuid';
+import useFlowStore from "../state/flowState";
 
 
 
 
 function NpForm({ isOpen, closeModal, formData, setFormData, setFetchingSwitch, isEditing, setIsEditing }) {
+
+  const {setEditorState, setProfileState} = useFlowStore();
   
   
 
@@ -16,7 +19,9 @@ function NpForm({ isOpen, closeModal, formData, setFormData, setFetchingSwitch, 
     const weight = formData.Weight;
     const bmi = (weight / (heightInMeters * heightInMeters)).toFixed(2);
     const formDataWithBMI = { ...formData, BMI: bmi };
-    persistentStore.getState().addPatient(patientId, formDataWithBMI); // this should not only add a new patient but also update the patient if the key value pair is already there
+    persistentStore.getState().addPatient(patientId, formDataWithBMI);
+    setEditorState(patientId);
+    setProfileState(patientId);
     closeModal();
     console.log(persistentStore.getState().patients);
   };

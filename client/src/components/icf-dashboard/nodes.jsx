@@ -140,6 +140,11 @@ export const ParticipationNode = ({ data, selected }) => (
         
         <li>Participations</li>
       </ul>
+      <Handle
+        type="source"
+        position="bottom"
+        style={{ background: selected ? "#6366F1" : "black" }}
+      />
     </div>
   </>
 );

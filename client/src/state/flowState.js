@@ -3,12 +3,63 @@ import { applyNodeChanges, applyEdgeChanges } from "@xyflow/react";
 
 const useFlowStore = create((set, get) => ({
   // Map to store flow states by patientId
-  flowStates: {},
+  patientId: "",
+  activeTab: "Profile",
+  editorStates: {},
+  profileStates: {},
   selectedNodeId: [],
   columnsLayout: [],
   rowsData: [],
   nodes: [],  // Global nodes
   edges: [],  // Global edges
+
+  
+  setPatientId: (id) => {
+    set({ patientId: id }); 
+    const { activeTab, hydrateBasedOnTab } = get();
+    hydrateBasedOnTab(id, activeTab); 
+  },
+
+  // Change Tab (Profile or Editor) - Reacts to tab changes
+  setActiveTab: (tab) => {
+    set({ activeTab: tab }); // Update activeTab in the store
+    const { patientId, hydrateBasedOnTab } = get();
+    if (patientId) {
+      hydrateBasedOnTab(patientId, tab); // Rehydrate if already on a patient
+    }
+  },
+
+  // Hydrate nodes and edges based on activeTab
+  hydrateBasedOnTab: (patientId, activeTab) => {
+    console.log("Hydrating for PatientId:", patientId, "Tab:", activeTab);
+    console.log("EditorStates:", get().editorStates);
+    console.log("ProfileStates:", get().profileStates);
+  
+    if (activeTab === "Editor") {
+      const editorState = get().editorStates[patientId];
+      console.log("Editor State:", editorState);
+      if (editorState) {
+        set({
+          nodes: editorState.nodes || [],
+          edges: editorState.edges || [],
+        });
+      } else {
+        console.warn(`No editor state found for patientId: ${patientId}`);
+      }
+    } else if (activeTab === "Profile") {
+      const profileState = get().profileStates[patientId];
+      console.log("Profile State:", profileState);
+      if (profileState) {
+        set({
+          nodes: profileState.nodes || [],
+          edges: profileState.edges || [],
+        });
+      } else {
+        console.warn(`No profile state found for patientId: ${patientId}`);
+      }
+    }
+  },
+  
 
   onNodesChange: (changes) => {
     set((state) => ({
@@ -39,11 +90,23 @@ const useFlowStore = create((set, get) => ({
     set({ nodes: flowState.nodes, edges: flowState.edges });
   },
 
-  saveFlowState: (patientId) => {
+  // Save Editor State
+  setEditorState: (patientId) => {
     const { nodes, edges } = get();
     set((state) => ({
-      flowStates: {
-        ...state.flowStates,
+      editorStates: {
+        ...state.editorStates,
+        [patientId]: { nodes, edges },
+      },
+    }));
+  },
+
+  // Save Profile State
+  setProfileState: (patientId) => {
+    const { nodes, edges } = get();
+    set((state) => ({
+      profileStates: {
+        ...state.profileStates,
         [patientId]: { nodes, edges },
       },
     }));

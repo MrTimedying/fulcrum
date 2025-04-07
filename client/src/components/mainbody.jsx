@@ -5,7 +5,7 @@ import { Tab } from "@headlessui/react";
 import Editor from "./editor/editor";
 import Profile from "./icf-dashboard/profile";
 import { ReactFlowProvider } from "@xyflow/react";
-import useTransientStore from "../state/transientState";
+import useFlowStore from "../state/flowState";
 import { AccountBox, DonutLarge, Close } from "@mui/icons-material";
 import { Composer } from "./editor/composer";
 
@@ -13,9 +13,8 @@ import { Composer } from "./editor/composer";
 Modal.setAppElement('#root');
 
 function MainBody() {
-  const patientID = useTransientStore((state) => state.patientID);
+  const {patientId, setActiveTab, activeTab, editorStates, profileStates } = useFlowStore();
   const [isExpanded, setIsExpanded] = useState(false);
-  const [selectedTab, setSelectedTab] = useState('Profile');
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Modal styles
@@ -99,7 +98,7 @@ function MainBody() {
               <Tab as={Fragment}>
                 {({ selected }) => (
                   <button
-                    onClick={() => setSelectedTab('Profile')}
+                    onClick={() => setActiveTab('Profile')}
                     className={`my-2 ${
                       selected
                         ? "mx-2 rounded-none text-gray-300 hover:text-white p-1 cursor-pointer focus:outline-none focus:text-white font-medium transition duration-300 border-b-2 border-indigo-500"
@@ -113,7 +112,7 @@ function MainBody() {
               <Tab as={Fragment}>
                 {({ selected }) => (
                   <button
-                    onClick={() => setSelectedTab('Editor')}
+                    onClick={() => setActiveTab('Editor')}
                     className={`my-2 ${
                       selected
                         ? "mx-2 rounded-none text-gray-300 hover:text-white p-1 cursor-pointer focus:outline-none focus:text-white font-medium transition duration-300 border-b-2 border-indigo-500"
@@ -145,7 +144,7 @@ function MainBody() {
     );
   }
 
-  if (patientID) {
+  if (patientId) {
     return (
       <div className="w-4/5 bg-neutral-800 p-4 h-full" style={{borderLeft: "solid 2px #1c1c1c"}}>
         {TabStructure()}

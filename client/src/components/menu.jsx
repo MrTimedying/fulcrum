@@ -3,14 +3,15 @@ import { Fragment, useState } from 'react'
 import { ChevronDownIcon } from '@heroicons/react/20/solid'
 import { useNavigate } from "react-router-dom";
 import NpForm from './npform';
+import usePersistentStore from '../state/persistentState';
+import useFlowStore from '../state/flowState';
 
-
-
-
-export default function MyDropdown({patientID, setPatientID, formData, setFormData, setFetchingSwitch}) {
+export default function MyDropdown({ formData, setFormData, setFetchingSwitch}) {
   const [isNpFormModalOpen, setIsNpFormModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const navigate = useNavigate();
+  const { removePatient } = usePersistentStore();
+  const { patientId } = useFlowStore();
 
   const closeNpFormModal = () => {
     setIsNpFormModalOpen(false);
@@ -49,14 +50,9 @@ export default function MyDropdown({patientID, setPatientID, formData, setFormDa
     setIsNpFormModalOpen(true);
   };
 
-  const handlePatientDelete = (patientID) => {
-    console.log(patientID);
-    const payload = { id: patientID};
-    dispatch(deletePatient(payload))
-
-    setPatientID(0);
+  const handlePatientDelete = (patientId) => {
+    removePatient(patientId);
     navigate(`/`)
-    setFetchingSwitch(true);
 };
 
 
@@ -132,7 +128,7 @@ export default function MyDropdown({patientID, setPatientID, formData, setFormDa
               <Menu.Item>
                 {({ active }) => (
                   <button
-                    onClick={() => handlePatientDelete(patientID)}
+                    onClick={() => handlePatientDelete(patientId)}
                     className={`${
                       active ? "bg-gray-500 text-white" : "text-slate-300"
                     } group flex w-full items-center rounded-md px-2 py-2 text-sm`}

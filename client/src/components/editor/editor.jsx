@@ -106,7 +106,8 @@ const selector = (state) => ({
 
 function Editor({isModalOpen}) {
   // STATE MANAGEMENT
-  const { patientId, setToaster } = useTransientStore();
+  const { setToaster } = useTransientStore();
+  const { patientId, activeTab, setEditorState } = useFlowStore();
   const {
     nodes,
     edges,
@@ -120,16 +121,15 @@ function Editor({isModalOpen}) {
     setColumnsLayout,
   } = useFlowStore(useShallow(selector));
 
-  useEffect(() => {
-    console.log("Is the modal open?", isModalOpen);
-  },[isModalOpen]);
- 
-
   // const debouncedSave = useMemo(
-  //   () => debounce((n, e) => saveFlowState(patientId, n, e), 1000),
+  //   () => debounce((nodes, edges) => setEditorState(patientId, nodes, edges), 1000),
   //   [patientId]
   // );
 
+  // useEffect(() => {
+  //   debouncedSave(nodes, edges);
+  //   console.log("Save is being fired!")
+  // }, [nodes, edges, debouncedSave]);
 
 
   const handleNodeClick = useCallback((event, node) => {

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom"; // Import the Link component
 import MyDropdown from "./menu";
 import usePersistentStore from "../state/persistentState.js";
-import useTransientStore from "../state/transientState.js";
+import useFlowStore from "../state/flowState.js";
 
 function Sidebar() {
   // const [clientList, setClientList] = useState([]);
@@ -21,9 +21,7 @@ function Sidebar() {
   });
   
   const clientList = usePersistentStore((state) => state.patients);
-  const patientID = useTransientStore((state) => state.patientID);
-  const setPatientID = useTransientStore((state) => state.setPatientID); 
-
+  const {patientId, setPatientId} = useFlowStore();
 
   const handleListParsing = (event) => {
     const inputValue = event.target.value;
@@ -49,10 +47,10 @@ function Sidebar() {
   };
   
   const handleSelection = (chosenPatient) => {
-    if (patientID === chosenPatient) {
-      return setPatientID("");
+    if (patientId === chosenPatient) {
+      return setPatientId("");
     } else {
-    return setPatientID(chosenPatient);
+    return setPatientId(chosenPatient);
     }
   };
   
@@ -76,9 +74,9 @@ function Sidebar() {
           
           {filteredClientList.length === 0 ? 
           Object.entries(clientList).map(([key,value]) => (
-            <li key={key} className={` ${patientID === key ? 'text-slate-600 text-s' : 'text-stone-200 text-xs '} `} onClick={() => handleSelection(key)}>
+            <li key={key} className={` ${patientId === key ? 'text-slate-600 text-s' : 'text-stone-200 text-xs '} `} onClick={() => handleSelection(key)}>
               {/* Create a Link for each patient */}
-              <Link to={patientID === key ? '/' : `/patients/${key}`}>
+              <Link to={patientId === key ? '/' : `/patients/${key}`}>
                 {value.Name} {value.Surname}
               </Link>
             </li>
@@ -86,9 +84,9 @@ function Sidebar() {
           query !== '' ? (<li>No results found for "{query}"</li>) 
           :
           filteredClientList.map(([key,value]) => (
-            <li key={key} className={` ${patientID === key ? 'text-slate-600 text-s' : 'text-stone-200 text-xs '} `} onClick={() => handleSelection(key)}>
+            <li key={key} className={` ${patientId === key ? 'text-slate-600 text-s' : 'text-stone-200 text-xs '} `} onClick={() => handleSelection(key)}>
               {/* Create a Link for each patient */}
-              <Link to={patientID === key ? '/' : `/patients/${key}`}>
+              <Link to={patientId === key ? '/' : `/patients/${key}`}>
                 {value.Name} {value.Surname}
               </Link>
             </li>
