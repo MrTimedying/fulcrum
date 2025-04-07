@@ -18,6 +18,7 @@ const useFlowStore = create((set, get) => ({
     set({ patientId: id }); 
     const { activeTab, hydrateBasedOnTab } = get();
     hydrateBasedOnTab(id, activeTab); 
+
   },
 
   // Change Tab (Profile or Editor) - Reacts to tab changes
