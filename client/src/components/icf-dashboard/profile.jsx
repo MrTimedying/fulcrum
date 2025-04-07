@@ -1,263 +1,364 @@
-import React, { useState } from "react";
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-import { Composer } from "./composer";
-import  Resume  from "./resume";
-import Timeline from "./timeline";
-// import { useSelector, useDispatch } from "react-redux";
-// import { newProfile, editProfile, deleteProfile } from "../../global/slices/profileSlice";
-import { createSelector } from "reselect";
+import React, { useRef, useCallback, useState, useMemo, useEffect } from "react";
+import { useShallow } from 'zustand/react/shallow';
+import { debounce } from "../utils";
+import {
+  useReactFlow,
+  ReactFlow,
+  Controls,
+  Background,
+  useNodesState,
+  useEdgesState,
+  reconnectEdge,
+  addEdge,
+  Handle,
+  applyEdgeChanges,
+  applyNodeChanges,
+} from "@xyflow/react";
+import "@xyflow/react/dist/style.css";
+import NodeMenu from "../editor/NodeMenu";
+import PaneMenu from "./PaneMenu"; // Specific Node Context Menu
+import { v4 as uuidv4 } from "uuid";
+import useFlowStore from "../../state/flowState";
+import useTransientStore from "../../state/transientState";
+import {ProfileNode, BodyStructureNode, ActivitiesNode, ParticipationNode} from "./nodes";
 
-const Profile = ({patientID}) => {
-  const [bodystructures, setBodyStructures] = useState([]);
-  const [activities_participation, setActivitiesParticipation] = useState([]);
-  const [environmental_factors, setEnvironmentalFactors] = useState([]);
-  const [personal_factors, setPersonalFactors] = useState([]);
-  const [isOpenComposer, setIsOpenComposer] =useState(false);
-  const [tableData, setTableData] = useState([]);
-  const [itemSelected, setItemSelected] = useState([]);
-  const [itemEdit, setItemEdit] = useState([]);
-  const [cards, setCards] = useState([]);
+// COLUMNS FOR THE COMPOSER
 
-  // const dispatch = useDispatch();
+// Updated columnTemplates
+const columnTemplates = {
+  profile: [
+    { title: "ID", field: "id", width: 100, editor: "textarea" },
+    { title: "Name", field: "name", width: 150, editor: "textarea" },
+    { title: "Surname", field: "surname", width: 150, editor: "textarea" },
+    { title: "Age", field: "age", width: 100, editor: "number" },
+    { title: "Gender", field: "gender", width: 100, editor: "select", editorParams: { options: ["Male", "Female", "Other"] } },
+    { title: "Height", field: "height", width: 100, editor: "number" },
+    { title: "Weight", field: "weight", width: 100, editor: "number" },
+  ],
+};
 
-  const getProfile = createSelector(
-    state => state.profile,
-    (_,patientID) => patientID,
-    (profile,patientID) => profile?.find(profile => profile.id === patientID)
+// Updated dataTemplates
+const dataTemplates = {
+  profile: () => ({
+    id: uuidv4(),
+    name: "New Profile",
+  }),
+  bodyStructure: () => ({
+    id: uuidv4(),
+    name: "New Body Structure",
+  }),
+  activities: () => ({
+    id: uuidv4(),
+    name: "New Activity",
+  }),
+  participation: () => ({
+    id: uuidv4(),
+    name: "New Participation",
+  }),
+};
+
+// Updated nodeTemplates
+const nodeTemplates = {
+  profile: {
+    type: "profile",
+  },
+  bodyStructure: {
+    type: "bodyStructure",
+  },
+  activities: {
+    type: "activities",
+  },
+  participation: {
+    type: "participation",
+  },
+};
+
+
+
+const selector = (state) => ({
+  nodes: state.nodes,
+  edges: state.edges,
+  setNodes: state.setNodes,
+  setEdges: state.setEdges,
+  onNodesChange: state.onNodesChange,
+  onEdgesChange: state.onEdgesChange,
+  selectedNodeId: state.selectedNodeId,
+  setSelectedNodeId: state.setSelectedNodeId,
+  columnsLayout: state.columnsLayout,
+  setColumnsLayout: state.setColumnsLayout,
+});
+
+function Profile({isModalOpen}) {
+  // STATE MANAGEMENT
+  const { patientId, setToaster } = useTransientStore();
+  const {
+    nodes,
+    edges,
+    setNodes,
+    setEdges,
+    onNodesChange,
+    onEdgesChange,
+    selectedNodeId,
+    setSelectedNodeId,
+    columnsLayout,
+    setColumnsLayout,
+  } = useFlowStore(useShallow(selector));
+
+  useEffect(() => {
+    console.log("Is the modal open?", isModalOpen);
+  },[isModalOpen]);
+ 
+
+  // const debouncedSave = useMemo(
+  //   () => debounce((n, e) => saveFlowState(patientId, n, e), 1000),
+  //   [patientId]
+  // );
+
+
+
+  const handleNodeClick = useCallback((event, node) => {
+    event.stopPropagation();
+    if (selectedNodeId?.id === node.id && node.selected) {
+      console.log("Data of the node", node.data);
+      console.log("Node structure", node);
+      onNodesChange([
+        {
+          id: node.id,
+          type: 'select',
+          selected: false
+        }
+      ]);
+      setColumnsLayout([]);
+      setSelectedNodeId(null);
+    } else {
+      // First deselect all nodes (optional, only if you want single selection)
+      const deselectChanges = nodes
+        .filter(n => n.selected)
+        .map(n => ({
+          id: n.id,
+          type: 'select',
+          selected: false
+        }));
+      
+      // Then select the clicked node
+      const selectChange = {
+        id: node.id,
+        type: 'select',
+        selected: true
+      };
+
+      setColumnsLayout((columnTemplates[node.type] || []));
+      
+      
+      // Apply all changes
+      onNodesChange([...deselectChanges, selectChange]);
+      setSelectedNodeId({id: node.id, type: node.type});
+    }
+  }, [selectedNodeId, nodes, onNodesChange]);
+
+  
+
+
+  const handlePaneClick = useCallback((event) => {
+    const isPaneClick = event.target.classList.contains('react-flow__pane') || 
+                       event.target.classList.contains('react-flow__background');
+    
+    if (isPaneClick) {
+      console.log("Genuine pane click detected");
+      setSelectedNodeId(null);
+      setColumnsLayout([]);
+    } else {
+      console.log("Click was on another element, not processing as pane click");
+    }
+  }, [setSelectedNodeId, setColumnsLayout]);
+  
+
+
+  const [nodeMenu, setNodeMenu] = useState({
+    isOpen: false,
+    position: { x: 0, y: 0 },
+    targetNode: null,
+  });
+
+  const [paneMenu, setPaneMenu] = useState({
+    isOpen: false,
+    position: { x: 0, y: 0 },
+  });
+
+  const closeMenus = useCallback(() => {
+    setNodeMenu({ isOpen: false, position: { x: 0, y: 0 }, targetNode: null });
+    setPaneMenu({ isOpen: false, position: { x: 0, y: 0 } });
+  }, []);
+
+  // EDGE MANAGEMENT
+  const edgeReconnectSuccessful = useRef(false);
+  const onConnect = useCallback((params) => setEdges((eds) => addEdge(params, eds)), []);
+  const onReconnectStart = useCallback(() => {
+    edgeReconnectSuccessful.current = false;
+  }, []);
+  const onReconnect = useCallback((oldEdge, newConnection) => {
+    edgeReconnectSuccessful.current = true; // Reconnection successful
+    setEdges((eds) => reconnectEdge(oldEdge, newConnection, eds));
+  }, []);
+  const onReconnectEnd = useCallback(
+    (_, edge) => {
+      if (!edgeReconnectSuccessful.current) {
+        setEdges((eds) => eds.filter((e) => e.id !== edge.id)); // Remove edge
+      }
+      edgeReconnectSuccessful.current = true; // Reset
+    },
+    []
+  );
+
+  const isValidConnection = useCallback(
+    (connection) => {
+      // Find the source and target nodes in the nodes state array
+      const sourceNode = nodes.find((node) => node.id === connection.source);
+      const targetNode = nodes.find((node) => node.id === connection.target);
+  
+      // Rule 1: Do not allow self connections
+      if (connection.source === connection.target) {
+        return false;
+      }
+  
+      // Rule 2: Ensure hierarchical structure
+      const validConnections = {
+        intervention: ["phase"], // Intervention can only connect to Phase
+        phase: ["micro"],        // Phase can only connect to Micro
+        micro: ["session"],      // Micro can only connect to Session
+      };
+  
+      // Get the type of source and target nodes
+      const allowedTargetTypes = validConnections[sourceNode?.type] || [];
+      if (!allowedTargetTypes.includes(targetNode?.type)) {
+        return false; // Not a valid connection type
+      }
+  
+      return true; // The connection is valid
+    },
+    [nodes] // Ensure this function recomputes when nodes change
   );
   
-  // const profile = useSelector(state => getProfile(state,patientID));
+
+  // NODE CONTEXT MENU HANDLING
+  const onNodeContextMenu = useCallback((event, node) => {
+    event.preventDefault();
+    setNodeMenu({ isOpen: true, position: { x: event.clientX, y: event.clientY }, targetNode: node });
+    setPaneMenu({ isOpen: false }); // Close PaneMenu
+  }, []);
+
+  // PANE CONTEXT MENU HANDLING
+  const onPaneContextMenu = useCallback((event) => {
+    event.preventDefault();
+    setPaneMenu({ isOpen: true, position: { x: event.clientX, y: event.clientY } });
+    setNodeMenu({ isOpen: false }); // Close NodeMenu
+  }, []);
+
+  // ACTION HANDLERS FOR MENUS
+  const reactFlowInstance = useReactFlow();
+
+  const validateNodeAddition = (type, nodes) => {
+    if (type === "intervention" && nodes.some((n) => n.type === "intervention")) {
+      return false; // Prevent adding multiple "intervention" nodes
+    }
+    return true; // Other node types can be added without restriction
+  };
+
+  const addNode = (position, type) => {
+    const canvasPosition = reactFlowInstance.screenToFlowPosition(position);
   
-
-  // suspended temporarely due to multiple interventions per patient implementation
-
-
-  console.log("Profile Component Rendered");
-
-  const updatingProfileData = () => {
-
-    const values = {
-      id: patientID,
-      timeline: JSON.stringify(cards),
-      body: JSON.stringify(bodystructures),
-      activities: JSON.stringify(activities_participation),
-      environment: JSON.stringify(environmental_factors),
-      personal: JSON.stringify(personal_factors)
+    // Validate node addition for types like "intervention"
+    if (!validateNodeAddition(type, nodes)) {
+      setToaster({ type: "error", message: "Only one intervention node is allowed", show: true });
+      return;
+    }
+  
+    // Dynamically create node based on type
+    const id = uuidv4();
+    const newNode = {
+      id,
+      position: canvasPosition,
+      data: dataTemplates[type]?.() || {}, // Generate node data dynamically
+      ...(nodeTemplates[type] || { type, data: {} }), // Use template or fallback
     };
-
-    if (profile === undefined) {
-      dispatch(newProfile(values));
-    } else {
-      dispatch(editProfile(values));
-    }    
+  
+    // Add the new node to the flow
+    setNodes((nds) => [...nds, newNode]);
+    closeMenus(); // Close any open context menus
   };
 
-  const eliminateProfile = (patientID) => {
-  dispatch(deleteProfile({id:patientID}));
+  const zoomToFit = () => {
+    console.log("Zooming to fit graph...");
+    closeMenus();
   };
 
-  const selectionSetter = (item) => {
-    setItemSelected(item.category); 
-    setItemEdit(item);
-    console.log(itemSelected);
-  }; 
-
-  const EditItemHandler = (item) => {
-    console.log(item);
-    const newRow = item;
-    setTableData([...tableData, newRow]);  
-    setIsOpenComposer(true);
-
-  };
-
-  const onDragEnd = (result) => {
-    if (!result.destination) return;
-
-  console.log('Droppable ID:', result.destination.droppableId);
-  console.log('Source Index:', result.source.index);
-  console.log('Destination Index:', result.destination.index);
-
-    let updatedItems;
-
-    switch (result.destination.droppableId) {
-      case 'bodystructures':
-        updatedItems = Array.from(bodystructures);
-        break;
-      case 'activities_participation':
-        updatedItems = Array.from(activities_participation);
-        break;
-      case 'environmental_factors':
-        updatedItems = Array.from(environmental_factors);
-        break;
-      case 'personal_factors':
-        updatedItems = Array.from(personal_factors);
-        break;
-      default:
-        return;
+  const editNode = (node) => {
+    const newLabel = prompt("Edit node label:", node.data.label);
+    if (newLabel) {
+      setNodes((nds) =>
+        nds.map((n) => (n.id === node.id ? { ...n, data: { ...n.data, label: newLabel } } : n))
+      );
     }
+    closeMenus();
+  };
 
-    const [movedItem] = updatedItems.splice(result.source.index, 1);
-    updatedItems.splice(result.destination.index, 0, movedItem);
-
-    switch (result.destination.droppableId) {
-      case 'bodystructures':
-        setBodyStructures(updatedItems);
-        break;
-      case 'activities_participation':
-        setActivitiesParticipation(updatedItems);
-        break;
-      case 'environmental_factors':
-        setEnvironmentalFactors(updatedItems);
-        break;
-      case 'personal_factors':
-        setPersonalFactors(updatedItems);
-        break;
-      default:
-        return;
-    }
+  const deleteNode = (node) => {
+    setNodes((nds) => nds.filter((n) => n.id !== node.id)); // Remove node
+    setEdges((eds) => eds.filter((e) => e.source !== node.id && e.target !== node.id)); // Remove edges
+    closeMenus();
   };
 
   return (
-    <div className="icf-profile">
-      <Resume
-        patientID = {patientID} />
-      <Timeline cards={cards} setCards={setCards} />
-      <Composer
-          setBodyStructures={setBodyStructures}
-          setActivitiesParticipation={setActivitiesParticipation}
-          setEnvironmentalFactors={setEnvironmentalFactors}
-          setPersonalFactors={setPersonalFactors}
-          isOpenComposer={isOpenComposer}
-          setIsOpenComposer={setIsOpenComposer}
-          tableData={tableData}
-          setTableData={setTableData}
-          
+    <div
+      id="wrapper"
+      className="flex flex-row h-full overflow-y-auto"
+      onClick={closeMenus} // Close the context menu on a click outside
+    >
+      <div id="left-block" className="bg-zinc-900 flex flex-col mt-5 h-full w-full overflow-y-auto">
+        {/* React Flow Canvas */}
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          onReconnectStart={onReconnectStart}
+          onReconnect={onReconnect}
+          onReconnectEnd={onReconnectEnd}
+          isValidConnection={isValidConnection}
+          onNodeClick={handleNodeClick}
+          onPaneClick={handlePaneClick}
+          onNodeContextMenu={onNodeContextMenu}
+          onPaneContextMenu={onPaneContextMenu} // Enable Node Context Menu
+          nodeTypes={{
+            profile: ProfileNode,
+            bodyStructure: BodyStructureNode,
+            activities: ActivitiesNode,
+            participation: ParticipationNode,
+          }}
+          fitView
+        >
+          <Background variant="dots" />
+          <Controls />
+        </ReactFlow>
+
+        {/* Node Context Menu */}
+        <NodeMenu
+          isOpen={nodeMenu.isOpen && nodeMenu.targetNode}
+          position={nodeMenu.position}
+          targetNode={nodeMenu.targetNode}
+          actions={{ editNode, deleteNode }}
+          onClose={closeMenus}
         />
-        <button className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2 px-2 py-2 rounded-md cursor-pointer text-sm" onClick={() => EditItemHandler(itemEdit)}>Edit Item</button>
-      
-      <div className="icf-droppables grid grid-cols-4 gap-4">
-        <DragDropContext onDragEnd={onDragEnd}>
-          <Droppable droppableId="bodystructures" direction="vertical">
-            {(provided) => (
-              <div
-                ref={provided.innerRef}
-                {...provided.droppableProps}
-                className="icf-column"
-              >
-                <h3 className="text-slate-300 font-mono bg-zinc-900 p-2 rounded-t-lg">Body and Structures</h3>
-                {bodystructures.map((item, index) => (
-                  <Draggable key={item.category} draggableId={item.category} index={index}>
-                    {(provided) => (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.draggableProps}
-                        {...provided.dragHandleProps}
-                        className={`icf-item bg-white p-2 mb-2 text-slate-300 font-mono rounded ${itemSelected === item.category? 'bg-zinc-600' : 'bg-zinc-800'}`}
-                        onClick={() => selectionSetter(item)}
-                      >
-                        {item.category} - {item.label} - {item.score}
-                      </div>
-                    )}
-                  </Draggable>
-                ))}
-                {provided.placeholder}
-              </div>
-            )}
-          </Droppable>
-          </DragDropContext>
-        <DragDropContext onDragEnd={onDragEnd}>
-          <Droppable droppableId="activities_participation" direction="vertical">
-            {(provided) => (
-              <div
-                ref={provided.innerRef}
-                {...provided.droppableProps}
-                className="icf-column"
-              >
-                <h3 className="text-slate-300 font-mono bg-zinc-900 p-2 rounded-t-lg">Activities and Participation</h3>
-                {activities_participation.map((item, index) => (
-                  <Draggable key={item.category} draggableId={item.category} index={index}>
-                    {(provided) => (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.draggableProps}
-                        {...provided.dragHandleProps}
-                        className={`icf-item bg-white p-2 mb-2 text-slate-300 font-mono rounded ${itemSelected === item.category? 'bg-zinc-600' : 'bg-zinc-800'}`}
-                        onClick={() => selectionSetter(item)}
-                      >
-                        {item.category} - {item.label} - {item.score}
-                      </div>
-                    )}
-                  </Draggable>
-                ))}
-                {provided.placeholder}
-              </div>
-            )}
-          </Droppable>
-          </DragDropContext>
-        <DragDropContext onDragEnd={onDragEnd}> 
-          <Droppable droppableId="environmental_factors" direction="vertical">
-            {(provided) => (
-              <div
-                ref={provided.innerRef}
-                {...provided.droppableProps}
-                className="icf-column"
-              >
-                <h3 className="text-slate-300 font-mono bg-zinc-900 p-2 rounded-t-lg">Environmental Factors</h3>
-                {environmental_factors.map((item, index) => (
-                  <Draggable key={item.category} draggableId={item.category} index={index}>
-                    {(provided) => (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.draggableProps}
-                        {...provided.dragHandleProps}
-                        className={`icf-item bg-white p-2 mb-2 text-slate-300 font-mono rounded ${itemSelected === item.category? 'bg-zinc-600' : 'bg-zinc-800'}`}
-                        onClick={() => selectionSetter(item)}
-                      >
-                        {item.category} - {item.label} - {item.score}
-                      </div>
-                    )}
-                  </Draggable>
-                ))}
-                {provided.placeholder}
-              </div>
-            )}
-          </Droppable>
-          </DragDropContext>
-        <DragDropContext onDragEnd={onDragEnd}>  
-          <Droppable droppableId="personal_factors" direction="vertical">
-            {(provided) => (
-              <div
-                ref={provided.innerRef}
-                {...provided.droppableProps}
-                className="icf-column"
-                
-              >
-                <h3 className="text-slate-300 font-mono bg-zinc-900 p-2 rounded-t-lg">Personal Factors</h3>
-                {personal_factors.map((item, index) => (
-                  <Draggable key={item.category} draggableId={item.category} index={index}>
-                    {(provided) => (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.draggableProps}
-                        {...provided.dragHandleProps}
-                        className={`icf-item bg-white p-2 mb-2 text-slate-300 font-mono rounded ${itemSelected === item.category? 'bg-zinc-600' : 'bg-zinc-800'}`}
-                        onClick={() => selectionSetter(item)}
-                      >
-                        {item.category} - {item.label} - {item.score}
-                      </div>
-                    )}
-                  </Draggable>
-                ))}
-                {provided.placeholder}
-              </div>
-            )}
-          </Droppable>
-          </DragDropContext>
-        </div>
-        <button className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2 px-2 py-2 rounded-md cursor-pointer text-sm" onClick={updatingProfileData}>Save Profile</button>
-        <button className="bg-zinc-950 hover:bg-black/30 text-slate-300 font-mono m-2 px-2 py-2 rounded-md cursor-pointer text-sm" onClick={() => eliminateProfile(patientID)}>Delete Profile</button>
+        <PaneMenu
+          isOpen={paneMenu.isOpen}
+          position={paneMenu.position}
+          actions={{ addNode, zoomToFit }}
+          onClose={closeMenus}
+        />
+      </div>
     </div>
   );
-};
+}
 
-export default Profile;
+export default React.memo(Profile);

@@ -130,8 +130,10 @@ function MainBody() {
         </div>
 
         <Tab.Panels className="h-full overflow-y-auto">
-          <Tab.Panel key="icfProfile">
+          <Tab.Panel key="icfProfile" className="h-full">
+          <ReactFlowProvider>
             <Profile />
+            </ReactFlowProvider>
           </Tab.Panel>
           <Tab.Panel key="internvetionEditor" className="h-full">
             <ReactFlowProvider>

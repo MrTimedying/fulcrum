@@ -15,7 +15,7 @@ import {
   applyNodeChanges,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import NodeMenu from "./nodeMenu";
+import NodeMenu from "./NodeMenu";
 import PaneMenu from "./paneMenu"; // Specific Node Context Menu
 import { v4 as uuidv4 } from "uuid";
 import useFlowStore from "../../state/flowState";
@@ -330,6 +330,7 @@ function Editor({isModalOpen}) {
       className="flex flex-row h-full overflow-y-auto"
       onClick={closeMenus} // Close the context menu on a click outside
     >
+
       <div id="left-block" className="bg-zinc-900 flex flex-col mt-5 h-full w-full overflow-y-auto">
         {/* React Flow Canvas */}
         <ReactFlow

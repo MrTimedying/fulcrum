@@ -2,10 +2,6 @@ import React from "react";
 import ContextMenu from "./ContextMenu.jsx";
 
 
-
-
-
-
 const NodeMenu = ({ isOpen, position, onClose, targetNode, actions }) => {
   if (!isOpen || !targetNode) return null; 
 
