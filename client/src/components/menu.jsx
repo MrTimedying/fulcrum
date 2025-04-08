@@ -3,15 +3,13 @@ import { Fragment, useState } from 'react'
 import { ChevronDownIcon } from '@heroicons/react/20/solid'
 import { useNavigate } from "react-router-dom";
 import NpForm from './npform';
-import usePersistentStore from '../state/persistentState';
 import useFlowStore from '../state/flowState';
 
 export default function MyDropdown({ formData, setFormData, setFetchingSwitch}) {
   const [isNpFormModalOpen, setIsNpFormModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const navigate = useNavigate();
-  const { removePatient } = usePersistentStore();
-  const { patientId } = useFlowStore();
+  const { patientId, setPatientId, removePatient } = useFlowStore();
 
   const closeNpFormModal = () => {
     setIsNpFormModalOpen(false);
@@ -52,7 +50,8 @@ export default function MyDropdown({ formData, setFormData, setFetchingSwitch}) 
 
   const handlePatientDelete = (patientId) => {
     removePatient(patientId);
-    navigate(`/`)
+    navigate(`/`);
+    setPatientId("");
 };
 
 

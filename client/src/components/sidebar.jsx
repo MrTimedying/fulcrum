@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom"; // Import the Link component
 import MyDropdown from "./menu";
-import usePersistentStore from "../state/persistentState.js";
 import useFlowStore from "../state/flowState.js";
 
 function Sidebar() {
@@ -20,8 +19,8 @@ function Sidebar() {
     Status: "",
   });
   
-  const clientList = usePersistentStore((state) => state.patients);
-  const {patientId, setPatientId} = useFlowStore();
+  const clientList = useFlowStore((state) => state.patients);
+  const {patientId, setPatientId, setTrailingPatientId} = useFlowStore();
 
   const handleListParsing = (event) => {
     const inputValue = event.target.value;
@@ -47,6 +46,7 @@ function Sidebar() {
   };
   
   const handleSelection = (chosenPatient) => {
+
     if (patientId === chosenPatient) {
       return setPatientId("");
     } else {

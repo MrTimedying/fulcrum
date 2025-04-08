@@ -13,7 +13,7 @@ import { Composer } from "./editor/composer";
 Modal.setAppElement('#root');
 
 function MainBody() {
-  const {patientId, setActiveTab, activeTab, editorStates, profileStates } = useFlowStore();
+  const {patientId, activeTab, setActiveTab, setTrailingActiveTab } = useFlowStore();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -90,6 +90,12 @@ function MainBody() {
   }
 
   function TabStructure() {
+
+    const handleActiveTab = (tab) => {
+      setActiveTab(tab);
+    };
+
+
     return (
       <Tab.Group as="div" className="flex flex-col h-full w-full">
         <div className="grid grid-cols-11 h-14 bg-zinc-850 w-full mb-2">
@@ -98,7 +104,7 @@ function MainBody() {
               <Tab as={Fragment}>
                 {({ selected }) => (
                   <button
-                    onClick={() => setActiveTab('Profile')}
+                    onClick={() => handleActiveTab('Profile')}
                     className={`my-2 ${
                       selected
                         ? "mx-2 rounded-none text-gray-300 hover:text-white p-1 cursor-pointer focus:outline-none focus:text-white font-medium transition duration-300 border-b-2 border-indigo-500"
@@ -112,7 +118,7 @@ function MainBody() {
               <Tab as={Fragment}>
                 {({ selected }) => (
                   <button
-                    onClick={() => setActiveTab('Editor')}
+                    onClick={() => handleActiveTab('Editor')}
                     className={`my-2 ${
                       selected
                         ? "mx-2 rounded-none text-gray-300 hover:text-white p-1 cursor-pointer focus:outline-none focus:text-white font-medium transition duration-300 border-b-2 border-indigo-500"
@@ -155,6 +161,15 @@ function MainBody() {
     return (
       <div className="w-4/5 flex items-center justify-center text-stone-400 bg-neutral-800 p-4 h-full" style={{borderLeft: "solid 2px #1c1c1c"}}>
         Select a patient to view their information.
+        <button 
+  onClick={() => {
+    localStorage.removeItem('flow-store');
+    window.location.reload();
+  }}
+  style={{ position: 'fixed', bottom: 10, right: 10 }}
+>
+  Reset Store
+</button>
       </div>
     );
   }

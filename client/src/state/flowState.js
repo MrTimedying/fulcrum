@@ -1,124 +1,231 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import { applyNodeChanges, applyEdgeChanges } from "@xyflow/react";
+import * as _ from "lodash";
 
-const useFlowStore = create((set, get) => ({
-  // Map to store flow states by patientId
-  patientId: "",
-  activeTab: "Profile",
-  editorStates: {},
-  profileStates: {},
-  selectedNodeId: [],
-  columnsLayout: [],
-  rowsData: [],
-  nodes: [],  // Global nodes
-  edges: [],  // Global edges
+const useFlowStore = create(
+  persist(
+    (set, get) => ({
+      // Map to store flow states by patientId
+      patientId: "",
+      trailingPatientId: "",
+      activeTab: "Profile",
+      trailingActiveTab: "",
+      patients: {},
+      editorStates: {},
+      profileStates: {},
+      selectedNodeId: [],
+      columnsLayout: [],
+      rowsData: [],
+      nodes: [], // Global nodes
+      edges: [], // Global edges
 
-  
-  setPatientId: (id) => {
-    set({ patientId: id }); 
-    const { activeTab, hydrateBasedOnTab } = get();
-    hydrateBasedOnTab(id, activeTab); 
-
-  },
-
-  // Change Tab (Profile or Editor) - Reacts to tab changes
-  setActiveTab: (tab) => {
-    set({ activeTab: tab }); // Update activeTab in the store
-    const { patientId, hydrateBasedOnTab } = get();
-    if (patientId) {
-      hydrateBasedOnTab(patientId, tab); // Rehydrate if already on a patient
-    }
-  },
-
-  // Hydrate nodes and edges based on activeTab
-  hydrateBasedOnTab: (patientId, activeTab) => {
-    console.log("Hydrating for PatientId:", patientId, "Tab:", activeTab);
-    console.log("EditorStates:", get().editorStates);
-    console.log("ProfileStates:", get().profileStates);
-  
-    if (activeTab === "Editor") {
-      const editorState = get().editorStates[patientId];
-      console.log("Editor State:", editorState);
-      if (editorState) {
-        set({
-          nodes: editorState.nodes || [],
-          edges: editorState.edges || [],
-        });
-      } else {
-        console.warn(`No editor state found for patientId: ${patientId}`);
-      }
-    } else if (activeTab === "Profile") {
-      const profileState = get().profileStates[patientId];
-      console.log("Profile State:", profileState);
-      if (profileState) {
-        set({
-          nodes: profileState.nodes || [],
-          edges: profileState.edges || [],
-        });
-      } else {
-        console.warn(`No profile state found for patientId: ${patientId}`);
-      }
-    }
-  },
-  
-
-  onNodesChange: (changes) => {
-    set((state) => ({
-      nodes: applyNodeChanges(changes, state.nodes),
-    }));
-  },
-  onEdgesChange: (changes) => {
-    set((state) => ({
-      edges: applyEdgeChanges(changes, state.edges),
-    }));
-  },
-  
-  setNodes: (payload) => {
-    set((state) => ({
-      nodes: typeof payload === "function" ? payload(state.nodes) : payload,
-    }));
-  },
-  // `setEdges` Implementation
-  setEdges: (payload) => {
-    set((state) => ({
-      edges: typeof payload === "function" ? payload(state.edges) : payload,
-    }));
-  },
-  
-  
-  initializeFlowState: (patientId) => {
-    const flowState = get().flowStates[patientId] || { nodes: [], edges: [] };
-    set({ nodes: flowState.nodes, edges: flowState.edges });
-  },
-
-  // Save Editor State
-  setEditorState: (patientId) => {
-    const { nodes, edges } = get();
-    set((state) => ({
-      editorStates: {
-        ...state.editorStates,
-        [patientId]: { nodes, edges },
+      setPatientId: (id) => {
+        if (id === "") {
+          return set({ patientId: id });
+        }
+        const { activeTab, patientId, hydrateFlowState } = get();
+        console.log("Saving state for patient:", patientId);
+        if (patientId) {
+          // Only save if there was a previous patient
+          if (activeTab === "Profile") {
+            get().setProfileState(patientId);
+          } else if (activeTab === "Editor") {
+            get().setEditorState(patientId);
+          }
+        }
+        set({ patientId: id, trailingPatientId: patientId });
+        set({ nodes: [], edges: [] });
+        hydrateFlowState(id, activeTab);
       },
-    }));
-  },
 
-  // Save Profile State
-  setProfileState: (patientId) => {
-    const { nodes, edges } = get();
-    set((state) => ({
-      profileStates: {
-        ...state.profileStates,
-        [patientId]: { nodes, edges },
+      // In setActiveTab function: add explicit saving at the beginning
+      setActiveTab: (tab) => {
+        const { patientId, hydrateFlowState, tabStateLogic, activeTab } = get();
+
+        // Explicitly save current state before switching
+        console.log("Saving state for tab:", activeTab);
+        if (activeTab === "Profile") {
+          get().setProfileState(patientId);
+        } else if (activeTab === "Editor") {
+          get().setEditorState(patientId);
+        }
+
+        // Continue with existing logic
+        set({ trailingActiveTab: activeTab, activeTab: tab });
+        tabStateLogic(activeTab, patientId); // Note: now passing activeTab, not trailing
+        set({ nodes: [], edges: [] });
+        hydrateFlowState(patientId, tab);
       },
-    }));
-  },
 
-  setSelectedNodeId: (nodeId) => set((state) => ({ ...state, selectedNodeId: nodeId})),
+      setTrailingActiveTab: (tab) => {
+        set({ trailingActiveTab: tab }); // Update trailingActiveTab in the store
+      },
 
-  setColumnsLayout: (layout) => set((state) => ({... state, columnsLayout: layout})),
+      // Hydrate nodes and edges based on activeTab
+      hydrateFlowState: (patientId, activeTab) => {
+        // set({ nodes: [], edges: [] });
 
-  setRowsData: (data) => set((state) => ({... state, rowsData: data})),
+        const { editorStates, profileStates } = get();
 
-}));
+        if (activeTab === "Editor") {
+          const editorState = editorStates[patientId] || {
+            nodes: [],
+            edges: [],
+          };
+          if (editorState) {
+            set({
+              nodes: editorState.nodes || [],
+              edges: editorState.edges || [],
+            });
+          }
+        } else if (activeTab === "Profile") {
+          const profileState = profileStates[patientId] || {
+            nodes: [],
+            edges: [],
+          };
+          if (profileState) {
+            set({
+              nodes: profileState.nodes || [],
+              edges: profileState.edges || [],
+            });
+          } else {
+            return;
+          }
+        }
+      },
+
+      patientStateLogic: (trailingPatientId, activeTab) => {
+        if (trailingPatientId === "") {
+          return;
+        }
+        const { setProfileState, setEditorState } = get();
+        if (activeTab === "Editor") {
+          setEditorState(trailingPatientId);
+        } else if (activeTab === "Profile") {
+          setProfileState(trailingPatientId);
+        }
+      },
+
+      // Comment out the entire logic in tabStateLogic
+      tabStateLogic: (trailingActiveTab, patientId) => {
+        console.log("Tab logic triggered - trailing tab:", trailingActiveTab);
+        // Temporarily comment out all state saving logic
+        // if (trailingActiveTab === "Editor") {
+        //   setEditorState(patientId);
+        // } else if (trailingActiveTab === "Profile") {
+        //   setProfileState(patientId);
+        // }
+      },
+
+      onNodesChange: (changes) => {
+        set((state) => ({
+          nodes: applyNodeChanges(changes, state.nodes),
+        }));
+      },
+      onEdgesChange: (changes) => {
+        set((state) => ({
+          edges: applyEdgeChanges(changes, state.edges),
+        }));
+      },
+
+      setNodes: (payload) => {
+        set((state) => ({
+          nodes: typeof payload === "function" ? payload(state.nodes) : payload,
+        }));
+      },
+      // `setEdges` Implementation
+      setEdges: (payload) => {
+        set((state) => ({
+          edges: typeof payload === "function" ? payload(state.edges) : payload,
+        }));
+      },
+
+      initializeFlowState: (patientId) => {
+        const flowState = get().flowStates[patientId] || {
+          nodes: [],
+          edges: [],
+        };
+        set({ nodes: flowState.nodes, edges: flowState.edges });
+      },
+
+      // Save Editor State
+      setEditorState: (patientId) => {
+        const { nodes, edges } = get();
+        console.log("Saving to Profile state:", nodes.length, "nodes");
+        set((state) => ({
+          editorStates: {
+            ...state.editorStates,
+            [patientId]: { nodes, edges },
+          },
+        }));
+      },
+
+      // Save Profile State
+      setProfileState: (patientId) => {
+        const { nodes, edges } = get();
+        console.log("Saving to Editor state:", nodes.length, "nodes");
+        set((state) => ({
+          profileStates: {
+            ...state.profileStates,
+            [patientId]: { nodes, edges },
+          },
+        }));
+      },
+
+      // CREATING A NEW PATIENT REQUIRES INITIALIZATION OF THE STATE
+
+      setNewEditor: (patientId) => {
+        set((state) => ({
+          editorStates: {
+            ...state.editorStates,
+            [patientId]: { nodes: [], edges: [] },
+          },
+        }));
+      },
+
+      setNewProfile: (patientId) => {
+        set((state) => ({
+          profileStates: {
+            ...state.profileStates,
+            [patientId]: { nodes: [], edges: [] },
+          },
+        }));
+      },
+
+      setSelectedNodeId: (nodeId) =>
+        set((state) => ({ ...state, selectedNodeId: nodeId })),
+
+      setColumnsLayout: (layout) =>
+        set((state) => ({ ...state, columnsLayout: layout })),
+
+      setRowsData: (data) => set((state) => ({ ...state, rowsData: data })),
+
+      addPatient: (patientId, patientDetails) => {
+        set((state) => ({
+          patients: {
+            ...state.patients,
+            [patientId]: { ...state.patients[patientId], ...patientDetails },
+          },
+        }));
+      },
+
+      removePatient: (patientId) => {
+        set((state) => {
+          const { [patientId]: _, ...updatedPatients } = state.patients;
+          return { patients: updatedPatients };
+        });
+      },
+    }),
+    {
+      name: "flow-store",
+      partialize: (state) => ({
+        patients: state.patients,
+        editorStates: state.editorStates,
+        profileStates: state.profileStates,
+      }),
+    }
+  )
+);
 
 export default useFlowStore;

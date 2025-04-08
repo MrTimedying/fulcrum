@@ -87,7 +87,6 @@ const selector = (state) => ({
 function Profile({isModalOpen}) {
   // STATE MANAGEMENT
   const { setToaster } = useTransientStore();
-  const { patientId, activeTab, setProfileState } = useFlowStore();
   const {
     nodes,
     edges,
@@ -101,17 +100,6 @@ function Profile({isModalOpen}) {
     setColumnsLayout,
   } = useFlowStore(useShallow(selector));
  
-
-  // const debouncedSave = useMemo(
-  //   () => debounce((nodes, edges) => setProfileState(patientId, nodes, edges), 1000),
-  //   [patientId]
-  // );
-
-  // useEffect(() => {
-  //   debouncedSave(nodes, edges);
-  //   console.log("Save is being fired!")
-  // }, [nodes, edges, debouncedSave]);
-
 
 
   const handleNodeClick = useCallback((event, node) => {
