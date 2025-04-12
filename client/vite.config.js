@@ -1,14 +1,16 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import path from 'path';
 
 export default defineConfig({
-  base: '/',
+  base: './', // Use relative paths to make assets work with file:// protocol
   plugins: [react()],
-  css: {
-    postcss: './postcss.config.js'
-  },
   build: {
-    outDir: '../build', // Adjust if needed
+    outDir: path.join(__dirname, '../build'), // Ensure correct output folder
+    emptyOutDir: true, // Clean the output directory before each build
+  },
+  css: {
+    postcss: './postcss.config.js',
   },
   server: {
     port: 3000,

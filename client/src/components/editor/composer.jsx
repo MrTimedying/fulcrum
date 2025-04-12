@@ -7,13 +7,14 @@ import { v4 as uuidv4 } from "uuid";
 export const Composer = () => {
   const { columnsLayout, selectedNodeId, nodes, setNodes } = useFlowStore();
   const [selectedRows, setSelectedRows] = useState([]);
+  const selectedNode = nodes.find((node) => node.selected);
 
   // Retrieve the data of the selected node
   const rowsData = (() => {
-    const selectedNode = nodes.find((node) => node.id === selectedNodeId.id);
+    const selectedNode = nodes.find((node) => node.selected);
 
     if (!selectedNode) {
-      console.error("No node found for the selectedNodeId:", selectedNodeId);
+      console.error("No selected node found");
       return [];
     }
 
@@ -22,7 +23,7 @@ export const Composer = () => {
 
   // Separate data specifically for exercises (if present)
   const exercisesData = (() => {
-    const selectedNode = nodes.find((node) => node.id === selectedNodeId.id);
+    const selectedNode = nodes.find((node) => node.selected);
 
     if (!selectedNode || !selectedNode.data.exercises) {
       return [];
@@ -38,7 +39,7 @@ export const Composer = () => {
 
     setNodes((prevNodes) =>
       prevNodes.map((node) =>
-        node.id === selectedNodeId.id
+        node.selected
           ? {
               ...node,
               data: { ...node.data, [field]: value }, // Update `data` property immutably
@@ -58,7 +59,7 @@ export const Composer = () => {
     setNodes((prevNodes) =>
       prevNodes.map(
         (node) =>
-          node.id === selectedNodeId.id
+          node.selected
             ? {
                 ...node,
                 data: {
@@ -80,7 +81,7 @@ export const Composer = () => {
     setNodes((prevNodes) =>
       prevNodes.map(
         (node) =>
-          node.id === selectedNodeId.id
+          node.selected
             ? {
                 ...node,
                 data: {
@@ -104,7 +105,7 @@ export const Composer = () => {
 
   // Delete selected exercises from the selected node
   const handleDeleteExercises = () => {
-    const selectedNode = nodes.find((node) => node.id === selectedNodeId.id);
+    const selectedNode = nodes.find((node) => node.selected);
 
     if (!selectedNode) {
       console.error("Node not found for deletion!");
@@ -116,7 +117,7 @@ export const Composer = () => {
     // Remove selected exercises from the node
     setNodes((prevNodes) =>
       prevNodes.map((node) =>
-        node.id === selectedNodeId.id
+        node.selected
           ? {
               ...node,
               data: {
@@ -149,10 +150,7 @@ export const Composer = () => {
 
   console.log("Selected Rows:", selectedRows);
   console.log("Exercises Data:", exercisesData);
-  console.log(
-    "Selected node exercise data",
-    nodes[selectedNodeId]?.data?.exercises
-  );
+
 
   // Predefined columns for the exercises table
   const exercisesColumns = [
@@ -186,7 +184,7 @@ export const Composer = () => {
         <hr className="my-4 border-gray-700" />
 
         {/* Conditional Tabulator for 'session' nodes */}
-        {selectedNodeId.type === "session" && (
+        {selectedNode?.type === "session" && (
           <>
             <div className="flex justify-between mb-4">
               <button

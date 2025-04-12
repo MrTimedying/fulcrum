@@ -1,7 +1,7 @@
 {
   "name": "fulcrum",
-  "version": "1.1.1",
-  "description": "A person management solution for movement sciences professionals",
+  "version": "0.3.0",
+  "description": "This versions has a new approach to invervention creation and patient management leveraging flow diagrams.",
   "main": "electron/main.js",
   "scripts": {
     "start": "cross-env NODE_ENV=production electron electron/main.js",
@@ -20,7 +20,8 @@
   "devDependencies": {
     "cross-env": "^7.0.3",
     "electron": "^35.0.1",
-    "electron-builder": "^25.1.8",
+    "electron-builder": "^26.0.12",
+    "node-abi": "github:lgeiger/node-abi",
     "nodemon": "^3.1.9"
   },
   "build": {
@@ -30,7 +31,7 @@
       "output": "fulcrum_dist"
     },
     "files": [
-      "client/build/**/*",
+      "build/**/*",
       "package.json",
       "electron/main.js",
       "electron/preload.js",

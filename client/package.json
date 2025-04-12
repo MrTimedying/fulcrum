@@ -1,7 +1,7 @@
 {
   "name": "fulcrum-app",
-  "version": "1.1.1",
-  "description": "Fulcrum aims to be a management software and workflow facilitator that will ease up the processes of work of any of these professions in a functional and practical manner.",
+  "version": "0.3.0",
+  "description": "This versions has a new approach to invervention creation and patient management leveraging flow diagrams.",
   "keywords": [
     "fitness",
     "exercise",
@@ -17,7 +17,8 @@
     "patient management",
     "workout app"
   ],
-  "license": "MIT",
+  "author": "Antonio Logarzo",
+  "license": "CC BY-NC-ND 4.0 Deed",
   "private": true,
   "main": "main.js",
   "homepage": "./",

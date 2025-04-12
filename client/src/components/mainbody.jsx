@@ -1,6 +1,6 @@
 import React, { Fragment, useState } from "react";
-import Modal from 'react-modal';
-import { Rnd } from 'react-rnd';
+import Modal from "react-modal";
+import { Rnd } from "react-rnd";
 import { Tab } from "@headlessui/react";
 import Editor from "./editor/editor";
 import Profile from "./icf-dashboard/profile";
@@ -8,28 +8,33 @@ import { ReactFlowProvider } from "@xyflow/react";
 import useFlowStore from "../state/flowState";
 import { AccountBox, DonutLarge, Close } from "@mui/icons-material";
 import { Composer } from "./editor/composer";
+import useTransientStore from "../state/transientState";
 
 // Bind modal to your appElement (http://reactcommunity.org/react-modal/accessibility/)
-Modal.setAppElement('#root');
+Modal.setAppElement("#root");
 
 function MainBody() {
-  const {patientId, activeTab, setActiveTab, setTrailingActiveTab } = useFlowStore();
+  const { patientId, setActiveTab, nodes } =
+    useFlowStore();
+  const { setToaster } = useTransientStore();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const nodeSelected = nodes.find((node) => node.selected);
 
   // Modal styles
   const modalStyles = {
     overlay: {
-      backgroundColor: 'rgba(0, 0, 0, 0.75)',
+      backgroundColor: "rgba(0, 0, 0, 0.75)",
       zIndex: 1000,
     },
     content: {
-      background: 'transparent',
-      border: 'none',
+      background: "transparent",
+      border: "none",
       padding: 0,
       inset: 0,
-      overflow: 'hidden',
-    }
+      overflow: "hidden",
+    },
   };
 
   // Default modal dimensions
@@ -66,7 +71,7 @@ function MainBody() {
                 <Close />
               </button>
             </div>
-            
+
             {/* Modal Content */}
             <div className="flex-1 overflow-auto p-4">
               <Composer />
@@ -77,12 +82,33 @@ function MainBody() {
     );
   }
 
+  function handleModalOpening() {
+    if (!nodeSelected) {
+      setToaster({
+        type: "error",
+        message: "No node is selected. Please select a node to edit.",
+        show: true,
+      });
+      return;
+    }
+    if (nodeSelected.type === "bodyStructure" || nodeSelected.type === "activities" || nodeSelected.type === "participation") {
+      setToaster({
+        message: "These are just placeholders. You can't edit them.",
+        type: "error",
+        show: true,
+      });
+      return;
+    }
+    setIsModalOpen(true);
+  }
+  
+
   function UtilityMenu() {
     return (
       <button
         id="createPhase"
         className="bg-zinc-900 hover:bg-black/30 text-slate-300 w-16 font-mono m-2 px-1 rounded-md cursor-pointer text-sm transition-colors duration-200"
-        onClick={() => setIsModalOpen(true)}
+        onClick={() => handleModalOpening()}
       >
         <AccountBox />
       </button>
@@ -90,11 +116,9 @@ function MainBody() {
   }
 
   function TabStructure() {
-
     const handleActiveTab = (tab) => {
       setActiveTab(tab);
     };
-
 
     return (
       <Tab.Group as="div" className="flex flex-col h-full w-full">
@@ -104,7 +128,7 @@ function MainBody() {
               <Tab as={Fragment}>
                 {({ selected }) => (
                   <button
-                    onClick={() => handleActiveTab('Profile')}
+                    onClick={() => handleActiveTab("Profile")}
                     className={`my-2 ${
                       selected
                         ? "mx-2 rounded-none text-gray-300 hover:text-white p-1 cursor-pointer focus:outline-none focus:text-white font-medium transition duration-300 border-b-2 border-indigo-500"
@@ -118,7 +142,7 @@ function MainBody() {
               <Tab as={Fragment}>
                 {({ selected }) => (
                   <button
-                    onClick={() => handleActiveTab('Editor')}
+                    onClick={() => handleActiveTab("Editor")}
                     className={`my-2 ${
                       selected
                         ? "mx-2 rounded-none text-gray-300 hover:text-white p-1 cursor-pointer focus:outline-none focus:text-white font-medium transition duration-300 border-b-2 border-indigo-500"
@@ -136,11 +160,11 @@ function MainBody() {
 
         <Tab.Panels className="h-full overflow-y-auto">
           <Tab.Panel key="icfProfile" className="h-full">
-          <ReactFlowProvider>
-            <Profile />
+            <ReactFlowProvider>
+              <Profile />
             </ReactFlowProvider>
           </Tab.Panel>
-          <Tab.Panel key="internvetionEditor" className="h-full">
+          <Tab.Panel key="interventionEditor" className="h-full">
             <ReactFlowProvider>
               <Editor isExpanded={isExpanded} isModalOpen={isModalOpen} />
             </ReactFlowProvider>
@@ -152,24 +176,30 @@ function MainBody() {
 
   if (patientId) {
     return (
-      <div className="w-4/5 bg-neutral-800 p-4 h-full" style={{borderLeft: "solid 2px #1c1c1c"}}>
+      <div
+        className="w-4/5 bg-neutral-800 p-4 h-full"
+        style={{ borderLeft: "solid 2px #1c1c1c" }}
+      >
         {TabStructure()}
         <ModalComposer />
       </div>
     );
   } else {
     return (
-      <div className="w-4/5 flex items-center justify-center text-stone-400 bg-neutral-800 p-4 h-full" style={{borderLeft: "solid 2px #1c1c1c"}}>
+      <div
+        className="w-4/5 flex items-center justify-center text-stone-400 bg-neutral-800 p-4 h-full"
+        style={{ borderLeft: "solid 2px #1c1c1c" }}
+      >
         Select a patient to view their information.
-        <button 
-  onClick={() => {
-    localStorage.removeItem('flow-store');
-    window.location.reload();
-  }}
-  style={{ position: 'fixed', bottom: 10, right: 10 }}
->
-  Reset Store
-</button>
+        <button
+          onClick={() => {
+            localStorage.removeItem("flow-store");
+            window.location.reload();
+          }}
+          style={{ position: "fixed", bottom: 10, right: 10 }}
+        >
+          Reset Store
+        </button>
       </div>
     );
   }

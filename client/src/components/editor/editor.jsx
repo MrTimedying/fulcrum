@@ -98,8 +98,6 @@ const selector = (state) => ({
   setEdges: state.setEdges,
   onNodesChange: state.onNodesChange,
   onEdgesChange: state.onEdgesChange,
-  selectedNodeId: state.selectedNodeId,
-  setSelectedNodeId: state.setSelectedNodeId,
   columnsLayout: state.columnsLayout,
   setColumnsLayout: state.setColumnsLayout,
 });
@@ -115,28 +113,16 @@ function Editor({isModalOpen}) {
     setEdges,
     onNodesChange,
     onEdgesChange,
-    selectedNodeId,
-    setSelectedNodeId,
     columnsLayout,
     setColumnsLayout,
   } = useFlowStore(useShallow(selector));
 
-  // const debouncedSave = useMemo(
-  //   () => debounce((nodes, edges) => setEditorState(patientId, nodes, edges), 1000),
-  //   [patientId]
-  // );
-
-  // useEffect(() => {
-  //   debouncedSave(nodes, edges);
-  //   console.log("Save is being fired!")
-  // }, [nodes, edges, debouncedSave]);
-
+  // const selectedNode = nodes.find((node) => node.selected);
+  // console.log("Selected node", selectedNode);
 
   const handleNodeClick = useCallback((event, node) => {
     event.stopPropagation();
-    if (selectedNodeId?.id === node.id && node.selected) {
-      console.log("Data of the node", node.data);
-      console.log("Node structure", node);
+    if (node.selected) {
       onNodesChange([
         {
           id: node.id,
@@ -145,7 +131,7 @@ function Editor({isModalOpen}) {
         }
       ]);
       setColumnsLayout([]);
-      setSelectedNodeId(null);
+
     } else {
       // First deselect all nodes (optional, only if you want single selection)
       const deselectChanges = nodes
@@ -164,32 +150,51 @@ function Editor({isModalOpen}) {
       };
 
       setColumnsLayout((columnTemplates[node.type] || []));
-      
-      
-      // Apply all changes
       onNodesChange([...deselectChanges, selectChange]);
-      setSelectedNodeId({id: node.id, type: node.type});
+
     }
-  }, [selectedNodeId, nodes, onNodesChange]);
+  }, [nodes, onNodesChange]);
 
+  const handleNodeDragStart = useCallback((event, node) => {
+    // If the node isn't already selected, select it when drag starts
+    if (!node.selected) {
+      const deselectChanges = nodes
+        .filter(n => n.selected)
+        .map(n => ({
+          id: n.id,
+          type: 'select',
+          selected: false,
+        }));
+      const selectChange = {
+        id: node.id,
+        type: 'select',
+        selected: true,
+      };
+      setColumnsLayout(columnTemplates[node.type] || []);
+      onNodesChange([...deselectChanges, selectChange]);
+    }
+  }, [nodes, onNodesChange, setColumnsLayout]);
   
-
 
   const handlePaneClick = useCallback((event) => {
     const isPaneClick = event.target.classList.contains('react-flow__pane') || 
-                       event.target.classList.contains('react-flow__background');
-    
+                        event.target.classList.contains('react-flow__background');
     if (isPaneClick) {
       console.log("Genuine pane click detected");
-      setSelectedNodeId(null);
+      const deselectChanges = nodes
+        .filter(n => n.selected)
+        .map(n => ({
+          id: n.id,
+          type: 'select',
+          selected: false,
+        }));
+      onNodesChange(deselectChanges);
       setColumnsLayout([]);
     } else {
       console.log("Click was on another element, not processing as pane click");
     }
-  }, [setSelectedNodeId, setColumnsLayout]);
+  }, [nodes, onNodesChange, setColumnsLayout]);
   
-
-
   const [nodeMenu, setNodeMenu] = useState({
     isOpen: false,
     position: { x: 0, y: 0 },
@@ -344,6 +349,7 @@ function Editor({isModalOpen}) {
           onReconnectEnd={onReconnectEnd}
           isValidConnection={isValidConnection}
           onNodeClick={handleNodeClick}
+          onNodeDragStart={handleNodeDragStart}          
           onPaneClick={handlePaneClick}
           onNodeContextMenu={onNodeContextMenu}
           onPaneContextMenu={onPaneContextMenu} // Enable Node Context Menu
