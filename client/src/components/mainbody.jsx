@@ -7,6 +7,8 @@ import Profile from "./icf-dashboard/profile";
 import { ReactFlowProvider } from "@xyflow/react";
 import useFlowStore from "../state/flowState";
 import { AccountBox, DonutLarge, Close } from "@mui/icons-material";
+import { SlNote } from "react-icons/sl";
+import { IoMenu } from "react-icons/io5";
 import { Composer } from "./editor/composer";
 import useTransientStore from "../state/transientState";
 
@@ -105,13 +107,22 @@ function MainBody() {
 
   function UtilityMenu() {
     return (
+      <div className="bg-zinc-900 rounded-full h-8 flex flex-row items-center place-self-center ml-36 col-span-6">
       <button
         id="createPhase"
-        className="bg-zinc-900 hover:bg-black/30 text-slate-300 w-16 font-mono m-2 px-1 rounded-md cursor-pointer text-sm transition-colors duration-200"
+        className="bg-zinc-900 hover:bg-black/30 text-slate-300 flex justify-center items-center w-16 font-mono m-2 px-1 rounded-md cursor-pointer text-sm transition-colors duration-200"
         onClick={() => handleModalOpening()}
       >
-        <AccountBox />
+        <SlNote size={20} />
       </button>
+      <button
+      id="createPhase"
+      className="bg-zinc-900 hover:bg-black/30 text-slate-300 flex justify-center items-center w-16 font-mono m-2 px-1 rounded-md cursor-pointer text-sm transition-colors duration-200"
+      onClick={() => handleModalOpening()}
+    >
+      <IoMenu size={20} />
+    </button>
+    </div>
     );
   }
 
@@ -123,7 +134,7 @@ function MainBody() {
     return (
       <Tab.Group as="div" className="flex flex-col h-full w-full">
         <div className="grid grid-cols-11 h-14 bg-zinc-850 w-full mb-2">
-          <div className="bg-zinc-900 rounded-full h-8 flex flex-row items-center place-self-center ml-36 col-span-10">
+          <div className="bg-zinc-900 rounded-full h-8 flex flex-row items-center place-self-center ml-36 col-span-4">
             <Tab.List className="flex mx-auto h-auto text-xs">
               <Tab as={Fragment}>
                 {({ selected }) => (
