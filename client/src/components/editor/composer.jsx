@@ -1,156 +1,61 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ReactTabulator } from "react-tabulator";
-import "tabulator-tables/dist/css/tabulator.min.css"; // Tabulator styles
+import "tabulator-tables/dist/css/tabulator.min.css";
 import useFlowStore from "../../state/flowState";
 import { v4 as uuidv4 } from "uuid";
 
 export const Composer = () => {
-  const { columnsLayout, selectedNodeId, nodes, setNodes } = useFlowStore();
+  const { columnsLayout, nodes, addExercise, updateNodeData, updateExerciseData, deleteExercises } = useFlowStore();
   const [selectedRows, setSelectedRows] = useState([]);
   const selectedNode = nodes.find((node) => node.selected);
+  
+  // Create COPIES of the data, not references
+  const rowsData = selectedNode ? [{ ...selectedNode.data }] : [];
+  const exercisesData = selectedNode?.data.exercises ? 
+    selectedNode.data.exercises.map(exercise => ({ ...exercise })) : 
+    [];
 
-  // Retrieve the data of the selected node
-  const rowsData = (() => {
-    const selectedNode = nodes.find((node) => node.selected);
-
-    if (!selectedNode) {
-      console.error("No selected node found");
-      return [];
-    }
-
-    return [selectedNode.data];
-  })();
-
-  // Separate data specifically for exercises (if present)
-  const exercisesData = (() => {
-    const selectedNode = nodes.find((node) => node.selected);
-
-    if (!selectedNode || !selectedNode.data.exercises) {
-      return [];
-    }
-
-    return selectedNode.data.exercises; // Returns the exercises array
-  })();
-
-  // Handle cell edits for node data
+  // Handler for main node data edits
   const handleNodeDataEdit = (cell) => {
+    console.log("Node data edit handler called!");
     const field = cell.getField();
     const value = cell.getValue();
-
-    setNodes((prevNodes) =>
-      prevNodes.map((node) =>
-        node.selected
-          ? {
-              ...node,
-              data: { ...node.data, [field]: value }, // Update `data` property immutably
-            }
-          : node
-      )
-    );
+    
+    // THIS is now critical - we must update our state through proper channels
+    updateNodeData(field, value);
   };
 
-  // Handle cell edits for exercise data
+  // Handler for exercise data edits
   const handleExerciseDataEdit = (cell) => {
-    const field = cell.getField(); // Get the edited field (e.g., name, reps)
-    const value = cell.getValue(); // Get the new value from the cell
-    const rowData = cell.getData(); // Get the full row of the cell being edited
-
-    // Update the node structure immutably
-    setNodes((prevNodes) =>
-      prevNodes.map(
-        (node) =>
-          node.selected
-            ? {
-                ...node,
-                data: {
-                  ...node.data,
-                  exercises: node.data.exercises.map((exercise) =>
-                    exercise.id === rowData.id
-                      ? { ...exercise, [field]: value } // Update the specific exercise immutably
-                      : exercise
-                  ),
-                },
-              }
-            : node // Keep other nodes unchanged
-      )
-    );
+    console.log("Exercise data edit handler called!");
+    const field = cell.getField();
+    const value = cell.getValue();
+    const rowData = cell.getData();
+    
+    // Critical to use our state update function
+    updateExerciseData(rowData.id, field, value);
   };
 
-  // Add new exercise to the selected node
-  const handleAddExercise = () => {
-    setNodes((prevNodes) =>
-      prevNodes.map(
-        (node) =>
-          node.selected
-            ? {
-                ...node,
-                data: {
-                  ...node.data,
-                  exercises: [
-                    ...node.data.exercises,
-                    {
-                      id: uuidv4(), // Generate a unique ID
-                      name: "New Exercise", // Default values
-                      duration: "0s",
-                      reps: 0,
-                      intensity: "low",
-                    },
-                  ],
-                },
-              }
-            : node // Keep other nodes unchanged
-      )
-    );
-  };
-
-  // Delete selected exercises from the selected node
-  const handleDeleteExercises = () => {
-    const selectedNode = nodes.find((node) => node.selected);
-
-    if (!selectedNode) {
-      console.error("Node not found for deletion!");
-      return;
-    }
-
-    const selectedExerciseIds = selectedRows.map((row) => row.id);
-
-    // Remove selected exercises from the node
-    setNodes((prevNodes) =>
-      prevNodes.map((node) =>
-        node.selected
-          ? {
-              ...node,
-              data: {
-                ...node.data,
-                exercises: node.data.exercises.filter(
-                  (exercise) => !selectedExerciseIds.includes(exercise.id)
-                ),
-              },
-            }
-          : node
-      )
-    );
-
-    setSelectedRows([]); // Clear selected rows
-  };
-
-  // Handle row selection
+  // Handle row selection for exercise table
   const handleRowSelected = (row) => {
-    const rowData = row.getData(); // Get the data of the selected row
-    setSelectedRows((prev) => [...prev, rowData]); // Add to selected rows
+    const rowData = row.getData();
+    setSelectedRows((prev) => [...prev, rowData]);
   };
 
-  // Handle row deselection
+  // Handle row deselection for exercise table
   const handleRowDeselected = (row) => {
     const rowData = row.getData();
-    setSelectedRows(
-      (prev) => prev.filter((selected) => selected.id !== rowData.id) // Remove deselected row
+    setSelectedRows((prev) => 
+      prev.filter((selected) => selected.id !== rowData.id)
     );
   };
 
-  console.log("Selected Rows:", selectedRows);
-  console.log("Exercises Data:", exercisesData);
-
+  // Handle delete button click
+  const handleDeleteClick = () => {
+    const selectedExerciseIds = selectedRows.map((row) => row.id);
+    deleteExercises(selectedExerciseIds);
+    setSelectedRows([]);
+  };
 
   // Predefined columns for the exercises table
   const exercisesColumns = [
@@ -173,12 +78,23 @@ export const Composer = () => {
         className="flex-grow"
         style={{ height: "calc(100vh - 100px)", background: "#2D2D2D" }}
       >
-        {/* Main Tabulator */}
+        {/* Main Tabulator - now with proper data management */}
         <ReactTabulator
-          data={rowsData} // Node-level general data
+          data={rowsData}
           columns={columnsLayout}
-          layout="fitData" // Adjust columns automatically
-          cellEdited={handleNodeDataEdit} // Notify cell edits for the `data` property
+          layout="fitData"
+          events={{
+            cellEdited: handleNodeDataEdit,
+          }}
+          options={{
+            // IMPORTANT: This prevents Tabulator from automatically mutating your data
+            dataTree: false,
+            reactiveData: false,
+            
+            // You can also add this to completely disable direct data mutation
+            // (but then your updateNodeData must manually refresh the table)
+            // mutability: false, 
+          }}
         />
 
         <hr className="my-4 border-gray-700" />
@@ -189,26 +105,38 @@ export const Composer = () => {
             <div className="flex justify-between mb-4">
               <button
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
-                onClick={handleAddExercise}
+                onClick={addExercise}
               >
                 Add Exercise
               </button>
               <button
                 className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded"
-                onClick={handleDeleteExercises}
+                onClick={handleDeleteClick}
+                disabled={selectedRows.length === 0}
               >
                 Delete Selected Exercises
               </button>
             </div>
             <ReactTabulator
-              data={exercisesData} // Use the exercises array as the data source
-              columns={exercisesColumns} // Predefined columns for exercises
+              data={exercisesData}
+              columns={exercisesColumns}
               layout="fitData"
-              selectableRows={true} // Enable row selection
-              cellEdited={handleExerciseDataEdit}
+              selectableRows={true}
               events={{
-                rowSelected: handleRowSelected, // Add row selection event
-                rowDeselected: handleRowDeselected, // Add row deselection event
+                rowSelected: handleRowSelected,
+                rowDeselected: handleRowDeselected,
+                cellEdited: handleExerciseDataEdit,
+              }}
+              options={{
+                history: true,
+                tooltips: true,
+                cellEditable: true,
+                // Prevent automatic data mutation
+                dataTree: false,
+                reactiveData: false,
+                
+                // You can also add this to completely disable direct data mutation
+                // mutability: false,
               }}
             />
           </>

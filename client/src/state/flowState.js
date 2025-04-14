@@ -262,6 +262,99 @@ const useFlowStore = create(
         });
       },
 
+      // Update a specific field in the selected node
+      updateNodeData: (field, value) => {
+        const { nodes } = get();
+        
+        // Prepare the updated nodes array by mapping over the current nodes
+        const updatedNodes = nodes.map((node) =>
+          node.selected
+            ? { ...node, data: { ...node.data, [field]: value } }
+            : node
+        );
+        
+        // Directly set the updated nodes, mimicking loadIntervention's approach
+        set({
+          nodes: updatedNodes,
+        });
+        
+        console.log(`Updated node data field ${field} to ${value}`);
+      },
+      
+      
+      // Update a specific exercise in the selected node
+      updateExerciseData: (exerciseId, field, value) => {
+        set((state) => {
+          const newNodes = _.cloneDeep(state.nodes);
+          const selectedNodeIndex = _.findIndex(newNodes, node => node.selected);
+          
+          if (selectedNodeIndex >= 0) {
+            const exercises = _.get(newNodes[selectedNodeIndex], 'data.exercises', []);
+            const exerciseIndex = _.findIndex(exercises, { id: exerciseId });
+            
+            if (exerciseIndex >= 0) {
+              // Update the specific field in the specific exercise
+              _.set(exercises[exerciseIndex], field, value);
+            }
+          }
+          
+          return { nodes: newNodes };
+        });
+      },
+      
+      // Add a new exercise to the selected node
+      addExercise: () => {
+        set((state) => {
+          const newNodes = _.cloneDeep(state.nodes);
+          const selectedNodeIndex = _.findIndex(newNodes, node => node.selected);
+          
+          if (selectedNodeIndex >= 0) {
+            const exercises = _.get(newNodes[selectedNodeIndex], 'data.exercises', []);
+            
+            // Create the new exercise
+            const newExercise = {
+              id: uuidv4(),
+              name: "New Exercise",
+              duration: "0s",
+              reps: 0,
+              intensity: "low",
+            };
+            
+            // Use lodash to add the exercise to the array
+            _.set(
+              newNodes[selectedNodeIndex], 
+              'data.exercises', 
+              [...exercises, newExercise]
+            );
+          }
+          
+          return { nodes: newNodes };
+        });
+      },
+      
+      // Delete selected exercises from the selected node
+      deleteExercises: (exerciseIds) => {
+        set((state) => {
+          const newNodes = _.cloneDeep(state.nodes);
+          const selectedNodeIndex = _.findIndex(newNodes, node => node.selected);
+          
+          if (selectedNodeIndex >= 0) {
+            const exercises = _.get(newNodes[selectedNodeIndex], 'data.exercises', []);
+            
+            // Filter out the exercises to be deleted
+            const filteredExercises = _.filter(
+              exercises, 
+              exercise => !_.includes(exerciseIds, exercise.id)
+            );
+            
+            // Set the filtered exercises back
+            _.set(newNodes[selectedNodeIndex], 'data.exercises', filteredExercises);
+          }
+          
+          return { nodes: newNodes };
+        });
+      },
+
     }),
 
     {

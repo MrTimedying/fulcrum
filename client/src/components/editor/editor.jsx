@@ -1,18 +1,12 @@
 import React, { useRef, useCallback, useState, useMemo, useEffect } from "react";
 import { useShallow } from 'zustand/react/shallow';
-import { debounce } from "../utils";
 import {
   useReactFlow,
   ReactFlow,
   Controls,
   Background,
-  useNodesState,
-  useEdgesState,
   reconnectEdge,
   addEdge,
-  Handle,
-  applyEdgeChanges,
-  applyNodeChanges,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import NodeMenu from "./NodeMenu";
@@ -105,7 +99,7 @@ const selector = (state) => ({
 function Editor() {
   // STATE MANAGEMENT
   const { setToaster } = useTransientStore();
-  const { patientId, activeTab, setEditorState } = useFlowStore();
+
   const {
     nodes,
     edges,
@@ -328,6 +322,8 @@ function Editor() {
     setEdges((eds) => eds.filter((e) => e.source !== node.id && e.target !== node.id)); // Remove edges
     closeMenus();
   };
+
+
 
   return (
     <div
