@@ -1,0 +1,46 @@
+export const ProfileTemplates = {
+  profile: [
+    { title: "ID", field: "id", width: 100, editor: "textarea" },
+    { title: "Name", field: "name", width: 150, editor: "textarea" },
+    { title: "Surname", field: "surname", width: 150, editor: "textarea" },
+    { title: "Age", field: "age", width: 100, editor: "number" },
+    {
+      title: "Gender",
+      field: "gender",
+      width: 100,
+      editor: "select",
+      editorParams: { options: ["Male", "Female", "Other"] },
+    },
+    { title: "Height", field: "height", width: 100, editor: "number" },
+    { title: "Weight", field: "weight", width: 100, editor: "number" },
+  ],
+};
+
+export const EditorTemplates = {
+  intervention: [
+    { title: "ID", field: "id", width: 100, editor: "textarea" },
+    { title: "Name", field: "name", width: 150, editor: "textarea" },
+    { title: "Type", field: "type", width: 150, editor: "textarea" },
+    {
+      title: "Description",
+      field: "description",
+      width: 200,
+      editor: "textarea",
+    },
+    { title: "Global", field: "global", width: 100, editor: "textarea" },
+    { title: "Service", field: "service", width: 100, editor: "textarea" },
+  ],
+  phase: [
+    { title: "ID", field: "id", width: 100 },
+    { title: "Scope", field: "scope", width: 150 },
+  ],
+  micro: [
+    { title: "ID", field: "id", width: 100 },
+    { title: "Scope", field: "scope", width: 150 },
+  ],
+  session: [
+    { title: "ID", field: "id", width: 100 },
+    { title: "Scope", field: "scope", width: 150, editor: "textarea" },
+    { title: "Day", field: "day", width: 150, editor: "date" },
+  ],
+};

@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { applyNodeChanges, applyEdgeChanges } from "@xyflow/react";
 import * as _ from "lodash";
+import { ProfileTemplates, EditorTemplates } from "../components/variables";
 
 const useFlowStore = create(
   persist(
@@ -20,6 +21,23 @@ const useFlowStore = create(
       rowsData: [],
       nodes: [], // Global nodes
       edges: [], // Global edges
+
+      updateColumnsForSelectedNode: () => {
+        const { nodes, activeTab } = get();
+        const selectedNode = nodes.find(node => node.selected);
+        
+        if (selectedNode) {
+          const templates = activeTab === "Profile" ? ProfileTemplates : EditorTemplates;
+          if (templates[selectedNode.type]) {
+            get().setColumnsLayout(templates[selectedNode.type]);
+            console.log(`Updated columns for ${activeTab} node type: ${selectedNode.type}`);
+          } else {
+            console.log(`No column template for ${activeTab} node type: ${selectedNode.type}`);
+          }
+        } else {
+          console.log("No node selected, columns not updated");
+        }
+      },
 
       setPatientId: (id) => {
         if (id === "") {
@@ -57,6 +75,7 @@ const useFlowStore = create(
         tabStateLogic(activeTab, patientId); // Note: now passing activeTab, not trailing
         set({ nodes: [], edges: [] });
         hydrateFlowState(patientId, tab);
+        get().updateColumnsForSelectedNode()
       },
 
       setTrailingActiveTab: (tab) => {

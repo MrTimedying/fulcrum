@@ -15,32 +15,11 @@ import { v4 as uuidv4 } from "uuid";
 import useFlowStore from "../../state/flowState";
 import useTransientStore from "../../state/transientState";
 import {InterventionNode, PhaseNode, MicroNode, SessionNode} from "./nodes";
+import {EditorTemplates}  from "../variables";
 
 // COLUMNS FOR THE COMPOSER
 
-const columnTemplates = {
-  intervention: [
-    { title: "ID", field: "id", width: 100, editor: "textarea" },
-    { title: "Name", field: "name", width: 150, editor: "textarea" },
-    { title: "Type", field: "type", width: 150, editor: "textarea" },
-    { title: "Description", field: "description", width: 200, editor: "textarea" },
-    { title: "Global", field: "global", width: 100, editor: "textarea" },
-    { title: "Service", field: "service", width: 100, editor: "textarea" },
-  ],
-  phase: [
-    { title: "ID", field: "id", width: 100 },
-    { title: "Scope", field: "scope", width: 150 },
-  ],
-  micro: [
-    { title: "ID", field: "id", width: 100 },
-    { title: "Scope", field: "scope", width: 150 },
-  ],
-  session: [
-    { title: "ID", field: "id", width: 100 },
-    { title: "Scope", field: "scope", width: 150, editor: "textarea" },
-    { title: "Day", field: "day", width: 150, editor: "date" },
-  ],
-};
+const columnTemplates = EditorTemplates;
 
 const dataTemplates = {
   intervention: () => ({

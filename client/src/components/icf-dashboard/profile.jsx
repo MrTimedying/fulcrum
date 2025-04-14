@@ -17,21 +17,12 @@ import useFlowStore from "../../state/flowState";
 import useTransientStore from "../../state/transientState";
 import {ProfileNode, BodyStructureNode, ActivitiesNode, ParticipationNode} from "./nodes";
 import Dagre from '@dagrejs/dagre';
+import { ProfileTemplates } from "../variables";
 
 // COLUMNS FOR THE COMPOSER
 
 // Updated columnTemplates
-const columnTemplates = {
-  profile: [
-    { title: "ID", field: "id", width: 100, editor: "textarea" },
-    { title: "Name", field: "name", width: 150, editor: "textarea" },
-    { title: "Surname", field: "surname", width: 150, editor: "textarea" },
-    { title: "Age", field: "age", width: 100, editor: "number" },
-    { title: "Gender", field: "gender", width: 100, editor: "select", editorParams: { options: ["Male", "Female", "Other"] } },
-    { title: "Height", field: "height", width: 100, editor: "number" },
-    { title: "Weight", field: "weight", width: 100, editor: "number" },
-  ],
-};
+const columnTemplates = ProfileTemplates;
 
 // Updated dataTemplates
 const dataTemplates = {
