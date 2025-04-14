@@ -145,8 +145,13 @@ function MainBody() {
       setActiveTab(tab);
     };
 
+    const initialIndex = activeTab === "Profile" ? 0 : 1;
+
     return (
-      <Tab.Group as="div" className="flex flex-col h-full w-full">
+      <Tab.Group 
+        as="div" 
+        className="flex flex-col h-full w-full"
+        defaultIndex={initialIndex}>
         <div className="grid grid-cols-11 h-14 bg-zinc-850 w-full mb-2">
           <div className="bg-zinc-900 rounded-full h-8 flex flex-row items-center place-self-center ml-36 col-span-4">
             <Tab.List className="flex mx-auto h-auto text-xs">

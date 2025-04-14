@@ -2,7 +2,7 @@ import React from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import MainBody from './mainbody';
 import Sidebar from './sidebar';
-import { Composer } from './editor/composer';
+import  Composer  from './editor/composer';
 import CustomFrame from './frame/customFrame';
 import { Toaster } from './toaster';
 
