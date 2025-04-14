@@ -11,16 +11,17 @@ import { SlNote } from "react-icons/sl";
 import { IoMenu } from "react-icons/io5";
 import { Composer } from "./editor/composer";
 import useTransientStore from "../state/transientState";
+import InterventionModal from "./interventionModal";
 
 // Bind modal to your appElement (http://reactcommunity.org/react-modal/accessibility/)
 Modal.setAppElement("#root");
 
 function MainBody() {
-  const { patientId, setActiveTab, nodes } =
+  const { patientId, activeTab, setActiveTab, nodes } =
     useFlowStore();
   const { setToaster } = useTransientStore();
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isComposerOpen, setIsComposerOpen] = useState(false);
+  const [isInterventionModalOpen, setIsInterventionModalOpen] = useState(false);
 
   const nodeSelected = nodes.find((node) => node.selected);
 
@@ -50,8 +51,8 @@ function MainBody() {
   function ModalComposer() {
     return (
       <Modal
-        isOpen={isModalOpen}
-        onRequestClose={() => setIsModalOpen(false)}
+        isOpen={isComposerOpen}
+        onRequestClose={() => setIsComposerOpen(false)}
         style={modalStyles}
         contentLabel="Composer Modal"
       >
@@ -67,7 +68,7 @@ function MainBody() {
             <div className="modal-handle bg-zinc-800 px-4 py-3 flex justify-between items-center cursor-move">
               <h3 className="text-gray-200 font-medium">Composer</h3>
               <button
-                onClick={() => setIsModalOpen(false)}
+                onClick={() => setIsComposerOpen(false)}
                 className="text-gray-400 hover:text-gray-200 transition-colors"
               >
                 <Close />
@@ -84,45 +85,58 @@ function MainBody() {
     );
   }
 
-  function handleModalOpening() {
-    if (!nodeSelected) {
+  function handleModalOpening(id) {
+    if (!nodeSelected && id == "interventionMenu" && activeTab === "Profile") {
+      setToaster({
+        type: "error",
+        message: "Switch to the Editor tab to load or save an intervention to work on!",
+        show: true,
+      })
+      return;
+    }
+    if (!nodeSelected && id == "composer") {
       setToaster({
         type: "error",
         message: "No node is selected. Please select a node to edit.",
         show: true,
       });
       return;
+    } if (id == "interventionMenu" && activeTab === "Editor") {
+      setIsInterventionModalOpen(true);
+      return;
     }
-    if (nodeSelected.type === "bodyStructure" || nodeSelected.type === "activities" || nodeSelected.type === "participation") {
+    if ((nodeSelected.type === "bodyStructure" || nodeSelected.type === "activities" || nodeSelected.type === "participation") && id == "composer") {
       setToaster({
         message: "These are just placeholders. You can't edit them.",
         type: "error",
         show: true,
       });
       return;
-    }
-    setIsModalOpen(true);
+    } else if (id == "composer") {
+      setIsComposerOpen(true);
+    } 
+    
   }
   
 
   function UtilityMenu() {
     return (
       <div className="bg-zinc-900 rounded-full h-8 flex flex-row items-center place-self-center ml-36 col-span-6">
-      <button
-        id="createPhase"
-        className="bg-zinc-900 hover:bg-black/30 text-slate-300 flex justify-center items-center w-16 font-mono m-2 px-1 rounded-md cursor-pointer text-sm transition-colors duration-200"
-        onClick={() => handleModalOpening()}
-      >
-        <SlNote size={20} />
-      </button>
-      <button
-      id="createPhase"
-      className="bg-zinc-900 hover:bg-black/30 text-slate-300 flex justify-center items-center w-16 font-mono m-2 px-1 rounded-md cursor-pointer text-sm transition-colors duration-200"
-      onClick={() => handleModalOpening()}
-    >
-      <IoMenu size={20} />
-    </button>
-    </div>
+        <button
+          id="composer"
+          className="bg-zinc-900 hover:bg-black/30 text-slate-300 flex justify-center items-center w-16 font-mono m-2 px-1 rounded-md cursor-pointer text-sm transition-colors duration-200"
+          onClick={(e) => handleModalOpening(e.currentTarget.id)}
+        >
+          <SlNote size={20} />
+        </button>
+        <button
+          id="interventionMenu"
+          className="bg-zinc-900 hover:bg-black/30 text-slate-300 flex justify-center items-center w-16 font-mono m-2 px-1 rounded-md cursor-pointer text-sm transition-colors duration-200"
+          onClick={(e) => handleModalOpening(e.currentTarget.id)}
+        >
+          <IoMenu size={20} />
+        </button>
+      </div>
     );
   }
 
@@ -177,7 +191,7 @@ function MainBody() {
           </Tab.Panel>
           <Tab.Panel key="interventionEditor" className="h-full">
             <ReactFlowProvider>
-              <Editor isExpanded={isExpanded} isModalOpen={isModalOpen} />
+              <Editor />
             </ReactFlowProvider>
           </Tab.Panel>
         </Tab.Panels>
@@ -193,6 +207,9 @@ function MainBody() {
       >
         {TabStructure()}
         <ModalComposer />
+        <InterventionModal 
+          isOpen={isInterventionModalOpen}
+          onClose={() => setIsInterventionModalOpen(false)}  />
       </div>
     );
   } else {

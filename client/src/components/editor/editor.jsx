@@ -102,7 +102,7 @@ const selector = (state) => ({
   setColumnsLayout: state.setColumnsLayout,
 });
 
-function Editor({isModalOpen}) {
+function Editor() {
   // STATE MANAGEMENT
   const { setToaster } = useTransientStore();
   const { patientId, activeTab, setEditorState } = useFlowStore();

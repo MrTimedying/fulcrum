@@ -12,6 +12,7 @@ const useFlowStore = create(
       activeTab: "Profile",
       trailingActiveTab: "",
       patients: {},
+      interventions: {},
       editorStates: {},
       profileStates: {},
       selectedNodeId: [],
@@ -216,11 +217,58 @@ const useFlowStore = create(
           return { patients: updatedPatients };
         });
       },
+
+      // Add an intervention for a patient
+      addIntervention: (patientID, interventionData) => {
+        set((state) => {
+          const newState = _.cloneDeep(state);
+          const patientInterventions = _.get(newState, `interventions.${patientID}`, []);
+          _.set(newState, `interventions.${patientID}`, [...patientInterventions, interventionData]);
+          return newState;
+        });
+      },
+
+      loadIntervention: (patientID, interventionID) => {
+        const { interventions } = get();
+      
+        const patientInterventions = _.get(interventions, patientID, []);
+        const intervention = patientInterventions.find(
+          (item) => item.id === interventionID
+        );
+      
+        if (!intervention) {
+          console.error(`Intervention with ID ${interventionID} not found for patient ${patientID}`);
+          return;
+        }
+      
+        set({
+          nodes: intervention.nodes || [],
+          edges: intervention.edges || [],
+        });
+      
+        console.log(`Intervention ${interventionID} loaded for patient ${patientID}`);
+      },
+
+      // Remove an intervention for a patient
+      removeIntervention: (patientID, interventionID) => {
+        set((state) => {
+          const newState = _.cloneDeep(state);
+          const patientInterventions = _.get(newState, `interventions.${patientID}`, []);
+          const updatedInterventions = patientInterventions.filter(
+            (intervention) => intervention.interventionID !== interventionID
+          );
+          _.set(newState, `interventions.${patientID}`, updatedInterventions);
+          return newState;
+        });
+      },
+
     }),
+
     {
       name: "flow-store",
       partialize: (state) => ({
         patients: state.patients,
+        interventions: state.interventions,
         editorStates: state.editorStates,
         profileStates: state.profileStates,
       }),
