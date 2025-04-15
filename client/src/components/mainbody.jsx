@@ -211,7 +211,9 @@ function MainBody() {
         style={{ borderLeft: "solid 2px #1c1c1c" }}
       >
         {TabStructure()}
-        <ModalComposer />
+        <Composer
+          isComposerOpen={isComposerOpen}
+          setIsComposerOpen={setIsComposerOpen} />
         <InterventionModal 
           isOpen={isInterventionModalOpen}
           onClose={() => setIsInterventionModalOpen(false)}  />
