@@ -12,6 +12,7 @@ import { IoMenu } from "react-icons/io5";
 import { Composer } from "./editor/composer";
 import useTransientStore from "../state/transientState";
 import InterventionModal from "./interventionModal";
+import TemplateModal from "./templateModal";
 
 // Bind modal to your appElement (http://reactcommunity.org/react-modal/accessibility/)
 Modal.setAppElement("#root");
@@ -22,6 +23,7 @@ function MainBody() {
   const { setToaster } = useTransientStore();
   const [isComposerOpen, setIsComposerOpen] = useState(false);
   const [isInterventionModalOpen, setIsInterventionModalOpen] = useState(false);
+  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
 
   const nodeSelected = nodes.find((node) => node.selected);
 
@@ -86,37 +88,79 @@ function MainBody() {
   }
 
   function handleModalOpening(id) {
-    if (!nodeSelected && id == "interventionMenu" && activeTab === "Profile") {
-      setToaster({
-        type: "error",
-        message: "Switch to the Editor tab to load or save an intervention to work on!",
-        show: true,
-      })
+    // Check if a node is selected
+    const nodeSelected = nodes.find((node) => node.selected);
+  
+    // Early return for common error states
+    if (id === "composer") {
+      if (!nodeSelected) {
+        setToaster({
+          type: "error",
+          message: "No node is selected. Please select a node to edit.",
+          show: true,
+        });
+        return;
+      }
+      if (
+        nodeSelected.type === "bodyStructure" ||
+        nodeSelected.type === "activities" ||
+        nodeSelected.type === "participation"
+      ) {
+        setToaster({
+          message: "These are just placeholders. You can't edit them.",
+          type: "error",
+          show: true,
+        });
+        return;
+      }
+      setIsComposerOpen(true);
       return;
     }
-    if (!nodeSelected && id == "composer") {
-      setToaster({
-        type: "error",
-        message: "No node is selected. Please select a node to edit.",
-        show: true,
-      });
-      return;
-    } if (id == "interventionMenu" && activeTab === "Editor") {
+  
+    if (id === "interventionMenu") {
+      if (activeTab !== "Editor") {
+        setToaster({
+          type: "error",
+          message: "Switch to the Editor tab to load or save an intervention to work on!",
+          show: true,
+        });
+        return;
+      }
+      if (!nodeSelected) {
+        setToaster({
+          type: "error",
+          message: "No node is selected. Please select a node first.",
+          show: true,
+        });
+        return;
+      }
       setIsInterventionModalOpen(true);
       return;
     }
-    if ((nodeSelected.type === "bodyStructure" || nodeSelected.type === "activities" || nodeSelected.type === "participation") && id == "composer") {
-      setToaster({
-        message: "These are just placeholders. You can't edit them.",
-        type: "error",
-        show: true,
-      });
+  
+    if (id === "templateMenu") {
+      // Optional: you can add restrictions as needed, e.g. must be on certain tab or a node must be selected
+      // If needed:
+      // if (!nodeSelected) {
+      //   setToaster({
+      //     type: "error",
+      //     message: "No node is selected. Please select a node to use templates.",
+      //     show: true,
+      //   });
+      //   return;
+      // }
+      setIsTemplateModalOpen(true);
       return;
-    } else if (id == "composer") {
-      setIsComposerOpen(true);
-    } 
-    
+    }
+  
+    // Fallback/default: no action for unknown menu
+    setToaster({
+      type: "error",
+      message: "Unknown menu action.",
+      show: true,
+    });
   }
+  
   
 
   function UtilityMenu() {
@@ -131,6 +175,13 @@ function MainBody() {
         </button>
         <button
           id="interventionMenu"
+          className="bg-zinc-900 hover:bg-black/30 text-slate-300 flex justify-center items-center w-16 font-mono m-2 px-1 rounded-md cursor-pointer text-sm transition-colors duration-200"
+          onClick={(e) => handleModalOpening(e.currentTarget.id)}
+        >
+          <IoMenu size={20} />
+        </button>
+        <button
+          id="templateMenu"
           className="bg-zinc-900 hover:bg-black/30 text-slate-300 flex justify-center items-center w-16 font-mono m-2 px-1 rounded-md cursor-pointer text-sm transition-colors duration-200"
           onClick={(e) => handleModalOpening(e.currentTarget.id)}
         >
@@ -217,6 +268,9 @@ function MainBody() {
         <InterventionModal 
           isOpen={isInterventionModalOpen}
           onClose={() => setIsInterventionModalOpen(false)}  />
+        <TemplateModal 
+          isOpen={isTemplateModalOpen}
+          onClose={() => setIsTemplateModalOpen(false)} />
       </div>
     );
   } else {

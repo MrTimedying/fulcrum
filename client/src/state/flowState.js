@@ -3,6 +3,7 @@ import { persist } from "zustand/middleware";
 import { applyNodeChanges, applyEdgeChanges } from "@xyflow/react";
 import * as _ from "lodash";
 import { ProfileTemplates, EditorTemplates } from "../components/variables";
+import { remapNodesAndEdgesWithNewIds } from "../components/utils";
 
 const useFlowStore = create(
   persist(
@@ -16,7 +17,7 @@ const useFlowStore = create(
       interventions: {},
       editorStates: {},
       profileStates: {},
-      selectedNodeId: [],
+      templates: [],
       columnsLayout: [],
       rowsData: [],
       nodes: [], // Global nodes
@@ -24,15 +25,20 @@ const useFlowStore = create(
 
       updateColumnsForSelectedNode: () => {
         const { nodes, activeTab } = get();
-        const selectedNode = nodes.find(node => node.selected);
-        
+        const selectedNode = nodes.find((node) => node.selected);
+
         if (selectedNode) {
-          const templates = activeTab === "Profile" ? ProfileTemplates : EditorTemplates;
+          const templates =
+            activeTab === "Profile" ? ProfileTemplates : EditorTemplates;
           if (templates[selectedNode.type]) {
             get().setColumnsLayout(templates[selectedNode.type]);
-            console.log(`Updated columns for ${activeTab} node type: ${selectedNode.type}`);
+            console.log(
+              `Updated columns for ${activeTab} node type: ${selectedNode.type}`
+            );
           } else {
-            console.log(`No column template for ${activeTab} node type: ${selectedNode.type}`);
+            console.log(
+              `No column template for ${activeTab} node type: ${selectedNode.type}`
+            );
           }
         } else {
           console.log("No node selected, columns not updated");
@@ -75,7 +81,7 @@ const useFlowStore = create(
         tabStateLogic(activeTab, patientId); // Note: now passing activeTab, not trailing
         set({ nodes: [], edges: [] });
         hydrateFlowState(patientId, tab);
-        get().updateColumnsForSelectedNode()
+        get().updateColumnsForSelectedNode();
       },
 
       setTrailingActiveTab: (tab) => {
@@ -241,38 +247,53 @@ const useFlowStore = create(
       addIntervention: (patientID, interventionData) => {
         set((state) => {
           const newState = _.cloneDeep(state);
-          const patientInterventions = _.get(newState, `interventions.${patientID}`, []);
-          _.set(newState, `interventions.${patientID}`, [...patientInterventions, interventionData]);
+          const patientInterventions = _.get(
+            newState,
+            `interventions.${patientID}`,
+            []
+          );
+          _.set(newState, `interventions.${patientID}`, [
+            ...patientInterventions,
+            interventionData,
+          ]);
           return newState;
         });
       },
 
       loadIntervention: (patientID, interventionID) => {
         const { interventions } = get();
-      
+
         const patientInterventions = _.get(interventions, patientID, []);
         const intervention = patientInterventions.find(
           (item) => item.id === interventionID
         );
-      
+
         if (!intervention) {
-          console.error(`Intervention with ID ${interventionID} not found for patient ${patientID}`);
+          console.error(
+            `Intervention with ID ${interventionID} not found for patient ${patientID}`
+          );
           return;
         }
-      
+
         set({
           nodes: intervention.nodes || [],
           edges: intervention.edges || [],
         });
-      
-        console.log(`Intervention ${interventionID} loaded for patient ${patientID}`);
+
+        console.log(
+          `Intervention ${interventionID} loaded for patient ${patientID}`
+        );
       },
 
       // Remove an intervention for a patient
       removeIntervention: (patientID, interventionID) => {
         set((state) => {
           const newState = _.cloneDeep(state);
-          const patientInterventions = _.get(newState, `interventions.${patientID}`, []);
+          const patientInterventions = _.get(
+            newState,
+            `interventions.${patientID}`,
+            []
+          );
           const updatedInterventions = patientInterventions.filter(
             (intervention) => intervention.interventionID !== interventionID
           );
@@ -284,52 +305,65 @@ const useFlowStore = create(
       // Update a specific field in the selected node
       updateNodeData: (field, value) => {
         const { nodes } = get();
-        
+
         // Prepare the updated nodes array by mapping over the current nodes
         const updatedNodes = nodes.map((node) =>
           node.selected
             ? { ...node, data: { ...node.data, [field]: value } }
             : node
         );
-        
+
         // Directly set the updated nodes, mimicking loadIntervention's approach
         set({
           nodes: updatedNodes,
         });
-        
+
         console.log(`Updated node data field ${field} to ${value}`);
       },
-      
-      
+
       // Update a specific exercise in the selected node
       updateExerciseData: (exerciseId, field, value) => {
         set((state) => {
           const newNodes = _.cloneDeep(state.nodes);
-          const selectedNodeIndex = _.findIndex(newNodes, node => node.selected);
-          
+          const selectedNodeIndex = _.findIndex(
+            newNodes,
+            (node) => node.selected
+          );
+
           if (selectedNodeIndex >= 0) {
-            const exercises = _.get(newNodes[selectedNodeIndex], 'data.exercises', []);
+            const exercises = _.get(
+              newNodes[selectedNodeIndex],
+              "data.exercises",
+              []
+            );
             const exerciseIndex = _.findIndex(exercises, { id: exerciseId });
-            
+
             if (exerciseIndex >= 0) {
               // Update the specific field in the specific exercise
               _.set(exercises[exerciseIndex], field, value);
             }
           }
-          
+
           return { nodes: newNodes };
         });
       },
-      
+
       // Add a new exercise to the selected node
       addExercise: () => {
         set((state) => {
           const newNodes = _.cloneDeep(state.nodes);
-          const selectedNodeIndex = _.findIndex(newNodes, node => node.selected);
-          
+          const selectedNodeIndex = _.findIndex(
+            newNodes,
+            (node) => node.selected
+          );
+
           if (selectedNodeIndex >= 0) {
-            const exercises = _.get(newNodes[selectedNodeIndex], 'data.exercises', []);
-            
+            const exercises = _.get(
+              newNodes[selectedNodeIndex],
+              "data.exercises",
+              []
+            );
+
             // Create the new exercise
             const newExercise = {
               id: uuidv4(),
@@ -338,42 +372,75 @@ const useFlowStore = create(
               reps: 0,
               intensity: "low",
             };
-            
+
             // Use lodash to add the exercise to the array
-            _.set(
-              newNodes[selectedNodeIndex], 
-              'data.exercises', 
-              [...exercises, newExercise]
-            );
+            _.set(newNodes[selectedNodeIndex], "data.exercises", [
+              ...exercises,
+              newExercise,
+            ]);
           }
-          
-          return { nodes: newNodes };
-        });
-      },
-      
-      // Delete selected exercises from the selected node
-      deleteExercises: (exerciseIds) => {
-        set((state) => {
-          const newNodes = _.cloneDeep(state.nodes);
-          const selectedNodeIndex = _.findIndex(newNodes, node => node.selected);
-          
-          if (selectedNodeIndex >= 0) {
-            const exercises = _.get(newNodes[selectedNodeIndex], 'data.exercises', []);
-            
-            // Filter out the exercises to be deleted
-            const filteredExercises = _.filter(
-              exercises, 
-              exercise => !_.includes(exerciseIds, exercise.id)
-            );
-            
-            // Set the filtered exercises back
-            _.set(newNodes[selectedNodeIndex], 'data.exercises', filteredExercises);
-          }
-          
+
           return { nodes: newNodes };
         });
       },
 
+      // Delete selected exercises from the selected node
+      deleteExercises: (exerciseIds) => {
+        set((state) => {
+          const newNodes = _.cloneDeep(state.nodes);
+          const selectedNodeIndex = _.findIndex(
+            newNodes,
+            (node) => node.selected
+          );
+
+          if (selectedNodeIndex >= 0) {
+            const exercises = _.get(
+              newNodes[selectedNodeIndex],
+              "data.exercises",
+              []
+            );
+
+            // Filter out the exercises to be deleted
+            const filteredExercises = _.filter(
+              exercises,
+              (exercise) => !_.includes(exerciseIds, exercise.id)
+            );
+
+            // Set the filtered exercises back
+            _.set(
+              newNodes[selectedNodeIndex],
+              "data.exercises",
+              filteredExercises
+            );
+          }
+
+          return { nodes: newNodes };
+        });
+      },
+
+      addTemplate: (template) =>
+        set((state) => ({
+          templates: [...state.templates, template],
+        })),
+
+      loadTemplate: (templateId) => {
+        const tpl = _.find(get().templates, { id: templateId });
+        if (tpl) {
+          const { newNodes, newEdges } = remapNodesAndEdgesWithNewIds(
+            tpl.nodes,
+            tpl.edges
+          );
+          set((state) => ({
+            nodes: [...state.nodes, ...newNodes],
+            edges: [...state.edges, ...newEdges],
+          }));
+        }
+      },
+
+      removeTemplate: (templateId) =>
+        set((state) => ({
+          templates: _.filter(state.templates, (tpl) => tpl.id !== templateId),
+        })),
     }),
 
     {
@@ -383,6 +450,7 @@ const useFlowStore = create(
         interventions: state.interventions,
         editorStates: state.editorStates,
         profileStates: state.profileStates,
+        templates: state.templates,
       }),
     }
   )
