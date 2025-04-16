@@ -32,17 +32,14 @@ const dataTemplates = {
   }),
   phase: () => ({
     id: uuidv4(),
-    name: "Phase Name",
     scope: "Phase Scope",
   }),
   micro: () => ({
     id: uuidv4(),
-    name: "Micro Name",
     scope: "Micro Scope",
   }),
   session: () => ({
     id: uuidv4(),
-    name: "Session Name",
     scope: "Session Scope",
     exercises: [],
   }),

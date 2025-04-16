@@ -263,7 +263,6 @@ const TemplateModal = ({ isOpen, onClose }) => {
                   <button
                     onClick={handleSaveTemplate}
                     className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-md font-medium transition duration-150"
-                    disabled={!newTemplateName.trim() || previewNodes.length === 0}
                   >
                     <Save fontSize="small" /> Save Template
                   </button>

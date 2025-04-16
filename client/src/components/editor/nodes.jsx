@@ -111,6 +111,7 @@ export const SessionNode = ({ data, selected }) => (
       <ul>
         <li>Session Name: {data.name || "Not defined yet"}</li>
         <li>Session Scope: {data.scope || "Not defined yet"}</li>
+        <li>Date: {data.date || "Not defined yet"}</li>
         <li>
           Exercises:
           {Array.isArray(data.exercises) && data.exercises.length > 0 ? ( // Check if exercises is a valid array with items

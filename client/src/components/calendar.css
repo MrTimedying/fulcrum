@@ -1,0 +1,46 @@
+/* Increase the number size of each day */
+.rmdp-day {
+    font-size: 30px; /* 20px, change as desired */
+    font-weight: 600;
+    color: #f1f5f9;
+    height: 50px;
+    width: 50px;
+  }
+  
+  /* Change color/style of today */
+  .rmdp-day.rmdp-today {
+    color: #4f46e5;
+    background: #e0e7ff;
+    border-radius: 0.5rem;
+  }
+  
+  /* Style the selected date */
+  .rmdp-day.rmdp-selected {
+    background: #6366f1 !important; /* indigo-500 */
+    color: #fff !important;
+    border-radius: 0.5rem;
+  }
+  
+  /* Style disabled/off days */
+  .rmdp-day.rmdp-disabled {
+    text-decoration: line-through;
+    color: #f87171;
+    background: #3f3f46;
+  }
+  
+  /* Week-days row example */
+  .rmdp-week-day {
+    font-size: 0.95rem;
+    font-weight: 400;
+    color: #a3a3a3 !important;
+    letter-spacing: 0.12em;
+  }
+  
+  /* Calendar wrapper (border, spacing, etc) */
+  .rmdp-wrapper {
+    background: #18181b; /* dark background */
+    border-radius: 0.75rem;
+    box-shadow: 0 2px 8px #00000022;
+    padding: 1.2rem;
+  }
+  

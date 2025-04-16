@@ -9,10 +9,13 @@ import useFlowStore from "../state/flowState";
 import { AccountBox, DonutLarge, Close } from "@mui/icons-material";
 import { SlNote } from "react-icons/sl";
 import { IoMenu } from "react-icons/io5";
+import { GoProjectTemplate } from "react-icons/go";
+import { IoCalendarOutline } from "react-icons/io5";
 import { Composer } from "./editor/composer";
 import useTransientStore from "../state/transientState";
 import InterventionModal from "./interventionModal";
 import TemplateModal from "./templateModal";
+import DatepickerModal from "./dateModal";
 
 // Bind modal to your appElement (http://reactcommunity.org/react-modal/accessibility/)
 Modal.setAppElement("#root");
@@ -24,68 +27,8 @@ function MainBody() {
   const [isComposerOpen, setIsComposerOpen] = useState(false);
   const [isInterventionModalOpen, setIsInterventionModalOpen] = useState(false);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+  const [isDatepickerModalOpen, setIsDatepickerModalOpen] = useState(false);
 
-  const nodeSelected = nodes.find((node) => node.selected);
-
-  // Modal styles
-  const modalStyles = {
-    overlay: {
-      backgroundColor: "rgba(0, 0, 0, 0.75)",
-      zIndex: 1000,
-    },
-    content: {
-      background: "transparent",
-      border: "none",
-      padding: 0,
-      inset: 0,
-      overflow: "hidden",
-    },
-  };
-
-  // Default modal dimensions
-  const defaultModalConfig = {
-    width: 800,
-    height: 600,
-    x: window.innerWidth / 2 - 400,
-    y: window.innerHeight / 2 - 300,
-  };
-
-  function ModalComposer() {
-    return (
-      <Modal
-        isOpen={isComposerOpen}
-        onRequestClose={() => setIsComposerOpen(false)}
-        style={modalStyles}
-        contentLabel="Composer Modal"
-      >
-        <Rnd
-          default={defaultModalConfig}
-          minWidth={400}
-          minHeight={300}
-          bounds="window"
-          dragHandleClassName="modal-handle"
-        >
-          <div className="w-full h-full bg-zinc-900 rounded-lg shadow-xl overflow-hidden flex flex-col">
-            {/* Modal Header - Drag Handle */}
-            <div className="modal-handle bg-zinc-800 px-4 py-3 flex justify-between items-center cursor-move">
-              <h3 className="text-gray-200 font-medium">Composer</h3>
-              <button
-                onClick={() => setIsComposerOpen(false)}
-                className="text-gray-400 hover:text-gray-200 transition-colors"
-              >
-                <Close />
-              </button>
-            </div>
-
-            {/* Modal Content */}
-            <div className="flex-1 overflow-auto p-4">
-              <Composer />
-            </div>
-          </div>
-        </Rnd>
-      </Modal>
-    );
-  }
 
   function handleModalOpening(id) {
     // Check if a node is selected
@@ -139,17 +82,32 @@ function MainBody() {
     }
   
     if (id === "templateMenu") {
-      // Optional: you can add restrictions as needed, e.g. must be on certain tab or a node must be selected
-      // If needed:
-      // if (!nodeSelected) {
-      //   setToaster({
-      //     type: "error",
-      //     message: "No node is selected. Please select a node to use templates.",
-      //     show: true,
-      //   });
-      //   return;
-      // }
+
+      if (
+        (nodeSelected && nodeSelected.type !== "phase" && nodeSelected.type !== "micro") ||
+        activeTab !== "Editor"
+      ) {
+        setToaster({
+          type: "error",
+          message: "Templater only works on phases and micros, in the intervention editor tool only.",
+          show: true,
+        });
+        return;
+      }
       setIsTemplateModalOpen(true);
+      return;
+    }
+
+    if (id === "calendarMenu") {
+      if (nodeSelected.type !== 'session' && activeTab !== "Editor") {
+        setToaster({
+          type: "error",
+          message: "Calendar only works on sessions, in the intervention editor tool only.",
+          show: true,
+        });
+        return;
+      }
+      setIsDatepickerModalOpen(true);
       return;
     }
   
@@ -168,24 +126,31 @@ function MainBody() {
       <div className="bg-zinc-900 rounded-full h-8 flex flex-row items-center place-self-center ml-36 col-span-6">
         <button
           id="composer"
-          className="bg-zinc-900 hover:bg-black/30 text-slate-300 flex justify-center items-center w-16 font-mono m-2 px-1 rounded-md cursor-pointer text-sm transition-colors duration-200"
+          className="bg-zinc-900 hover:bg-black/30 text-slate-300 flex justify-center items-center font-sans text-xs font-medium m-2 px-1 rounded-md cursor-pointer  transition-colors duration-200"
           onClick={(e) => handleModalOpening(e.currentTarget.id)}
         >
-          <SlNote size={20} />
+          <SlNote size={20} /> Composer
         </button>
         <button
           id="interventionMenu"
-          className="bg-zinc-900 hover:bg-black/30 text-slate-300 flex justify-center items-center w-16 font-mono m-2 px-1 rounded-md cursor-pointer text-sm transition-colors duration-200"
+          className="bg-zinc-900 hover:bg-black/30 text-slate-300 flex justify-center items-center font-sans text-xs font-medium m-2 px-1 rounded-md cursor-pointer  transition-colors duration-200"
           onClick={(e) => handleModalOpening(e.currentTarget.id)}
         >
-          <IoMenu size={20} />
+          <IoMenu size={20} /> Intervention Menu
         </button>
         <button
           id="templateMenu"
-          className="bg-zinc-900 hover:bg-black/30 text-slate-300 flex justify-center items-center w-16 font-mono m-2 px-1 rounded-md cursor-pointer text-sm transition-colors duration-200"
+          className="bg-zinc-900 hover:bg-black/30 text-slate-300 flex justify-center items-center font-sans text-xs font-medium m-2 px-1 rounded-md cursor-pointer  transition-colors duration-200"
           onClick={(e) => handleModalOpening(e.currentTarget.id)}
         >
-          <IoMenu size={20} />
+          <GoProjectTemplate size={20} /> Template
+        </button>
+        <button
+          id="calendarMenu"
+          className="bg-zinc-900 hover:bg-black/30 text-slate-300 flex justify-center items-center font-sans text-xs font-medium m-2 px-1 rounded-md cursor-pointer  transition-colors duration-200"
+          onClick={(e) => handleModalOpening(e.currentTarget.id)}
+        >
+          <IoCalendarOutline size={20} /> Calendar
         </button>
       </div>
     );
@@ -216,7 +181,7 @@ function MainBody() {
                         : "mx-2 text-gray-300 hover:text-white p-1 cursor-pointer focus:outline-none focus:text-white font-medium transition duration-300 border-b-2 border-transparent"
                     }`}
                   >
-                    <AccountBox />
+                    <AccountBox /> Profile
                   </button>
                 )}
               </Tab>
@@ -230,7 +195,7 @@ function MainBody() {
                         : "mx-2 text-gray-300 hover:text-white px-1 cursor-pointer focus:outline-none focus:text-white font-medium transition duration-300 border-b-2 border-transparent"
                     }`}
                   >
-                    <DonutLarge />
+                    <DonutLarge /> Editor
                   </button>
                 )}
               </Tab>
@@ -271,6 +236,9 @@ function MainBody() {
         <TemplateModal 
           isOpen={isTemplateModalOpen}
           onClose={() => setIsTemplateModalOpen(false)} />
+        <DatepickerModal
+          isOpen={isDatepickerModalOpen}
+          onClose={() => setIsDatepickerModalOpen(false)} />
       </div>
     );
   } else {

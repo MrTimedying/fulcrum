@@ -29,3 +29,30 @@ export function remapNodesAndEdgesWithNewIds(nodes, edges) {
   }));
   return { newNodes, newEdges };
 }
+
+// Clear the 'date' property from node.data
+export function clearDatesFromNodes(nodes) {
+  return nodes.map(node => ({
+    ...node,
+    data: { ...(node.data || {}), date: undefined },
+  }));
+}
+
+// Offset positions of nodes and edges by (dx, dy)
+export function offsetNodesEdgesPosition(nodes, edges, dx = 100, dy = 100) {
+  const offsetedNodes = nodes.map(node => ({
+    ...node,
+    position: {
+      x: (node.position?.x ?? node.x ?? 0) + dx,
+      y: (node.position?.y ?? node.y ?? 0) + dy,
+    },
+  }));
+  const offsetedEdges = edges.map(edge => ({
+    ...edge,
+    sourceX: (edge.sourceX ?? 0) + dx,
+    sourceY: (edge.sourceY ?? 0) + dy,
+    targetX: (edge.targetX ?? 0) + dx,
+    targetY: (edge.targetY ?? 0) + dy,
+  }));
+  return { offsetedNodes, offsetedEdges };
+}

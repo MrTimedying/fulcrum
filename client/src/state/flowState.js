@@ -3,7 +3,7 @@ import { persist } from "zustand/middleware";
 import { applyNodeChanges, applyEdgeChanges } from "@xyflow/react";
 import * as _ from "lodash";
 import { ProfileTemplates, EditorTemplates } from "../components/variables";
-import { remapNodesAndEdgesWithNewIds } from "../components/utils";
+import { remapNodesAndEdgesWithNewIds, clearDatesFromNodes, offsetNodesEdgesPosition } from "../components/utils";
 
 const useFlowStore = create(
   persist(
@@ -426,13 +426,25 @@ const useFlowStore = create(
       loadTemplate: (templateId) => {
         const tpl = _.find(get().templates, { id: templateId });
         if (tpl) {
-          const { newNodes, newEdges } = remapNodesAndEdgesWithNewIds(
+          let { newNodes, newEdges } = remapNodesAndEdgesWithNewIds(
             tpl.nodes,
             tpl.edges
           );
+
+          // Clear dates from nodes
+          newNodes = clearDatesFromNodes(newNodes);
+
+          // Offset nodes and edges to prevent overlap
+          const { offsetedNodes, offsetedEdges } = offsetNodesEdgesPosition(
+            newNodes,
+            newEdges,
+            100,
+            100
+          );
+
           set((state) => ({
-            nodes: [...state.nodes, ...newNodes],
-            edges: [...state.edges, ...newEdges],
+            nodes: [...state.nodes, ...offsetedNodes],
+            edges: [...state.edges, ...offsetedEdges],
           }));
         }
       },
@@ -441,8 +453,18 @@ const useFlowStore = create(
         set((state) => ({
           templates: _.filter(state.templates, (tpl) => tpl.id !== templateId),
         })),
-    }),
 
+      updateNodeById: (id, date) =>
+        set((state) => ({
+          nodes: state.nodes.map((node) => {
+            if (node.id !== id) return node;
+            // Deep clone node and node.data
+            const updatedNode = _.cloneDeep(node);
+            _.set(updatedNode, "data.date", date);
+            return updatedNode;
+          }),
+        })),
+    }),
     {
       name: "flow-store",
       partialize: (state) => ({

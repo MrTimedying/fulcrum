@@ -32,15 +32,14 @@ export const EditorTemplates = {
   ],
   phase: [
     { title: "ID", field: "id", width: 100 },
-    { title: "Scope", field: "scope", width: 150 },
+    { title: "Scope", field: "scope", width: 150, editor: "textarea" },
   ],
   micro: [
     { title: "ID", field: "id", width: 100 },
-    { title: "Scope", field: "scope", width: 150 },
+    { title: "Scope", field: "scope", width: 150, editor: "textarea" },
   ],
   session: [
     { title: "ID", field: "id", width: 100 },
     { title: "Scope", field: "scope", width: 150, editor: "textarea" },
-    { title: "Day", field: "day", width: 150, editor: "date" },
   ],
 };
