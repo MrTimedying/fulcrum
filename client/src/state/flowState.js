@@ -3,7 +3,12 @@ import { persist } from "zustand/middleware";
 import { applyNodeChanges, applyEdgeChanges } from "@xyflow/react";
 import * as _ from "lodash";
 import { ProfileTemplates, EditorTemplates } from "../components/variables";
-import { remapNodesAndEdgesWithNewIds, clearDatesFromNodes, offsetNodesEdgesPosition } from "../components/utils";
+import {
+  remapNodesAndEdgesWithNewIds,
+  clearDatesFromNodes,
+  offsetNodesEdgesPosition,
+} from "../components/utils";
+
 
 const useFlowStore = create(
   persist(
@@ -20,6 +25,7 @@ const useFlowStore = create(
       templates: [],
       columnsLayout: [],
       rowsData: [],
+      clipboard: { nodes: [], edges: [] },
       nodes: [], // Global nodes
       edges: [], // Global edges
 
@@ -464,6 +470,62 @@ const useFlowStore = create(
             return updatedNode;
           }),
         })),
+
+      cutNodesEdges: () =>
+        set((state) => {
+          const nodesToCut = state.nodes.filter((n) => n.selected);
+          const edgesToCut = state.edges.filter((e) => e.selected);
+          const remainingNodes = state.nodes.filter((n) => !n.selected);
+          const remainingEdges = state.edges.filter((e) => !e.selected);
+
+          return {
+            ...state,
+            clipboard: {
+              nodes: _.cloneDeep(nodesToCut),
+              edges: _.cloneDeep(edgesToCut),
+            },
+            nodes: remainingNodes,
+            edges: remainingEdges,
+          };
+        }),
+
+      copyNodesEdges: () =>
+        set((state) => {
+          const nodesToCopy = state.nodes.filter((n) => n.selected);
+          const edgesToCopy = state.edges.filter((e) => e.selected);
+          return {
+            ...state,
+            clipboard: {
+              nodes: _.cloneDeep(nodesToCopy),
+              edges: _.cloneDeep(edgesToCopy),
+            },
+          };
+        }),
+
+      pasteNodesEdges: (position) =>
+        set((state) => {
+          const { clipboard } = state;
+          // Deep copy and assign new IDs
+          const { newNodes, newEdges } = remapNodesAndEdgesWithNewIds(
+            clipboard.nodes,
+            clipboard.edges
+          );
+          // Offset position (if needed)
+          const { offsetedNodes, offsetedEdges } = offsetNodesEdgesPosition(
+            newNodes,
+            newEdges,
+            position?.x ?? 100,
+            position?.y ?? 100
+          );
+          // Clear selection state on new nodes/edges
+          offsetedNodes.forEach((n) => (n.selected = false));
+          offsetedEdges.forEach((e) => (e.selected = false));
+          return {
+            ...state,
+            nodes: [...state.nodes, ...offsetedNodes],
+            edges: [...state.edges, ...offsetedEdges],
+          };
+        }),
     }),
     {
       name: "flow-store",

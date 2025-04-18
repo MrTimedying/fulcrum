@@ -308,7 +308,7 @@ function Editor() {
       onClick={closeMenus} // Close the context menu on a click outside
     >
 
-      <div id="left-block" className="bg-zinc-900 flex flex-col mt-5 h-full w-full overflow-y-auto">
+      <div id="left-block" className="bg-zinc-900 flex flex-col h-full w-full overflow-y-auto">
         {/* React Flow Canvas */}
         <ReactFlow
           nodes={nodes}
@@ -321,7 +321,8 @@ function Editor() {
           onReconnectEnd={onReconnectEnd}
           isValidConnection={isValidConnection}
           onNodeClick={handleNodeClick}
-          onNodeDragStart={handleNodeDragStart}          
+          onNodeDragStart={handleNodeDragStart}
+          selectNodesOnDrag={true}          
           onPaneClick={handlePaneClick}
           onNodeContextMenu={onNodeContextMenu}
           onPaneContextMenu={onPaneContextMenu} // Enable Node Context Menu

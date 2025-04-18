@@ -350,7 +350,7 @@ function Profile({isModalOpen}) {
       className="flex flex-row h-full overflow-y-auto"
       onClick={closeMenus} // Close the context menu on a click outside
     >
-      <div id="left-block" className="bg-zinc-900 flex flex-col mt-5 h-full w-full overflow-y-auto">
+      <div id="left-block" className="bg-zinc-900 flex flex-col h-full w-full overflow-y-auto">
         {/* React Flow Canvas */}
         <ReactFlow
           nodes={nodes}
