@@ -16,6 +16,7 @@ import useFlowStore from "../../state/flowState";
 import useTransientStore from "../../state/transientState";
 import {InterventionNode, PhaseNode, MicroNode, SessionNode} from "./nodes";
 import {EditorTemplates}  from "../variables";
+import Inspector from "../Inspector";
 
 // COLUMNS FOR THE COMPOSER
 
@@ -72,7 +73,7 @@ const selector = (state) => ({
   setColumnsLayout: state.setColumnsLayout,
 });
 
-function Editor() {
+function Editor({isInspectorOpen, setIsInspectorOpen}) {
   // STATE MANAGEMENT
   const { setToaster } = useTransientStore();
 
@@ -87,8 +88,8 @@ function Editor() {
     setColumnsLayout,
   } = useFlowStore(useShallow(selector));
 
-  // const selectedNode = nodes.find((node) => node.selected);
-  // console.log("Selected node", selectedNode);
+  const selectedNode = nodes.find((node) => node.selected);
+  console.log("Selected node", selectedNode);
 
   const handleNodeClick = useCallback((event, node) => {
     event.stopPropagation();
@@ -343,6 +344,7 @@ function Editor() {
           isOpen={nodeMenu.isOpen && nodeMenu.targetNode}
           position={nodeMenu.position}
           targetNode={nodeMenu.targetNode}
+          setIsInspectorOpen={setIsInspectorOpen}
           actions={{ editNode, deleteNode }}
           onClose={closeMenus}
         />
@@ -352,6 +354,7 @@ function Editor() {
           actions={{ addNode, zoomToFit }}
           onClose={closeMenus}
         />
+        <Inspector isOpen={isInspectorOpen} node={selectedNode} onClose={() => setIsInspectorOpen(false)} />
       </div>
     </div>
   );

@@ -28,6 +28,7 @@ function MainBody() {
   const [isInterventionModalOpen, setIsInterventionModalOpen] = useState(false);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
   const [isDatepickerModalOpen, setIsDatepickerModalOpen] = useState(false);
+  const [isInspectorOpen, setIsInspectorOpen] = useState(false);
 
 
   function handleModalOpening(id) {
@@ -212,7 +213,7 @@ function MainBody() {
           </Tab.Panel>
           <Tab.Panel key="interventionEditor" className="h-full">
             <ReactFlowProvider>
-              <Editor />
+              <Editor isInspectorOpen={isInspectorOpen} setIsInspectorOpen={setIsInspectorOpen} />
             </ReactFlowProvider>
           </Tab.Panel>
         </Tab.Panels>
