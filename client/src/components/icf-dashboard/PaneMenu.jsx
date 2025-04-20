@@ -2,7 +2,7 @@ import React, {useEffect, useState} from "react";
 import ContextMenu from "../editor/ContextMenu";
 import { BsMenuButtonFill } from "react-icons/bs";
 
-const PaneMenu = ({ isOpen, position, onClose, actions }) => {
+const PaneMenu = ({ isOpen, position, onClose, actions, clipboard }) => {
   if (!isOpen) return null;
 
   const handleNodeCreation = (type) => {
@@ -26,6 +26,25 @@ const PaneMenu = ({ isOpen, position, onClose, actions }) => {
             New Test Result
           </button>
         </li>
+                {(clipboard.nodes || clipboard.edges) && (
+                  <>
+                  <hr className="my-1 border-solid border-zinc-700"></hr>
+                  <li className="mb-0 text-sm text-slate-300 hover:bg-zinc-900 rounded-sm p-1">
+                    <button
+                      onClick={() => {
+                        const pastePosition = {
+                          x: position?.x || 100,
+                          y: position?.y || 100,
+                        };
+                        actions.pasteNodesEdges(pastePosition);
+                        onClose();
+                      }}
+                    >
+                      Paste
+                    </button>
+                  </li>
+                  </>
+                )}
       </ul>
     </ContextMenu>
   );

@@ -1,5 +1,11 @@
-import React, { useRef, useCallback, useState, useMemo, useEffect } from "react";
-import { useShallow } from 'zustand/react/shallow';
+import React, {
+  useRef,
+  useCallback,
+  useState,
+  useMemo,
+  useEffect,
+} from "react";
+import { useShallow } from "zustand/react/shallow";
 import {
   useReactFlow,
   ReactFlow,
@@ -14,10 +20,11 @@ import PaneMenu from "./paneMenu"; // Specific Node Context Menu
 import { v4 as uuidv4 } from "uuid";
 import useFlowStore from "../../state/flowState";
 import useTransientStore from "../../state/transientState";
-import {InterventionNode, PhaseNode, MicroNode, SessionNode} from "./nodes";
-import {EditorTemplates}  from "../variables";
+import { InterventionNode, PhaseNode, MicroNode, SessionNode } from "./nodes";
+import { EditorTemplates } from "../variables";
 import Inspector from "../Inspector";
 import SelectionMenu from "../selectionMenu";
+
 
 // COLUMNS FOR THE COMPOSER
 
@@ -49,7 +56,7 @@ const dataTemplates = {
 
 const nodeTemplates = {
   intervention: {
-    type: "intervention",    
+    type: "intervention",
   },
   phase: {
     type: "phase",
@@ -62,7 +69,6 @@ const nodeTemplates = {
   },
 };
 
-
 const selector = (state) => ({
   nodes: state.nodes,
   edges: state.edges,
@@ -70,11 +76,11 @@ const selector = (state) => ({
   setEdges: state.setEdges,
   onNodesChange: state.onNodesChange,
   onEdgesChange: state.onEdgesChange,
-  columnsLayout: state.columnsLayout,
   setColumnsLayout: state.setColumnsLayout,
+  clipboard: state.clipboard,
 });
 
-function Editor({isInspectorOpen, setIsInspectorOpen}) {
+function Editor({ isInspectorOpen, setIsInspectorOpen }) {
   // STATE MANAGEMENT
   const { setToaster } = useTransientStore();
 
@@ -85,11 +91,16 @@ function Editor({isInspectorOpen, setIsInspectorOpen}) {
     setEdges,
     onNodesChange,
     onEdgesChange,
-    columnsLayout,
     setColumnsLayout,
+    clipboard,
   } = useFlowStore(useShallow(selector));
 
-  const { cutNodesEdges, copyNodesEdges, pasteNodesEdges, deleteSelectedNodesEdges } = useFlowStore(
+  const {
+    cutNodesEdges,
+    copyNodesEdges,
+    pasteNodesEdges,
+    deleteSelectedNodesEdges,
+  } = useFlowStore(
     useShallow((state) => ({
       cutNodesEdges: state.cutNodesEdges,
       copyNodesEdges: state.copyNodesEdges,
@@ -99,83 +110,93 @@ function Editor({isInspectorOpen, setIsInspectorOpen}) {
   );
 
   const selectedNode = nodes.find((node) => node.selected);
-  const multipleNodesSelected = nodes.filter((node) => node.selected).length > 1;
+  const multipleNodesSelected =
+    nodes.filter((node) => node.selected).length > 1;
 
-  const handleNodeClick = useCallback((event, node) => {
-    event.stopPropagation();
-    if (node.selected) {
-      onNodesChange([
-        {
+  const handleNodeClick = useCallback(
+    (event, node) => {
+      event.stopPropagation();
+      if (node.selected) {
+        onNodesChange([
+          {
+            id: node.id,
+            type: "select",
+            selected: false,
+          },
+        ]);
+        setColumnsLayout([]);
+      } else {
+        // First deselect all nodes (optional, only if you want single selection)
+        const deselectChanges = nodes
+          .filter((n) => n.selected)
+          .map((n) => ({
+            id: n.id,
+            type: "select",
+            selected: false,
+          }));
+
+        // Then select the clicked node
+        const selectChange = {
           id: node.id,
-          type: 'select',
-          selected: false
-        }
-      ]);
-      setColumnsLayout([]);
+          type: "select",
+          selected: true,
+        };
 
-    } else {
-      // First deselect all nodes (optional, only if you want single selection)
-      const deselectChanges = nodes
-        .filter(n => n.selected)
-        .map(n => ({
-          id: n.id,
-          type: 'select',
-          selected: false
-        }));
-      
-      // Then select the clicked node
-      const selectChange = {
-        id: node.id,
-        type: 'select',
-        selected: true
-      };
+        setColumnsLayout(columnTemplates[node.type] || []);
+        onNodesChange([...deselectChanges, selectChange]);
+      }
+    },
+    [nodes, onNodesChange]
+  );
 
-      setColumnsLayout((columnTemplates[node.type] || []));
-      onNodesChange([...deselectChanges, selectChange]);
+  const handleNodeDragStart = useCallback(
+    (event, node) => {
+      // If the node isn't already selected, select it when drag starts
+      if (!node.selected) {
+        const deselectChanges = nodes
+          .filter((n) => n.selected)
+          .map((n) => ({
+            id: n.id,
+            type: "select",
+            selected: false,
+          }));
+        const selectChange = {
+          id: node.id,
+          type: "select",
+          selected: true,
+        };
+        setColumnsLayout(columnTemplates[node.type] || []);
+        onNodesChange([...deselectChanges, selectChange]);
+      }
+    },
+    [nodes, onNodesChange, setColumnsLayout]
+  );
 
-    }
-  }, [nodes, onNodesChange]);
+  const handlePaneClick = useCallback(
+    (event) => {
+      const isPaneClick =
+        event.target.classList.contains("react-flow__pane") ||
+        event.target.classList.contains("react-flow__background");
+      if (isPaneClick) {
+        console.log("Genuine pane click detected");
+        const deselectChanges = nodes
+          .filter((n) => n.selected)
+          .map((n) => ({
+            id: n.id,
+            type: "select",
+            selected: false,
+          }));
+        onNodesChange(deselectChanges);
+        setColumnsLayout([]);
+      } else {
+        console.log(
+          "Click was on another element, not processing as pane click"
+        );
+      }
+    },
+    [nodes, onNodesChange, setColumnsLayout]
+  );
 
-  const handleNodeDragStart = useCallback((event, node) => {
-    // If the node isn't already selected, select it when drag starts
-    if (!node.selected) {
-      const deselectChanges = nodes
-        .filter(n => n.selected)
-        .map(n => ({
-          id: n.id,
-          type: 'select',
-          selected: false,
-        }));
-      const selectChange = {
-        id: node.id,
-        type: 'select',
-        selected: true,
-      };
-      setColumnsLayout(columnTemplates[node.type] || []);
-      onNodesChange([...deselectChanges, selectChange]);
-    }
-  }, [nodes, onNodesChange, setColumnsLayout]);
-  
-
-  const handlePaneClick = useCallback((event) => {
-    const isPaneClick = event.target.classList.contains('react-flow__pane') || 
-                        event.target.classList.contains('react-flow__background');
-    if (isPaneClick) {
-      console.log("Genuine pane click detected");
-      const deselectChanges = nodes
-        .filter(n => n.selected)
-        .map(n => ({
-          id: n.id,
-          type: 'select',
-          selected: false,
-        }));
-      onNodesChange(deselectChanges);
-      setColumnsLayout([]);
-    } else {
-      console.log("Click was on another element, not processing as pane click");
-    }
-  }, [nodes, onNodesChange, setColumnsLayout]);
-  
   const [nodeMenu, setNodeMenu] = useState({
     isOpen: false,
     position: { x: 0, y: 0 },
@@ -200,7 +221,10 @@ function Editor({isInspectorOpen, setIsInspectorOpen}) {
 
   // EDGE MANAGEMENT
   const edgeReconnectSuccessful = useRef(false);
-  const onConnect = useCallback((params) => setEdges((eds) => addEdge(params, eds)), []);
+  const onConnect = useCallback(
+    (params) => setEdges((eds) => addEdge(params, eds)),
+    []
+  );
   const onReconnectStart = useCallback(() => {
     edgeReconnectSuccessful.current = false;
   }, []);
@@ -208,50 +232,50 @@ function Editor({isInspectorOpen, setIsInspectorOpen}) {
     edgeReconnectSuccessful.current = true; // Reconnection successful
     setEdges((eds) => reconnectEdge(oldEdge, newConnection, eds));
   }, []);
-  const onReconnectEnd = useCallback(
-    (_, edge) => {
-      if (!edgeReconnectSuccessful.current) {
-        setEdges((eds) => eds.filter((e) => e.id !== edge.id)); // Remove edge
-      }
-      edgeReconnectSuccessful.current = true; // Reset
-    },
-    []
-  );
+  const onReconnectEnd = useCallback((_, edge) => {
+    if (!edgeReconnectSuccessful.current) {
+      setEdges((eds) => eds.filter((e) => e.id !== edge.id)); // Remove edge
+    }
+    edgeReconnectSuccessful.current = true; // Reset
+  }, []);
 
   const isValidConnection = useCallback(
     (connection) => {
       // Find the source and target nodes in the nodes state array
       const sourceNode = nodes.find((node) => node.id === connection.source);
       const targetNode = nodes.find((node) => node.id === connection.target);
-  
+
       // Rule 1: Do not allow self connections
       if (connection.source === connection.target) {
         return false;
       }
-  
+
       // Rule 2: Ensure hierarchical structure
       const validConnections = {
         intervention: ["phase"], // Intervention can only connect to Phase
-        phase: ["micro"],        // Phase can only connect to Micro
-        micro: ["session"],      // Micro can only connect to Session
+        phase: ["micro"], // Phase can only connect to Micro
+        micro: ["session"], // Micro can only connect to Session
       };
-  
+
       // Get the type of source and target nodes
       const allowedTargetTypes = validConnections[sourceNode?.type] || [];
       if (!allowedTargetTypes.includes(targetNode?.type)) {
         return false; // Not a valid connection type
       }
-  
+
       return true; // The connection is valid
     },
     [nodes] // Ensure this function recomputes when nodes change
   );
-  
 
   // NODE CONTEXT MENU HANDLING
   const onNodeContextMenu = useCallback((event, node) => {
     event.preventDefault();
-    setNodeMenu({ isOpen: true, position: { x: event.clientX, y: event.clientY }, targetNode: node });
+    setNodeMenu({
+      isOpen: true,
+      position: { x: event.clientX, y: event.clientY },
+      targetNode: node,
+    });
     setPaneMenu({ isOpen: false });
     setSelectionMenu({ isOpen: false });
   }, []);
@@ -259,14 +283,20 @@ function Editor({isInspectorOpen, setIsInspectorOpen}) {
   // PANE CONTEXT MENU HANDLING
   const onPaneContextMenu = useCallback((event) => {
     event.preventDefault();
-    setPaneMenu({ isOpen: true, position: { x: event.clientX, y: event.clientY } });
-    setNodeMenu({ isOpen: false }); 
+    setPaneMenu({
+      isOpen: true,
+      position: { x: event.clientX, y: event.clientY },
+    });
+    setNodeMenu({ isOpen: false });
     setSelectionMenu({ isOpen: false });
   }, []);
 
   const onSelectionContextMenu = useCallback((event) => {
     event.preventDefault();
-    setSelectionMenu({ isOpen: true, position: { x: event.clientX, y: event.clientY } });
+    setSelectionMenu({
+      isOpen: true,
+      position: { x: event.clientX, y: event.clientY },
+    });
     setPaneMenu({ isOpen: false }); // Close PaneMenu
     setNodeMenu({ isOpen: false }); // Close NodeMenu
   }, []);
@@ -275,7 +305,10 @@ function Editor({isInspectorOpen, setIsInspectorOpen}) {
   const reactFlowInstance = useReactFlow();
 
   const validateNodeAddition = (type, nodes) => {
-    if (type === "intervention" && nodes.some((n) => n.type === "intervention")) {
+    if (
+      type === "intervention" &&
+      nodes.some((n) => n.type === "intervention")
+    ) {
       return false; // Prevent adding multiple "intervention" nodes
     }
     return true; // Other node types can be added without restriction
@@ -283,13 +316,17 @@ function Editor({isInspectorOpen, setIsInspectorOpen}) {
 
   const addNode = (position, type) => {
     const canvasPosition = reactFlowInstance.screenToFlowPosition(position);
-  
+
     // Validate node addition for types like "intervention"
     if (!validateNodeAddition(type, nodes)) {
-      setToaster({ type: "error", message: "Only one intervention node is allowed", show: true });
+      setToaster({
+        type: "error",
+        message: "Only one intervention node is allowed",
+        show: true,
+      });
       return;
     }
-  
+
     // Dynamically create node based on type
     const id = uuidv4();
     const newNode = {
@@ -298,7 +335,7 @@ function Editor({isInspectorOpen, setIsInspectorOpen}) {
       data: dataTemplates[type]?.() || {}, // Generate node data dynamically
       ...(nodeTemplates[type] || { type, data: {} }), // Use template or fallback
     };
-  
+
     // Add the new node to the flow
     setNodes((nds) => [...nds, newNode]);
     closeMenus(); // Close any open context menus
@@ -313,7 +350,9 @@ function Editor({isInspectorOpen, setIsInspectorOpen}) {
     const newLabel = prompt("Edit node label:", node.data.label);
     if (newLabel) {
       setNodes((nds) =>
-        nds.map((n) => (n.id === node.id ? { ...n, data: { ...n.data, label: newLabel } } : n))
+        nds.map((n) =>
+          n.id === node.id ? { ...n, data: { ...n.data, label: newLabel } } : n
+        )
       );
     }
     closeMenus();
@@ -321,11 +360,11 @@ function Editor({isInspectorOpen, setIsInspectorOpen}) {
 
   const deleteNode = (node) => {
     setNodes((nds) => nds.filter((n) => n.id !== node.id)); // Remove node
-    setEdges((eds) => eds.filter((e) => e.source !== node.id && e.target !== node.id)); // Remove edges
+    setEdges((eds) =>
+      eds.filter((e) => e.source !== node.id && e.target !== node.id)
+    ); // Remove edges
     closeMenus();
   };
-
-
 
   return (
     <div
@@ -333,8 +372,10 @@ function Editor({isInspectorOpen, setIsInspectorOpen}) {
       className="flex flex-row h-full overflow-y-auto"
       onClick={closeMenus} // Close the context menu on a click outside
     >
-
-      <div id="left-block" className="bg-zinc-900 flex flex-col h-full w-full overflow-y-auto">
+      <div
+        id="left-block"
+        className="bg-zinc-900 flex flex-col h-full w-full overflow-y-auto"
+      >
         {/* React Flow Canvas */}
         <ReactFlow
           nodes={nodes}
@@ -348,7 +389,7 @@ function Editor({isInspectorOpen, setIsInspectorOpen}) {
           isValidConnection={isValidConnection}
           onNodeClick={handleNodeClick}
           onNodeDragStart={handleNodeDragStart}
-          selectNodesOnDrag={true}          
+          selectNodesOnDrag={true}
           onPaneClick={handlePaneClick}
           onNodeContextMenu={onNodeContextMenu}
           onPaneContextMenu={onPaneContextMenu}
@@ -377,7 +418,8 @@ function Editor({isInspectorOpen, setIsInspectorOpen}) {
         <PaneMenu
           isOpen={paneMenu.isOpen}
           position={paneMenu.position}
-          actions={{ addNode, zoomToFit }}
+          clipboard={clipboard}
+          actions={{ addNode, zoomToFit, pasteNodesEdges }}
           onClose={closeMenus}
         />
         <SelectionMenu
@@ -385,10 +427,17 @@ function Editor({isInspectorOpen, setIsInspectorOpen}) {
           position={selectionMenu.position}
           onClose={closeMenus}
           actions={{
-            cutNodesEdges, copyNodesEdges, pasteNodesEdges, deleteSelectedNodesEdges,
+            cutNodesEdges,
+            copyNodesEdges,
+            deleteSelectedNodesEdges,
           }}
-          />
-        <Inspector isOpen={isInspectorOpen} node={selectedNode} onClose={() => setIsInspectorOpen(false)} multiple={multipleNodesSelected} />
+        />
+        <Inspector
+          isOpen={isInspectorOpen}
+          node={selectedNode}
+          onClose={() => setIsInspectorOpen(false)}
+          multiple={multipleNodesSelected}
+        />
       </div>
     </div>
   );

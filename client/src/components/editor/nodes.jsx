@@ -142,7 +142,7 @@ export const SessionNode = ({ id, data, selected }) => {
               data: {
                 ...node.data,
                 targetHandlePosition: newPosition,
-                targetHandleId: newHandleId // Optional for UI
+                targetHandleId: newHandleId, // Optional for UI
               },
             }
           : node
@@ -185,27 +185,26 @@ export const SessionNode = ({ id, data, selected }) => {
       >
         {/* --- Both handles are always rendered, only one is visible at a time --- */}
         <Handle
-  type="target"
-  id="target-handle-left"
-  position={Position.Left}
-  style={{
-    background: selected ? "#6366F1" : "black",
-    opacity: currentHandlePosition === "left" ? 1 : 0,
-    pointerEvents: currentHandlePosition === "left" ? "auto" : "none",
-    // No display:none!
-  }}
-/>
-<Handle
-  type="target"
-  id="target-handle-top"
-  position={Position.Top}
-  style={{
-    background: selected ? "#6366F1" : "black",
-    opacity: currentHandlePosition === "top" ? 1 : 0,
-    pointerEvents: currentHandlePosition === "top" ? "auto" : "none",
-  }}
-/>
-
+          type="target"
+          id="target-handle-left"
+          position={Position.Left}
+          style={{
+            background: selected ? "#6366F1" : "black",
+            opacity: currentHandlePosition === "left" ? 1 : 0,
+            pointerEvents: currentHandlePosition === "left" ? "auto" : "none",
+            // No display:none!
+          }}
+        />
+        <Handle
+          type="target"
+          id="target-handle-top"
+          position={Position.Top}
+          style={{
+            background: selected ? "#6366F1" : "black",
+            opacity: currentHandlePosition === "top" ? 1 : 0,
+            pointerEvents: currentHandlePosition === "top" ? "auto" : "none",
+          }}
+        />
 
         {/* If you need a source handle always on right, you can add it here */}
         {/* <Handle type="source" id="source-handle" position={Position.Right} style={{ background: selected ? "#32a852" : "black" }} /> */}

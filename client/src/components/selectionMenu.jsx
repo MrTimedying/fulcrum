@@ -42,22 +42,6 @@ const SelectionMenu = ({ isOpen, position, onClose, actions }) => {
           </button>
         </li>
 
-        {/* Paste */}
-        <li className="mb-0 text-sm text-slate-300 hover:bg-zinc-900 rounded-sm p-1">
-          <button
-            onClick={() => {
-              const pastePosition = {
-                x: position?.x || 100,
-                y: position?.y || 100,
-              };
-              actions.pasteNodesEdges(pastePosition);
-              onClose();
-            }}
-          >
-            Paste
-          </button>
-        </li>
-
         {/* Delete */}
         <li className="mb-0 text-sm text-slate-300 hover:bg-zinc-900 rounded-sm p-1">
           <button

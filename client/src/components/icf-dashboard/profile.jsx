@@ -1,5 +1,11 @@
-import React, { useRef, useCallback, useState, useMemo, useEffect } from "react";
-import { useShallow } from 'zustand/react/shallow';
+import React, {
+  useRef,
+  useCallback,
+  useState,
+  useMemo,
+  useEffect,
+} from "react";
+import { useShallow } from "zustand/react/shallow";
 import { debounce } from "../utils";
 import {
   useReactFlow,
@@ -15,10 +21,16 @@ import PaneMenu from "./PaneMenu"; // Specific Node Context Menu
 import { v4 as uuidv4 } from "uuid";
 import useFlowStore from "../../state/flowState";
 import useTransientStore from "../../state/transientState";
-import {ProfileNode, BodyStructureNode, ActivitiesNode, ParticipationNode} from "./nodes";
-import Dagre from '@dagrejs/dagre';
+import {
+  ProfileNode,
+  BodyStructureNode,
+  ActivitiesNode,
+  ParticipationNode,
+} from "./nodes";
+import Dagre from "@dagrejs/dagre";
 import { ProfileTemplates } from "../variables";
 import Inspector from "../Inspector";
+import SelectionMenu from "../selectionMenu";
 
 // COLUMNS FOR THE COMPOSER
 
@@ -61,8 +73,6 @@ const nodeTemplates = {
   },
 };
 
-
-
 const selector = (state) => ({
   nodes: state.nodes,
   edges: state.edges,
@@ -70,13 +80,14 @@ const selector = (state) => ({
   setEdges: state.setEdges,
   onNodesChange: state.onNodesChange,
   onEdgesChange: state.onEdgesChange,
-  columnsLayout: state.columnsLayout,
   setColumnsLayout: state.setColumnsLayout,
+  clipboard: state.clipboard,
 });
 
-function Profile({isInspectorOpen, setIsInspectorOpen}) {
+function Profile({ isInspectorOpen, setIsInspectorOpen }) {
   // STATE MANAGEMENT
   const { setToaster } = useTransientStore();
+
   const {
     nodes,
     edges,
@@ -84,89 +95,111 @@ function Profile({isInspectorOpen, setIsInspectorOpen}) {
     setEdges,
     onNodesChange,
     onEdgesChange,
-    columnsLayout,
     setColumnsLayout,
+    clipboard,
   } = useFlowStore(useShallow(selector));
- 
+
+  const {
+    cutNodesEdges,
+    copyNodesEdges,
+    pasteNodesEdges,
+    deleteSelectedNodesEdges,
+  } = useFlowStore(
+    useShallow((state) => ({
+      cutNodesEdges: state.cutNodesEdges,
+      copyNodesEdges: state.copyNodesEdges,
+      pasteNodesEdges: state.pasteNodesEdges,
+      deleteSelectedNodesEdges: state.deleteSelectedNodesEdges,
+    }))
+  );
+
   const selectedNode = nodes.find((node) => node.selected);
-  const multipleNodesSelected = nodes.filter((node) => node.selected).length > 1;
+  const multipleNodesSelected =
+    nodes.filter((node) => node.selected).length > 1;
 
-  const handleNodeClick = useCallback((event, node) => {
-    event.stopPropagation();
-    if (node.selected) {
-      onNodesChange([
-        {
+  const handleNodeClick = useCallback(
+    (event, node) => {
+      event.stopPropagation();
+      if (node.selected) {
+        onNodesChange([
+          {
+            id: node.id,
+            type: "select",
+            selected: false,
+          },
+        ]);
+        setColumnsLayout([]);
+      } else {
+        // First deselect all nodes (optional, only if you want single selection)
+        const deselectChanges = nodes
+          .filter((n) => n.selected)
+          .map((n) => ({
+            id: n.id,
+            type: "select",
+            selected: false,
+          }));
+
+        // Then select the clicked node
+        const selectChange = {
           id: node.id,
-          type: 'select',
-          selected: false
-        }
-      ]);
-      setColumnsLayout([]);
+          type: "select",
+          selected: true,
+        };
 
-    } else {
-      // First deselect all nodes (optional, only if you want single selection)
-      const deselectChanges = nodes
-        .filter(n => n.selected)
-        .map(n => ({
-          id: n.id,
-          type: 'select',
-          selected: false
-        }));
-      
-      // Then select the clicked node
-      const selectChange = {
-        id: node.id,
-        type: 'select',
-        selected: true
-      };
+        setColumnsLayout(columnTemplates[node.type] || []);
+        onNodesChange([...deselectChanges, selectChange]);
+      }
+    },
+    [nodes, onNodesChange]
+  );
 
-      setColumnsLayout((columnTemplates[node.type] || []));
-      onNodesChange([...deselectChanges, selectChange]);
+  const handleNodeDragStart = useCallback(
+    (event, node) => {
+      // If the node isn't already selected, select it when drag starts
+      if (!node.selected) {
+        const deselectChanges = nodes
+          .filter((n) => n.selected)
+          .map((n) => ({
+            id: n.id,
+            type: "select",
+            selected: false,
+          }));
+        const selectChange = {
+          id: node.id,
+          type: "select",
+          selected: true,
+        };
+        setColumnsLayout(columnTemplates[node.type] || []);
+        onNodesChange([...deselectChanges, selectChange]);
+      }
+    },
+    [nodes, onNodesChange, setColumnsLayout]
+  );
 
-    }
-  }, [nodes, onNodesChange]);
-
-  const handleNodeDragStart = useCallback((event, node) => {
-    // If the node isn't already selected, select it when drag starts
-    if (!node.selected) {
-      const deselectChanges = nodes
-        .filter(n => n.selected)
-        .map(n => ({
-          id: n.id,
-          type: 'select',
-          selected: false,
-        }));
-      const selectChange = {
-        id: node.id,
-        type: 'select',
-        selected: true,
-      };
-      setColumnsLayout(columnTemplates[node.type] || []);
-      onNodesChange([...deselectChanges, selectChange]);
-    }
-  }, [nodes, onNodesChange, setColumnsLayout]);
-  
-
-  const handlePaneClick = useCallback((event) => {
-    const isPaneClick = event.target.classList.contains('react-flow__pane') || 
-                        event.target.classList.contains('react-flow__background');
-    if (isPaneClick) {
-      console.log("Genuine pane click detected");
-      const deselectChanges = nodes
-        .filter(n => n.selected)
-        .map(n => ({
-          id: n.id,
-          type: 'select',
-          selected: false,
-        }));
-      onNodesChange(deselectChanges);
-      setColumnsLayout([]);
-    } else {
-      console.log("Click was on another element, not processing as pane click");
-    }
-  }, [nodes, onNodesChange, setColumnsLayout]);
-  
-
+  const handlePaneClick = useCallback(
+    (event) => {
+      const isPaneClick =
+        event.target.classList.contains("react-flow__pane") ||
+        event.target.classList.contains("react-flow__background");
+      if (isPaneClick) {
+        console.log("Genuine pane click detected");
+        const deselectChanges = nodes
+          .filter((n) => n.selected)
+          .map((n) => ({
+            id: n.id,
+            type: "select",
+            selected: false,
+          }));
+        onNodesChange(deselectChanges);
+        setColumnsLayout([]);
+      } else {
+        console.log(
+          "Click was on another element, not processing as pane click"
+        );
+      }
+    },
+    [nodes, onNodesChange, setColumnsLayout]
+  );
 
   const [nodeMenu, setNodeMenu] = useState({
     isOpen: false,
@@ -179,14 +212,23 @@ function Profile({isInspectorOpen, setIsInspectorOpen}) {
     position: { x: 0, y: 0 },
   });
 
+  const [selectionMenu, setSelectionMenu] = useState({
+    isOpen: false,
+    position: { x: 0, y: 0 },
+  });
+
   const closeMenus = useCallback(() => {
     setNodeMenu({ isOpen: false, position: { x: 0, y: 0 }, targetNode: null });
     setPaneMenu({ isOpen: false, position: { x: 0, y: 0 } });
+    setSelectionMenu({ isOpen: false, position: { x: 0, y: 0 } });
   }, []);
 
   // EDGE MANAGEMENT
   const edgeReconnectSuccessful = useRef(false);
-  const onConnect = useCallback((params) => setEdges((eds) => addEdge(params, eds)), []);
+  const onConnect = useCallback(
+    (params) => setEdges((eds) => addEdge(params, eds)),
+    []
+  );
   const onReconnectStart = useCallback(() => {
     edgeReconnectSuccessful.current = false;
   }, []);
@@ -194,55 +236,70 @@ function Profile({isInspectorOpen, setIsInspectorOpen}) {
     edgeReconnectSuccessful.current = true; // Reconnection successful
     setEdges((eds) => reconnectEdge(oldEdge, newConnection, eds));
   }, []);
-  const onReconnectEnd = useCallback(
-    (_, edge) => {
-      if (!edgeReconnectSuccessful.current) {
-        setEdges((eds) => eds.filter((e) => e.id !== edge.id)); // Remove edge
-      }
-      edgeReconnectSuccessful.current = true; // Reset
-    },
-    []
-  );
+  const onReconnectEnd = useCallback((_, edge) => {
+    if (!edgeReconnectSuccessful.current) {
+      setEdges((eds) => eds.filter((e) => e.id !== edge.id)); // Remove edge
+    }
+    edgeReconnectSuccessful.current = true; // Reset
+  }, []);
 
   const isValidConnection = useCallback(
     (connection) => {
       // Find the source and target nodes in the nodes state array
       const sourceNode = nodes.find((node) => node.id === connection.source);
       const targetNode = nodes.find((node) => node.id === connection.target);
-  
+
       // Rule 1: Do not allow self connections
       if (connection.source === connection.target) {
         return false;
       }
-  
+
       // Rule 2: Ensure hierarchical structure
       const validConnections = {
-        profile: ["bodyStructure", "activities", "participation"], 
+        profile: ["bodyStructure", "activities", "participation"],
       };
-  
+
       // Get the type of source and target nodes
       const allowedTargetTypes = validConnections[sourceNode?.type] || [];
       if (!allowedTargetTypes.includes(targetNode?.type)) {
         return false; // Not a valid connection type
       }
-  
+
       return true; // The connection is valid
     },
     [nodes] // Ensure this function recomputes when nodes change
   );
-  
 
   // NODE CONTEXT MENU HANDLING
   const onNodeContextMenu = useCallback((event, node) => {
     event.preventDefault();
-    setNodeMenu({ isOpen: true, position: { x: event.clientX, y: event.clientY }, targetNode: node });
-    setPaneMenu({ isOpen: false }); // Close PaneMenu
+    setNodeMenu({
+      isOpen: true,
+      position: { x: event.clientX, y: event.clientY },
+      targetNode: node,
+    });
+    setPaneMenu({ isOpen: false });
+    setSelectionMenu({ isOpen: false });
   }, []);
 
   // PANE CONTEXT MENU HANDLING
   const onPaneContextMenu = useCallback((event) => {
     event.preventDefault();
-    setPaneMenu({ isOpen: true, position: { x: event.clientX, y: event.clientY } });
+    setPaneMenu({
+      isOpen: true,
+      position: { x: event.clientX, y: event.clientY },
+    });
+    setNodeMenu({ isOpen: false });
+    setSelectionMenu({ isOpen: false });
+  }, []);
+
+  const onSelectionContextMenu = useCallback((event) => {
+    event.preventDefault();
+    setSelectionMenu({
+      isOpen: true,
+      position: { x: event.clientX, y: event.clientY },
+    });
+    setPaneMenu({ isOpen: false }); // Close PaneMenu
     setNodeMenu({ isOpen: false }); // Close NodeMenu
   }, []);
 
@@ -251,21 +308,21 @@ function Profile({isInspectorOpen, setIsInspectorOpen}) {
 
   const validateNodeAddition = (type, nodes) => {
     if (
-      (type === "profile" || 
-       type === "bodyStructure" || 
-       type === "activities" || 
-       type === "participation") && 
+      (type === "profile" ||
+        type === "bodyStructure" ||
+        type === "activities" ||
+        type === "participation") &&
       nodes.some((n) => n.type === type)
     ) {
-      return false; 
+      return false;
     }
-  
-    return true; 
+
+    return true;
   };
 
   const addNode = (position, type) => {
     const canvasPosition = reactFlowInstance.screenToFlowPosition(position);
-  
+
     // Validate node addition for certain types
     if (!validateNodeAddition(type, nodes)) {
       setToaster({
@@ -275,29 +332,29 @@ function Profile({isInspectorOpen, setIsInspectorOpen}) {
       });
       return;
     }
-  
+
     // Create child nodes for "profile" type or add a simple node
     if (type === "profile") {
       createProfileWithChildren(canvasPosition);
     } else {
       addSingleNode(canvasPosition, type);
     }
-  
+
     closeMenus();
   };
-  
+
   // Helper function to create "profile" and child nodes
   const createProfileWithChildren = (canvasPosition) => {
     const spacingX = 200; // Constant spacing for child nodes
     const childTypes = ["bodyStructure", "activities", "participation"];
-  
+
     const profileNode = {
       id: uuidv4(),
       position: canvasPosition,
       type: "profile",
       data: dataTemplates["profile"]?.() || {},
     };
-  
+
     const childNodes = childTypes.map((childType, index) => ({
       id: uuidv4(),
       position: {
@@ -307,10 +364,10 @@ function Profile({isInspectorOpen, setIsInspectorOpen}) {
       type: childType,
       data: dataTemplates[childType]?.() || {},
     }));
-  
+
     setNodes((nds) => [...nds, profileNode, ...childNodes]);
   };
-  
+
   // Helper function to add a generic single node
   const addSingleNode = (canvasPosition, type) => {
     const newNode = {
@@ -320,10 +377,9 @@ function Profile({isInspectorOpen, setIsInspectorOpen}) {
       data: dataTemplates[type]?.() || {},
       ...(nodeTemplates[type] || { type, data: {} }),
     };
-  
+
     setNodes((nds) => [...nds, newNode]);
   };
-  
 
   const zoomToFit = () => {
     console.log("Zooming to fit graph...");
@@ -334,7 +390,9 @@ function Profile({isInspectorOpen, setIsInspectorOpen}) {
     const newLabel = prompt("Edit node label:", node.data.label);
     if (newLabel) {
       setNodes((nds) =>
-        nds.map((n) => (n.id === node.id ? { ...n, data: { ...n.data, label: newLabel } } : n))
+        nds.map((n) =>
+          n.id === node.id ? { ...n, data: { ...n.data, label: newLabel } } : n
+        )
       );
     }
     closeMenus();
@@ -342,7 +400,9 @@ function Profile({isInspectorOpen, setIsInspectorOpen}) {
 
   const deleteNode = (node) => {
     setNodes((nds) => nds.filter((n) => n.id !== node.id)); // Remove node
-    setEdges((eds) => eds.filter((e) => e.source !== node.id && e.target !== node.id)); // Remove edges
+    setEdges((eds) =>
+      eds.filter((e) => e.source !== node.id && e.target !== node.id)
+    ); // Remove edges
     closeMenus();
   };
 
@@ -352,7 +412,10 @@ function Profile({isInspectorOpen, setIsInspectorOpen}) {
       className="flex flex-row h-full overflow-y-auto"
       onClick={closeMenus} // Close the context menu on a click outside
     >
-      <div id="left-block" className="bg-zinc-900 flex flex-col h-full w-full overflow-y-auto">
+      <div
+        id="left-block"
+        className="bg-zinc-900 flex flex-col h-full w-full overflow-y-auto"
+      >
         {/* React Flow Canvas */}
         <ReactFlow
           nodes={nodes}
@@ -368,7 +431,8 @@ function Profile({isInspectorOpen, setIsInspectorOpen}) {
           onNodeDragStart={handleNodeDragStart}
           onPaneClick={handlePaneClick}
           onNodeContextMenu={onNodeContextMenu}
-          onPaneContextMenu={onPaneContextMenu} // Enable Node Context Menu
+          onPaneContextMenu={onPaneContextMenu}
+          onSelectionContextMenu={onSelectionContextMenu} // Enable Node Context Menu
           nodeTypes={{
             profile: ProfileNode,
             bodyStructure: BodyStructureNode,
@@ -393,10 +457,26 @@ function Profile({isInspectorOpen, setIsInspectorOpen}) {
         <PaneMenu
           isOpen={paneMenu.isOpen}
           position={paneMenu.position}
-          actions={{ addNode, zoomToFit }}
+          clipboard={clipboard}
+          actions={{ addNode, zoomToFit, pasteNodesEdges }}
           onClose={closeMenus}
         />
-        <Inspector isOpen={isInspectorOpen} node={selectedNode} onClose={() => setIsInspectorOpen(false)} multiple={multipleNodesSelected} />
+        <SelectionMenu
+          isOpen={selectionMenu.isOpen && multipleNodesSelected}
+          position={selectionMenu.position}
+          onClose={closeMenus}
+          actions={{
+            cutNodesEdges,
+            copyNodesEdges,
+            deleteSelectedNodesEdges,
+          }}
+        />
+        <Inspector
+          isOpen={isInspectorOpen}
+          node={selectedNode}
+          onClose={() => setIsInspectorOpen(false)}
+          multiple={multipleNodesSelected}
+        />
       </div>
     </div>
   );
