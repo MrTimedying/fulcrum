@@ -89,7 +89,7 @@ function Profile({isInspectorOpen, setIsInspectorOpen}) {
   } = useFlowStore(useShallow(selector));
  
   const selectedNode = nodes.find((node) => node.selected);
-  console.log("Selected node", selectedNode);
+  const multipleNodesSelected = nodes.filter((node) => node.selected).length > 1;
 
   const handleNodeClick = useCallback((event, node) => {
     event.stopPropagation();
@@ -396,7 +396,7 @@ function Profile({isInspectorOpen, setIsInspectorOpen}) {
           actions={{ addNode, zoomToFit }}
           onClose={closeMenus}
         />
-        <Inspector isOpen={isInspectorOpen} node={selectedNode} onClose={() => setIsInspectorOpen(false)} />
+        <Inspector isOpen={isInspectorOpen} node={selectedNode} onClose={() => setIsInspectorOpen(false)} multiple={multipleNodesSelected} />
       </div>
     </div>
   );

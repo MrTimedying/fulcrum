@@ -34,6 +34,16 @@ function MainBody() {
   function handleModalOpening(id) {
     // Check if a node is selected
     const nodeSelected = nodes.find((node) => node.selected);
+    const multipleNodesSelected = nodes.filter((node) => node.selected).length > 1;
+
+    if (multipleNodesSelected) {
+      setToaster({
+        type: "error",
+        message: "Tools are disabled when multiple nodes are selected.",
+        show: true,
+      });
+      return;
+    }
   
     // Early return for common error states
     if (id === "composer") {

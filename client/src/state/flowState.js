@@ -526,6 +526,19 @@ const useFlowStore = create(
             edges: [...state.edges, ...offsetedEdges],
           };
         }),
+
+        deleteSelectedNodesEdges: () =>
+          set((state) => {
+            const remainingNodes = state.nodes.filter((n) => !n.selected);
+            const remainingEdges = state.edges.filter((e) => !e.selected);
+        
+            return {
+              ...state,
+              nodes: remainingNodes,
+              edges: remainingEdges,
+            };
+          }),
+        
     }),
     {
       name: "flow-store",

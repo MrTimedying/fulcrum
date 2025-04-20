@@ -4,7 +4,7 @@ import { Rnd } from "react-rnd";
 import { IoClose } from "react-icons/io5";
 import useFlowStore from "../state/flowState";
 
-function Inspector({ isOpen, onClose }) {
+function Inspector({ isOpen, onClose, multiple }) {
   const { nodes, setNodes } = useFlowStore();
   const selectedNodes = Array.isArray(nodes) ? nodes.filter(node => node.selected) : [];
 
@@ -50,7 +50,7 @@ function Inspector({ isOpen, onClose }) {
 
   return (
     <Modal
-      isOpen={isOpen}
+      isOpen={!multiple && isOpen}
       onRequestClose={handleClose}
       aria={{
         labelledby: "inspector-title",

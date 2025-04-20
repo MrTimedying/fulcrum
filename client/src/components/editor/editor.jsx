@@ -17,6 +17,7 @@ import useTransientStore from "../../state/transientState";
 import {InterventionNode, PhaseNode, MicroNode, SessionNode} from "./nodes";
 import {EditorTemplates}  from "../variables";
 import Inspector from "../Inspector";
+import SelectionMenu from "../selectionMenu";
 
 // COLUMNS FOR THE COMPOSER
 
@@ -88,8 +89,17 @@ function Editor({isInspectorOpen, setIsInspectorOpen}) {
     setColumnsLayout,
   } = useFlowStore(useShallow(selector));
 
+  const { cutNodesEdges, copyNodesEdges, pasteNodesEdges, deleteSelectedNodesEdges } = useFlowStore(
+    useShallow((state) => ({
+      cutNodesEdges: state.cutNodesEdges,
+      copyNodesEdges: state.copyNodesEdges,
+      pasteNodesEdges: state.pasteNodesEdges,
+      deleteSelectedNodesEdges: state.deleteSelectedNodesEdges,
+    }))
+  );
+
   const selectedNode = nodes.find((node) => node.selected);
-  console.log("Selected node", selectedNode);
+  const multipleNodesSelected = nodes.filter((node) => node.selected).length > 1;
 
   const handleNodeClick = useCallback((event, node) => {
     event.stopPropagation();
@@ -177,9 +187,15 @@ function Editor({isInspectorOpen, setIsInspectorOpen}) {
     position: { x: 0, y: 0 },
   });
 
+  const [selectionMenu, setSelectionMenu] = useState({
+    isOpen: false,
+    position: { x: 0, y: 0 },
+  });
+
   const closeMenus = useCallback(() => {
     setNodeMenu({ isOpen: false, position: { x: 0, y: 0 }, targetNode: null });
     setPaneMenu({ isOpen: false, position: { x: 0, y: 0 } });
+    setSelectionMenu({ isOpen: false, position: { x: 0, y: 0 } });
   }, []);
 
   // EDGE MANAGEMENT
@@ -236,13 +252,22 @@ function Editor({isInspectorOpen, setIsInspectorOpen}) {
   const onNodeContextMenu = useCallback((event, node) => {
     event.preventDefault();
     setNodeMenu({ isOpen: true, position: { x: event.clientX, y: event.clientY }, targetNode: node });
-    setPaneMenu({ isOpen: false }); // Close PaneMenu
+    setPaneMenu({ isOpen: false });
+    setSelectionMenu({ isOpen: false });
   }, []);
 
   // PANE CONTEXT MENU HANDLING
   const onPaneContextMenu = useCallback((event) => {
     event.preventDefault();
     setPaneMenu({ isOpen: true, position: { x: event.clientX, y: event.clientY } });
+    setNodeMenu({ isOpen: false }); 
+    setSelectionMenu({ isOpen: false });
+  }, []);
+
+  const onSelectionContextMenu = useCallback((event) => {
+    event.preventDefault();
+    setSelectionMenu({ isOpen: true, position: { x: event.clientX, y: event.clientY } });
+    setPaneMenu({ isOpen: false }); // Close PaneMenu
     setNodeMenu({ isOpen: false }); // Close NodeMenu
   }, []);
 
@@ -326,7 +351,8 @@ function Editor({isInspectorOpen, setIsInspectorOpen}) {
           selectNodesOnDrag={true}          
           onPaneClick={handlePaneClick}
           onNodeContextMenu={onNodeContextMenu}
-          onPaneContextMenu={onPaneContextMenu} // Enable Node Context Menu
+          onPaneContextMenu={onPaneContextMenu}
+          onSelectionContextMenu={onSelectionContextMenu}
           nodeTypes={{
             intervention: InterventionNode,
             phase: PhaseNode,
@@ -354,7 +380,15 @@ function Editor({isInspectorOpen, setIsInspectorOpen}) {
           actions={{ addNode, zoomToFit }}
           onClose={closeMenus}
         />
-        <Inspector isOpen={isInspectorOpen} node={selectedNode} onClose={() => setIsInspectorOpen(false)} />
+        <SelectionMenu
+          isOpen={selectionMenu.isOpen && multipleNodesSelected}
+          position={selectionMenu.position}
+          onClose={closeMenus}
+          actions={{
+            cutNodesEdges, copyNodesEdges, pasteNodesEdges, deleteSelectedNodesEdges,
+          }}
+          />
+        <Inspector isOpen={isInspectorOpen} node={selectedNode} onClose={() => setIsInspectorOpen(false)} multiple={multipleNodesSelected} />
       </div>
     </div>
   );
