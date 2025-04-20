@@ -18,6 +18,7 @@ import useTransientStore from "../../state/transientState";
 import {ProfileNode, BodyStructureNode, ActivitiesNode, ParticipationNode} from "./nodes";
 import Dagre from '@dagrejs/dagre';
 import { ProfileTemplates } from "../variables";
+import Inspector from "../Inspector";
 
 // COLUMNS FOR THE COMPOSER
 
@@ -73,7 +74,7 @@ const selector = (state) => ({
   setColumnsLayout: state.setColumnsLayout,
 });
 
-function Profile({isModalOpen}) {
+function Profile({isInspectorOpen, setIsInspectorOpen}) {
   // STATE MANAGEMENT
   const { setToaster } = useTransientStore();
   const {
@@ -87,7 +88,8 @@ function Profile({isModalOpen}) {
     setColumnsLayout,
   } = useFlowStore(useShallow(selector));
  
-
+  const selectedNode = nodes.find((node) => node.selected);
+  console.log("Selected node", selectedNode);
 
   const handleNodeClick = useCallback((event, node) => {
     event.stopPropagation();
@@ -384,6 +386,7 @@ function Profile({isModalOpen}) {
           isOpen={nodeMenu.isOpen && nodeMenu.targetNode}
           position={nodeMenu.position}
           targetNode={nodeMenu.targetNode}
+          setIsInspectorOpen={setIsInspectorOpen}
           actions={{ editNode, deleteNode }}
           onClose={closeMenus}
         />
@@ -393,6 +396,7 @@ function Profile({isModalOpen}) {
           actions={{ addNode, zoomToFit }}
           onClose={closeMenus}
         />
+        <Inspector isOpen={isInspectorOpen} node={selectedNode} onClose={() => setIsInspectorOpen(false)} />
       </div>
     </div>
   );

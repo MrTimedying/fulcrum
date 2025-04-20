@@ -208,7 +208,7 @@ function MainBody() {
         <Tab.Panels className="h-full overflow-y-auto">
           <Tab.Panel key="icfProfile" className="h-full">
             <ReactFlowProvider>
-              <Profile />
+              <Profile isInspectorOpen={isInspectorOpen} setIsInspectorOpen={setIsInspectorOpen} />
             </ReactFlowProvider>
           </Tab.Panel>
           <Tab.Panel key="interventionEditor" className="h-full">
