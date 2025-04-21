@@ -20,6 +20,7 @@ export const InterventionNode = ({ data, selected }) => (
           ? "rgba(28, 28, 28, 1)"
           : "rgba(28, 28, 28, 1)",
         transition: "all 0.2s ease",
+        overflow: "hidden",
       }}
       className="w-full h-full"
     >
@@ -57,6 +58,7 @@ export const PhaseNode = ({ data, selected }) => (
           ? "rgba(28, 28, 28, 1)"
           : "rgba(28, 28, 28, 1)",
         transition: "all 0.2s ease",
+        overflow: "hidden",
       }}
       className="w-full h-full"
     >
@@ -97,6 +99,7 @@ export const MicroNode = ({ data, selected }) => (
           ? "rgba(28, 28, 28, 1)"
           : "rgba(28, 28, 28, 1)",
         transition: "all 0.2s ease",
+        overflow: "hidden",
       }}
       className="w-full h-full"
     >
@@ -180,6 +183,7 @@ export const SessionNode = ({ id, data, selected }) => {
           boxShadow: selected ? "0 0 10px #32a852" : "none",
           backgroundColor: "rgba(28, 28, 28, 1)",
           transition: "all 0.2s ease",
+          overflow: "hidden",
         }}
         className="w-full h-full"
       >

@@ -16,7 +16,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import NodeMenu from "./NodeMenu";
-import PaneMenu from "./paneMenu"; // Specific Node Context Menu
+import PaneMenu from "./PaneMenu"; // Specific Node Context Menu
 import { v4 as uuidv4 } from "uuid";
 import useFlowStore from "../../state/flowState";
 import useTransientStore from "../../state/transientState";
@@ -78,6 +78,7 @@ const selector = (state) => ({
   onEdgesChange: state.onEdgesChange,
   setColumnsLayout: state.setColumnsLayout,
   clipboard: state.clipboard,
+  dumpClipboard: state.dumpClipboard,
 });
 
 function Editor({ isInspectorOpen, setIsInspectorOpen }) {
@@ -93,6 +94,7 @@ function Editor({ isInspectorOpen, setIsInspectorOpen }) {
     onEdgesChange,
     setColumnsLayout,
     clipboard,
+    dumpClipboard,
   } = useFlowStore(useShallow(selector));
 
   const {
@@ -401,6 +403,8 @@ function Editor({ isInspectorOpen, setIsInspectorOpen }) {
             session: SessionNode,
           }}
           fitView
+          maxZoom={5}
+          minZoom={0.3}
         >
           <Background variant="dots" />
           <Controls />
@@ -419,7 +423,7 @@ function Editor({ isInspectorOpen, setIsInspectorOpen }) {
           isOpen={paneMenu.isOpen}
           position={paneMenu.position}
           clipboard={clipboard}
-          actions={{ addNode, zoomToFit, pasteNodesEdges }}
+          actions={{ addNode, zoomToFit, pasteNodesEdges, dumpClipboard }}
           onClose={closeMenus}
         />
         <SelectionMenu

@@ -9,7 +9,6 @@ import {
   offsetNodesEdgesPosition,
 } from "../components/utils";
 
-
 const useFlowStore = create(
   persist(
     (set, get) => ({
@@ -502,7 +501,7 @@ const useFlowStore = create(
           };
         }),
 
-      pasteNodesEdges: (position) =>
+      pasteNodesEdges: () =>
         set((state) => {
           const { clipboard } = state;
           // Deep copy and assign new IDs
@@ -514,8 +513,8 @@ const useFlowStore = create(
           const { offsetedNodes, offsetedEdges } = offsetNodesEdgesPosition(
             newNodes,
             newEdges,
-            position?.x ?? 100,
-            position?.y ?? 100
+            400,
+            400,
           );
           // Clear selection state on new nodes/edges
           offsetedNodes.forEach((n) => (n.selected = false));
@@ -527,18 +526,28 @@ const useFlowStore = create(
           };
         }),
 
-        deleteSelectedNodesEdges: () =>
-          set((state) => {
-            const remainingNodes = state.nodes.filter((n) => !n.selected);
-            const remainingEdges = state.edges.filter((e) => !e.selected);
-        
-            return {
-              ...state,
-              nodes: remainingNodes,
-              edges: remainingEdges,
-            };
-          }),
-        
+      deleteSelectedNodesEdges: () =>
+        set((state) => {
+          const remainingNodes = state.nodes.filter((n) => !n.selected);
+          const remainingEdges = state.edges.filter((e) => !e.selected);
+
+          return {
+            ...state,
+            nodes: remainingNodes,
+            edges: remainingEdges,
+          };
+        }),
+
+      dumpClipboard: () =>
+        set((state) => ({
+          // Implicit return with ()
+          ...state, // Keep existing state
+          clipboard: {
+            // Overwrite 'clipboard' with a new object
+            nodes: [],
+            edges: [],
+          },
+        })),
     }),
     {
       name: "flow-store",

@@ -1,7 +1,9 @@
 import React from "react";
 import { BsMenuButtonFill } from "react-icons/bs";
 import ContextMenu from "./editor/ContextMenu";
-
+import { IoMdCut } from "react-icons/io";
+import { FaRegCopy } from "react-icons/fa";
+import { MdDeleteForever } from "react-icons/md";
 const SelectionMenu = ({ isOpen, position, onClose, actions }) => {
   if (!isOpen) return null;
 
@@ -19,8 +21,8 @@ const SelectionMenu = ({ isOpen, position, onClose, actions }) => {
       {/* Actions */}
       <ul style={{ marginTop: "10px" }}>
         {/* Cut */}
-        <li className="mb-0 text-sm text-slate-300 hover:bg-zinc-900 rounded-sm p-1">
-          <button
+        <li className="flex flex-row items-center gap-2 mb-0 text-sm text-slate-300 hover:bg-zinc-900 rounded-sm p-1">
+          <IoMdCut /><button
             onClick={() => {
               actions.cutNodesEdges();
               onClose();
@@ -31,8 +33,8 @@ const SelectionMenu = ({ isOpen, position, onClose, actions }) => {
         </li>
 
         {/* Copy */}
-        <li className="mb-0 text-sm text-slate-300 hover:bg-zinc-900 rounded-sm p-1">
-          <button
+        <li className="flex flex-row items-center gap-2 mb-0 text-sm text-slate-300 hover:bg-zinc-900 rounded-sm p-1">
+          <FaRegCopy/><button
             onClick={() => {
               actions.copyNodesEdges();
               onClose();
@@ -43,8 +45,8 @@ const SelectionMenu = ({ isOpen, position, onClose, actions }) => {
         </li>
 
         {/* Delete */}
-        <li className="mb-0 text-sm text-slate-300 hover:bg-zinc-900 rounded-sm p-1">
-          <button
+        <li className="flex flex-row items-center gap-2 mb-0 text-sm text-slate-300 hover:bg-zinc-900 rounded-sm p-1">
+          <MdDeleteForever/><button
             onClick={() => {
               actions.deleteSelectedNodesEdges();
               onClose();

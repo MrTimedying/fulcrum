@@ -15,6 +15,7 @@ export const ProfileNode = ({ data, selected }) => (
         boxShadow: selected ? "0 0 10px #32a852" : "none",
         backgroundColor: selected ? "rgba(28, 28, 28, 1)" : "rgba(28, 28, 28, 1)",
         transition: "all 0.2s ease",
+        overflow: "hidden",
       }}
       className="w-full h-full"
     >
@@ -53,6 +54,7 @@ export const BodyStructureNode = ({ data, selected }) => (
         boxShadow: selected ? "0 0 10px #32a852" : "none",
         backgroundColor: selected ? "rgba(28, 28, 28, 1)" : "rgba(28, 28, 28, 1)",
         transition: "all 0.2s ease",
+        overflow: "hidden",
       }}
       className="w-full h-full"
     >
@@ -90,6 +92,7 @@ export const ActivitiesNode = ({ data, selected }) => (
         boxShadow: selected ? "0 0 10px #32a852" : "none",
         backgroundColor: selected ? "rgba(28, 28, 28, 1)" : "rgba(28, 28, 28, 1)",
         transition: "all 0.2s ease",
+        overflow: "hidden",
       }}
       className="w-full h-full"
     >
@@ -127,6 +130,7 @@ export const ParticipationNode = ({ data, selected }) => (
         boxShadow: selected ? "0 0 10px #32a852" : "none",
         backgroundColor: selected ? "rgba(28, 28, 28, 1)" : "rgba(28, 28, 28, 1)",
         transition: "all 0.2s ease",
+        overflow: "hidden",
       }}
       className="w-full h-full"
     >
@@ -139,6 +143,46 @@ export const ParticipationNode = ({ data, selected }) => (
       <ul>
         
         <li>Participations</li>
+      </ul>
+      <Handle
+        type="source"
+        position="bottom"
+        style={{ background: selected ? "#6366F1" : "black" }}
+      />
+    </div>
+  </>
+);
+
+export const RecordElement = ({ data, selected }) => (
+  <>
+    <NodeResizer isVisible={selected} minWidth={100} minHeight={30} />
+    <div
+      style={{
+        padding: 10,
+        border: `1px solid ${selected ? "#32a852" : "white"}`,
+        fontFamily: "Arial",
+        fontSize: "11px",
+        color: "white",
+        fontWeight: "initial",
+        borderRadius: 5,
+        boxShadow: selected ? "0 0 10px #32a852" : "none",
+        backgroundColor: selected ? "rgba(28, 28, 28, 1)" : "rgba(28, 28, 28, 1)",
+        transition: "all 0.2s ease",
+        overflow: "hidden",
+      }}
+      className="w-full h-full"
+    >
+      <Handle
+        type="target"
+        position="top"
+        style={{ background: selected ? "#6366F1" : "black" }}
+      />
+
+      <strong>{data.type || "Define a type"}</strong>
+      <ul>
+        
+        <li>{data.code || "Insert the appropriate code"}</li>
+        <li>{data.description || "Description if needed.."}</li>
       </ul>
       <Handle
         type="source"

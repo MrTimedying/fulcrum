@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import ContextMenu from "./ContextMenu";
 import { BsMenuButtonFill } from "react-icons/bs";
+import { CiTrash } from "react-icons/ci";
 
 const PaneMenu = ({ isOpen, position, onClose, actions, clipboard }) => {
   if (!isOpen) return null;
@@ -16,7 +17,7 @@ const PaneMenu = ({ isOpen, position, onClose, actions, clipboard }) => {
     <ContextMenu isOpen={isOpen} position={position} onClose={onClose}>
       <p
         style={{ fontWeight: "bold", marginBottom: "8px" }}
-        className=" flex items-center gap-2 mb-0 text-sm text-slate-300 rounded-sm p-1"
+        className=" flex items-center gap-2 mb-0 text-sm text-slate-300 rounded-md p-1"
       >
         <BsMenuButtonFill />
         Pane Menu
@@ -36,21 +37,28 @@ const PaneMenu = ({ isOpen, position, onClose, actions, clipboard }) => {
         <li className="mb-0 text-sm text-slate-300 hover:bg-zinc-900 rounded-lg p-1">
           <button onClick={handleNodeCreation("session")}>New session</button>
         </li>
-        {(clipboard.nodes || clipboard.edges) && (
+        {(clipboard.nodes.length > 0 || clipboard.edges.length > 0) && (
           <>
           <hr className="my-1 border-solid border-zinc-700"></hr>
           <li className="mb-0 text-sm text-slate-300 hover:bg-zinc-900 rounded-sm p-1">
             <button
               onClick={() => {
-                const pastePosition = {
-                  x: position?.x || 100,
-                  y: position?.y || 100,
-                };
-                actions.pasteNodesEdges(pastePosition);
+                actions.pasteNodesEdges();
                 onClose();
               }}
             >
               Paste
+            </button>
+          </li>
+          <li className="mb-0 text-sm text-slate-300 hover:bg-zinc-900 rounded-sm p-1">
+            <button
+              onClick={() => {
+                actions.dumpClipboard();
+                onClose();
+              }
+              }
+            >
+              Dump selection
             </button>
           </li>
           </>

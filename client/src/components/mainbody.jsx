@@ -36,6 +36,15 @@ function MainBody() {
     const nodeSelected = nodes.find((node) => node.selected);
     const multipleNodesSelected = nodes.filter((node) => node.selected).length > 1;
 
+    if (!nodeSelected) {
+      setToaster({
+        type: "error",
+        message: "No node is selected. Please select a node first.",
+        show: true,
+      });
+      return;
+    }
+
     if (multipleNodesSelected) {
       setToaster({
         type: "error",
@@ -95,12 +104,12 @@ function MainBody() {
     if (id === "templateMenu") {
 
       if (
-        (nodeSelected && nodeSelected.type !== "phase" && nodeSelected.type !== "micro") ||
+        (nodeSelected && nodeSelected.type !== "phase" && nodeSelected.type !== "micro" && nodeSelected.type !== "session") ||
         activeTab !== "Editor"
       ) {
         setToaster({
           type: "error",
-          message: "Templater only works on phases and micros, in the intervention editor tool only.",
+          message: "Templater only works on phases, micros and sessions, in the intervention editor tool only.",
           show: true,
         });
         return;
@@ -110,7 +119,7 @@ function MainBody() {
     }
 
     if (id === "calendarMenu") {
-      if (nodeSelected.type !== 'session' && activeTab !== "Editor") {
+      if (nodeSelected.type !== 'session' || activeTab !== "Editor") {
         setToaster({
           type: "error",
           message: "Calendar only works on sessions, in the intervention editor tool only.",

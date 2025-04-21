@@ -26,17 +26,18 @@ const PaneMenu = ({ isOpen, position, onClose, actions, clipboard }) => {
             New Test Result
           </button>
         </li>
-                {(clipboard.nodes || clipboard.edges) && (
+        <li className="mb-0 text-sm text-slate-300 hover:bg-zinc-900 rounded-sm p-1">
+          <button onClick={handleNodeCreation('record')}>
+            New Record Element
+          </button>
+        </li>
+                {(clipboard.nodes.lenght > 0 || clipboard.edges.length > 0) && (
                   <>
                   <hr className="my-1 border-solid border-zinc-700"></hr>
                   <li className="mb-0 text-sm text-slate-300 hover:bg-zinc-900 rounded-sm p-1">
                     <button
                       onClick={() => {
-                        const pastePosition = {
-                          x: position?.x || 100,
-                          y: position?.y || 100,
-                        };
-                        actions.pasteNodesEdges(pastePosition);
+                        actions.pasteNodesEdges();
                         onClose();
                       }}
                     >

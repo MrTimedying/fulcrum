@@ -14,6 +14,11 @@ export const ProfileTemplates = {
     { title: "Height", field: "height", width: 100, editor: "number" },
     { title: "Weight", field: "weight", width: 100, editor: "number" },
   ],
+  record: [
+    { title: "Type", field: "type", width: 100, editor: "textarea" },
+    { title: "Code", field: "code", width: 100, editor: "textarea" },
+    { title: "Description", field: "description", width: 200, editor: "textarea" },
+  ]
 };
 
 export const EditorTemplates = {

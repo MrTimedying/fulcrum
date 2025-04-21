@@ -26,6 +26,7 @@ import {
   BodyStructureNode,
   ActivitiesNode,
   ParticipationNode,
+  RecordElement,
 } from "./nodes";
 import Dagre from "@dagrejs/dagre";
 import { ProfileTemplates } from "../variables";
@@ -55,6 +56,10 @@ const dataTemplates = {
     id: uuidv4(),
     name: "New Participation",
   }),
+  record: () => ({
+    id: uuidv4(),
+    name: "New Record Element",
+  })
 };
 
 // Updated nodeTemplates
@@ -71,6 +76,10 @@ const nodeTemplates = {
   participation: {
     type: "participation",
   },
+  record: {
+    type: "record",
+  },
+  
 };
 
 const selector = (state) => ({
@@ -82,6 +91,7 @@ const selector = (state) => ({
   onEdgesChange: state.onEdgesChange,
   setColumnsLayout: state.setColumnsLayout,
   clipboard: state.clipboard,
+  dumpClipboard: state.dumpClipboard,
 });
 
 function Profile({ isInspectorOpen, setIsInspectorOpen }) {
@@ -97,6 +107,7 @@ function Profile({ isInspectorOpen, setIsInspectorOpen }) {
     onEdgesChange,
     setColumnsLayout,
     clipboard,
+    dumpClipboard,
   } = useFlowStore(useShallow(selector));
 
   const {
@@ -257,6 +268,9 @@ function Profile({ isInspectorOpen, setIsInspectorOpen }) {
       // Rule 2: Ensure hierarchical structure
       const validConnections = {
         profile: ["bodyStructure", "activities", "participation"],
+        bodyStructure: ["record"],
+        activities: ["record"],
+        participation: ["record"],
       };
 
       // Get the type of source and target nodes
@@ -438,8 +452,11 @@ function Profile({ isInspectorOpen, setIsInspectorOpen }) {
             bodyStructure: BodyStructureNode,
             activities: ActivitiesNode,
             participation: ParticipationNode,
+            record: RecordElement,
           }}
           fitView
+          maxZoom={5}
+          minZoom={0.3}
         >
           <Background variant="dots" />
           <Controls />
@@ -458,7 +475,7 @@ function Profile({ isInspectorOpen, setIsInspectorOpen }) {
           isOpen={paneMenu.isOpen}
           position={paneMenu.position}
           clipboard={clipboard}
-          actions={{ addNode, zoomToFit, pasteNodesEdges }}
+          actions={{ addNode, zoomToFit, pasteNodesEdges, dumpClipboard }}
           onClose={closeMenus}
         />
         <SelectionMenu
