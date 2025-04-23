@@ -1,50 +1,173 @@
 export const ProfileTemplates = {
   profile: [
-    { title: "ID", field: "id", width: 100, editor: "textarea" },
-    { title: "Name", field: "name", width: 150, editor: "textarea" },
-    { title: "Surname", field: "surname", width: 150, editor: "textarea" },
-    { title: "Age", field: "age", width: 100, editor: "number" },
     {
-      title: "Gender",
-      field: "gender",
-      width: 100,
-      editor: "select",
-      editorParams: { options: ["Male", "Female", "Other"] },
+      id: "id", // Explicit ID
+      accessorKey: "id",
+      header: "ID",
+      size: 100,
+      cell: info => String(info.getValue() ?? ''),
     },
-    { title: "Height", field: "height", width: 100, editor: "number" },
-    { title: "Weight", field: "weight", width: 100, editor: "number" },
+    {
+      id: "name", // Explicit ID
+      accessorKey: "name",
+      header: "Name",
+      size: 150,
+      cell: info => String(info.getValue() ?? ''),
+    },
+    {
+      id: "surname", // Explicit ID
+      accessorKey: "surname",
+      header: "Surname",
+      size: 150,
+      cell: info => String(info.getValue() ?? ''),
+    },
+    {
+      id: "age", // Explicit ID
+      accessorKey: "age",
+      header: "Age",
+      size: 100,
+      cell: info => String(info.getValue() ?? ''),
+    },
+    {
+      id: "gender", // Explicit ID
+      accessorKey: "gender",
+      header: "Gender",
+      size: 100,
+      cell: info => String(info.getValue() ?? ''),
+    },
+    {
+      id: "height", // Explicit ID
+      accessorKey: "height",
+      header: "Height",
+      size: 100,
+      cell: info => String(info.getValue() ?? ''),
+    },
+    {
+      id: "weight", // Explicit ID
+      accessorKey: "weight",
+      header: "Weight",
+      size: 100,
+      cell: info => String(info.getValue() ?? ''),
+    },
   ],
   record: [
-    { title: "Type", field: "type", width: 100, editor: "textarea" },
-    { title: "Code", field: "code", width: 100, editor: "textarea" },
-    { title: "Description", field: "description", width: 200, editor: "textarea" },
+    {
+      id: "type", // Explicit ID
+      accessorKey: "type",
+      header: "Type",
+      size: 100,
+      cell: info => String(info.getValue() ?? ''),
+    },
+    {
+      id: "code", // Explicit ID
+      accessorKey: "code",
+      header: "Code",
+      size: 100,
+      cell: info => String(info.getValue() ?? ''),
+    },
+    {
+      id: "description", // Explicit ID
+      accessorKey: "description",
+      header: "Description",
+      size: 200,
+      cell: info => String(info.getValue() ?? ''),
+    },
   ]
 };
 
+
 export const EditorTemplates = {
   intervention: [
-    { title: "ID", field: "id", width: 100, editor: "textarea" },
-    { title: "Name", field: "name", width: 150, editor: "textarea" },
-    { title: "Type", field: "type", width: 150, editor: "textarea" },
     {
-      title: "Description",
-      field: "description",
-      width: 200,
-      editor: "textarea",
+      id: "id", // Explicit ID
+      accessorKey: "id",
+      header: "ID",
+      size: 100,
+      cell: info => String(info.getValue() ?? ''),
     },
-    { title: "Global", field: "global", width: 100, editor: "textarea" },
-    { title: "Service", field: "service", width: 100, editor: "textarea" },
+    {
+      id: "name", // Explicit ID
+      accessorKey: "name",
+      header: "Name",
+      size: 150,
+      cell: info => String(info.getValue() ?? ''),
+    },
+    {
+      id: "type", // Explicit ID
+      accessorKey: "type",
+      header: "Type",
+      size: 150,
+      cell: info => String(info.getValue() ?? ''),
+    },
+    {
+      id: "description", // Explicit ID
+      accessorKey: "description",
+      header: "Description",
+      size: 200,
+      cell: info => String(info.getValue() ?? ''),
+    },
+    {
+      id: "global", // Explicit ID
+      accessorKey: "global",
+      header: "Global",
+      size: 100,
+      cell: info => String(info.getValue() ?? ''),
+    },
+    {
+      id: "service", // Explicit ID
+      accessorKey: "service",
+      header: "Service",
+      size: 100,
+      cell: info => String(info.getValue() ?? ''),
+    },
   ],
   phase: [
-    { title: "ID", field: "id", width: 100 },
-    { title: "Scope", field: "scope", width: 150, editor: "textarea" },
+    {
+      id: "id", // Explicit ID
+      accessorKey: "id",
+      header: "ID",
+      size: 100,
+      cell: info => String(info.getValue() ?? ''),
+    },
+    {
+      id: "scope", // Explicit ID
+      accessorKey: "scope",
+      header: "Scope",
+      size: 150,
+      cell: info => String(info.getValue() ?? ''),
+    },
   ],
   micro: [
-    { title: "ID", field: "id", width: 100 },
-    { title: "Scope", field: "scope", width: 150, editor: "textarea" },
+     {
+      id: "id", // Explicit ID
+      accessorKey: "id",
+      header: "ID",
+      size: 100,
+      cell: info => String(info.getValue() ?? ''),
+    },
+    {
+      id: "scope", // Explicit ID
+      accessorKey: "scope",
+      header: "Scope",
+      size: 150,
+      cell: info => String(info.getValue() ?? ''),
+    },
   ],
   session: [
-    { title: "ID", field: "id", width: 100 },
-    { title: "Scope", field: "scope", width: 150, editor: "textarea" },
+     {
+      id: "id", // Explicit ID
+      accessorKey: "id",
+      header: "ID",
+      size: 100,
+      cell: info => String(info.getValue() ?? ''),
+    },
+    {
+      id: "scope", // Explicit ID
+      accessorKey: "scope",
+      header: "Scope",
+      size: 150,
+      cell: info => String(info.getValue() ?? ''),
+    },
   ],
 };
+

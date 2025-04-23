@@ -8,6 +8,7 @@ import {
   clearDatesFromNodes,
   offsetNodesEdgesPosition,
 } from "../components/utils";
+import { v4 as uuidv4 } from "uuid";
 
 const useFlowStore = create(
   persist(
@@ -373,7 +374,8 @@ const useFlowStore = create(
             const newExercise = {
               id: uuidv4(),
               name: "New Exercise",
-              duration: "0s",
+              duration: 0,
+              sets: 0,
               reps: 0,
               intensity: "low",
             };
