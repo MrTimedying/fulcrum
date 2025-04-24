@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { applyNodeChanges, applyEdgeChanges } from "@xyflow/react";
 import * as _ from "lodash";
-import { ProfileTemplates, EditorTemplates } from "../components/variables";
+import { getProfileComposerTemplates, getEditorComposerTemplates } from "../components/variables";
 import {
   remapNodesAndEdgesWithNewIds,
   clearDatesFromNodes,
@@ -35,7 +35,7 @@ const useFlowStore = create(
 
         if (selectedNode) {
           const templates =
-            activeTab === "Profile" ? ProfileTemplates : EditorTemplates;
+            activeTab === "Profile" ? getProfileComposerTemplates(get().updateNodeData) : getEditorComposerTemplates(get().updateNodeData);
           if (templates[selectedNode.type]) {
             get().setColumnsLayout(templates[selectedNode.type]);
             console.log(

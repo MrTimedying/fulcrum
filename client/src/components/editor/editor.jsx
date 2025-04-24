@@ -21,14 +21,13 @@ import { v4 as uuidv4 } from "uuid";
 import useFlowStore from "../../state/flowState";
 import useTransientStore from "../../state/transientState";
 import { InterventionNode, PhaseNode, MicroNode, SessionNode } from "./nodes";
-import { EditorTemplates } from "../variables";
+import { getEditorComposerTemplates } from "../variables";
 import Inspector from "../Inspector";
 import SelectionMenu from "../selectionMenu";
 
 
 // COLUMNS FOR THE COMPOSER
 
-const columnTemplates = EditorTemplates;
 
 const dataTemplates = {
   intervention: () => ({

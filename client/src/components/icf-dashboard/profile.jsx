@@ -29,14 +29,12 @@ import {
   RecordElement,
 } from "./nodes";
 import Dagre from "@dagrejs/dagre";
-import { ProfileTemplates } from "../variables";
+import { getProfileComposerTemplates } from "../variables";
 import Inspector from "../Inspector";
 import SelectionMenu from "../selectionMenu";
 
-// COLUMNS FOR THE COMPOSER
 
-// Updated columnTemplates
-const columnTemplates = ProfileTemplates;
+
 
 // Updated dataTemplates
 const dataTemplates = {
@@ -92,6 +90,7 @@ const selector = (state) => ({
   setColumnsLayout: state.setColumnsLayout,
   clipboard: state.clipboard,
   dumpClipboard: state.dumpClipboard,
+  updateNodeData: state.updateNodeData,
 });
 
 function Profile({ isInspectorOpen, setIsInspectorOpen }) {
@@ -108,6 +107,7 @@ function Profile({ isInspectorOpen, setIsInspectorOpen }) {
     setColumnsLayout,
     clipboard,
     dumpClipboard,
+    updateNodeData,
   } = useFlowStore(useShallow(selector));
 
   const {
@@ -123,6 +123,8 @@ function Profile({ isInspectorOpen, setIsInspectorOpen }) {
       deleteSelectedNodesEdges: state.deleteSelectedNodesEdges,
     }))
   );
+
+  const columnTemplates = getProfileComposerTemplates(updateNodeData);
 
   const selectedNode = nodes.find((node) => node.selected);
   const multipleNodesSelected =
