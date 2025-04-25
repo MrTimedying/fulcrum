@@ -15,7 +15,7 @@ import {
   addEdge,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import NodeMenu from "./NodeMenu";
+import NodeMenu from "./nodeMenu";
 import PaneMenu from "./PaneMenu"; // Specific Node Context Menu
 import { v4 as uuidv4 } from "uuid";
 import useFlowStore from "../../state/flowState";
@@ -24,6 +24,7 @@ import { InterventionNode, PhaseNode, MicroNode, SessionNode } from "./nodes";
 import { getEditorComposerTemplates } from "../variables";
 import Inspector from "../Inspector";
 import SelectionMenu from "../selectionMenu";
+import TestModal from "./TestModal";
 
 
 
@@ -450,6 +451,11 @@ function Editor({ isInspectorOpen, setIsInspectorOpen }) {
           onClose={() => setIsInspectorOpen(false)}
           multiple={multipleNodesSelected}
         />
+        <TestModal
+          isOpen={isTestModalOpen}
+          onClose={() => setIsTestModalOpen(false)}
+          multiple={multipleNodesSelected}
+          />
       </div>
     </div>
   );
