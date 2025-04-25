@@ -26,8 +26,6 @@ import Inspector from "../Inspector";
 import SelectionMenu from "../selectionMenu";
 
 
-// COLUMNS FOR THE COMPOSER
-
 
 const dataTemplates = {
   intervention: () => ({
@@ -78,6 +76,7 @@ const selector = (state) => ({
   setColumnsLayout: state.setColumnsLayout,
   clipboard: state.clipboard,
   dumpClipboard: state.dumpClipboard,
+  updateNodeData: state.updateNodeData,
 });
 
 function Editor({ isInspectorOpen, setIsInspectorOpen }) {
@@ -94,6 +93,7 @@ function Editor({ isInspectorOpen, setIsInspectorOpen }) {
     setColumnsLayout,
     clipboard,
     dumpClipboard,
+    updateNodeData
   } = useFlowStore(useShallow(selector));
 
   const {
@@ -109,6 +109,8 @@ function Editor({ isInspectorOpen, setIsInspectorOpen }) {
       deleteSelectedNodesEdges: state.deleteSelectedNodesEdges,
     }))
   );
+
+  const columnTemplates = getEditorComposerTemplates(updateNodeData);
 
   const selectedNode = nodes.find((node) => node.selected);
   const multipleNodesSelected =
@@ -401,7 +403,7 @@ function Editor({ isInspectorOpen, setIsInspectorOpen }) {
             micro: MicroNode,
             session: SessionNode,
           }}
-          fitView
+          // fitView
           maxZoom={5}
           minZoom={0.3}
         >
