@@ -15,7 +15,6 @@
     background: transparent; /* Optional: make scrollbar track transparent */
   }
 
-
   .custom-radio {
     /* hiding browser el */
     appearance: none;
@@ -60,5 +59,6 @@ input.custom-radio:checked {
 .collapsed {
   width:0px;
 }
+
 
 

@@ -251,7 +251,7 @@ export const SessionNode = ({ id, data, selected }) => {
           className="p-1 text-gray-300 hover:text-green-400 transition-colors rounded-full hover:bg-gray-700 bg-gray-800 border border-gray-600 shadow-sm"
           aria-label="Toggle target handle position"
           title={`Target handle on: ${currentHandlePosition}`}
-        >
+        >         
           {currentHandlePosition === "left" ? (
             <IoSwapHorizontal size={14} />
           ) : (

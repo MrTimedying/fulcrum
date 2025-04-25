@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
+
 // Component to handle inline editing
 const EditableCell = ({
   initialValue,
@@ -74,7 +75,8 @@ const EditableCell = ({
         onBlur={handleBlur}
         onKeyDown={handleKeyDown}
         autoFocus
-        className="w-full px-1 py-0.5 caret-white bg-zinc-700 border border-blue-500 rounded focus:outline-none focus:ring-1 focus:ring-blue-400"
+        // style={{ caretColor: '#ffffff' }}
+        className="w-full px-1 py-0.5 bg-zinc-700 caret-white"
         step={inputType === 'number' ? 'any' : undefined}
         // Optional: Add placeholder based on expected format for text inputs like duration
         placeholder={columnId === 'duration' ? 'e.g., 1m 30s' : ''}
@@ -84,7 +86,7 @@ const EditableCell = ({
 
   // Display mode: Always format the raw initialValue from props
   return (
-    <div onDoubleClick={handleDoubleClick} className="cursor-pointer min-h-[24px] py-0.5 px-1">
+    <div onDoubleClick={handleDoubleClick} className="cursor-pointer caret-white min-h-[24px] py-0.5 px-1">
       {displayFormatter(initialValue)}
     </div>
   );

@@ -22,6 +22,18 @@ const NodeMenu = ({ isOpen, position, onClose, targetNode, actions, setIsInspect
             Inspect Node
           </button>
         </li>
+        { targetNode.type === 'session' && (
+                <li style={{ marginBottom: "8px" }} className="mb-0 text-sm text-slate-300 hover:bg-zinc-900 rounded-sm p-1">
+                <button
+                  onClick={() => {
+                    actions?.setIsTestModalOpen(true);
+                    onClose();
+                  }}
+                >
+                  Schedule testing
+                </button>
+              </li> )
+        }
         <li style={{ marginBottom: "8px" }} className="mb-0 text-sm text-slate-300 hover:bg-zinc-900 rounded-sm p-1">
           <button
             onClick={() => {

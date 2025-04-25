@@ -284,6 +284,24 @@ export const getEditorComposerTemplates = (updateDataFunction) => ({
         />
       ),
     },
+    {
+      id: "description",
+      accessorKey: "description",
+      header: "Description",
+      size: 150,
+      cell: (info) => (
+        <EditableCell
+          initialValue={info.getValue()}
+          rowId={info.row.original.id}
+          columnId={info.column.id}
+          updateDataFunction={updateDataFunction}
+          dataType="node"
+          displayFormatter={(value) => String(value ?? '')}
+          inputType="text"
+          valueParser={(value) => value} // Keep as string
+        />
+      ),
+    },
   ],
   micro: [
     {
@@ -304,12 +322,48 @@ export const getEditorComposerTemplates = (updateDataFunction) => ({
         />
       ),
     },
+    {
+      id: "description",
+      accessorKey: "description",
+      header: "Description",
+      size: 150,
+      cell: (info) => (
+        <EditableCell
+          initialValue={info.getValue()}
+          rowId={info.row.original.id}
+          columnId={info.column.id}
+          updateDataFunction={updateDataFunction}
+          dataType="node"
+          displayFormatter={(value) => String(value ?? '')}
+          inputType="text"
+          valueParser={(value) => value} // Keep as string
+        />
+      ),
+    },
   ],
   session: [
     {
       id: "scope",
       accessorKey: "scope",
       header: "Scope",
+      size: 150,
+      cell: (info) => (
+        <EditableCell
+          initialValue={info.getValue()}
+          rowId={info.row.original.id}
+          columnId={info.column.id}
+          updateDataFunction={updateDataFunction}
+          dataType="node"
+          displayFormatter={(value) => String(value ?? '')}
+          inputType="text"
+          valueParser={(value) => value} // Keep as string
+        />
+      ),
+    },
+    {
+      id: "description",
+      accessorKey: "description",
+      header: "Description",
       size: 150,
       cell: (info) => (
         <EditableCell

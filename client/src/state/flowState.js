@@ -2,7 +2,10 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { applyNodeChanges, applyEdgeChanges } from "@xyflow/react";
 import * as _ from "lodash";
-import { getProfileComposerTemplates, getEditorComposerTemplates } from "../components/variables";
+import {
+  getProfileComposerTemplates,
+  getEditorComposerTemplates,
+} from "../components/variables";
 import {
   remapNodesAndEdgesWithNewIds,
   clearDatesFromNodes,
@@ -35,7 +38,9 @@ const useFlowStore = create(
 
         if (selectedNode) {
           const templates =
-            activeTab === "Profile" ? getProfileComposerTemplates(get().updateNodeData) : getEditorComposerTemplates(get().updateNodeData);
+            activeTab === "Profile"
+              ? getProfileComposerTemplates(get().updateNodeData)
+              : getEditorComposerTemplates(get().updateNodeData);
           if (templates[selectedNode.type]) {
             get().setColumnsLayout(templates[selectedNode.type]);
             console.log(
@@ -516,7 +521,7 @@ const useFlowStore = create(
             newNodes,
             newEdges,
             400,
-            400,
+            400
           );
           // Clear selection state on new nodes/edges
           offsetedNodes.forEach((n) => (n.selected = false));
@@ -550,6 +555,63 @@ const useFlowStore = create(
             edges: [],
           },
         })),
+
+      // Add function to add a new Test to the selected Session node
+      addTest: (testData) => {
+        const selectedNode = get().nodes.find((node) => node.selected);
+        if (selectedNode && selectedNode.type === "session") {
+          const newTest = {
+            id: uuidv4(),
+            ...testData, // Data from the modular form
+          };
+          const updatedTests = [...(selectedNode.data.tests || []), newTest];
+          set((state) => ({
+            nodes: state.nodes.map((n) =>
+              n.id === selectedNode.id
+                ? { ...n, data: { ...n.data, tests: updatedTests } }
+                : n
+            ),
+          }));
+        }
+      },
+
+      // Add function to update existing Test data
+      updateTestData: (nodeId, testId, updatedData) => {
+        set((state) => ({
+          nodes: state.nodes.map((node) =>
+            node.id === nodeId
+              ? {
+                  ...node,
+                  data: {
+                    ...node.data,
+                    tests: (node.data.tests || []).map((test) =>
+                      test.id === testId ? { ...test, ...updatedData } : test
+                    ),
+                  },
+                }
+              : node
+          ),
+        }));
+      },
+
+      // Add function to delete Tests
+      deleteTests: (nodeId, testIds) => {
+        set((state) => ({
+          nodes: state.nodes.map((node) =>
+            node.id === nodeId
+              ? {
+                  ...node,
+                  data: {
+                    ...node.data,
+                    tests: (node.data.tests || []).filter(
+                      (test) => !testIds.includes(test.id)
+                    ),
+                  },
+                }
+              : node
+          ),
+        }));
+      },
     }),
     {
       name: "flow-store",

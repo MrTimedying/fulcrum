@@ -48,6 +48,7 @@ const dataTemplates = {
     id: uuidv4(),
     scope: "Session Scope",
     exercises: [],
+    tests: [],
   }),
 };
 
@@ -109,6 +110,8 @@ function Editor({ isInspectorOpen, setIsInspectorOpen }) {
       deleteSelectedNodesEdges: state.deleteSelectedNodesEdges,
     }))
   );
+
+  const [isTestModalOpen, setIsTestModalOpen] = useState(false);
 
   const columnTemplates = getEditorComposerTemplates(updateNodeData);
 
@@ -369,6 +372,15 @@ function Editor({ isInspectorOpen, setIsInspectorOpen }) {
     closeMenus();
   };
 
+  const nodeTypes = useMemo(() => {
+    return {
+      intervention: InterventionNode,
+      phase: PhaseNode,
+      micro: MicroNode,
+      session: SessionNode,
+    };
+  });
+
   return (
     <div
       id="wrapper"
@@ -397,12 +409,7 @@ function Editor({ isInspectorOpen, setIsInspectorOpen }) {
           onNodeContextMenu={onNodeContextMenu}
           onPaneContextMenu={onPaneContextMenu}
           onSelectionContextMenu={onSelectionContextMenu}
-          nodeTypes={{
-            intervention: InterventionNode,
-            phase: PhaseNode,
-            micro: MicroNode,
-            session: SessionNode,
-          }}
+          nodeTypes={nodeTypes}
           // fitView
           maxZoom={5}
           minZoom={0.3}
@@ -417,7 +424,7 @@ function Editor({ isInspectorOpen, setIsInspectorOpen }) {
           position={nodeMenu.position}
           targetNode={nodeMenu.targetNode}
           setIsInspectorOpen={setIsInspectorOpen}
-          actions={{ editNode, deleteNode }}
+          actions={{ editNode, deleteNode, setIsTestModalOpen }}
           onClose={closeMenus}
         />
         <PaneMenu
