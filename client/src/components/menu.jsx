@@ -14,14 +14,14 @@ export default function MyDropdown({ formData, setFormData, setFetchingSwitch}) 
   const closeNpFormModal = () => {
     setIsNpFormModalOpen(false);
     setFormData({
-      Name: "",
-      Surname: "",
-      Age: "",
-      Gender: "",
-      BMI: "",
-      Height: "",
-      Weight: "",
-      Status: "",
+      name: "",
+      surname: "",
+      age: "",
+      gender: "",
+      bmi: "",
+      height: "",
+      weight: "",
+      status: "",
     });
   };
 
@@ -29,14 +29,14 @@ export default function MyDropdown({ formData, setFormData, setFetchingSwitch}) 
 
     setIsNpFormModalOpen(true);
     setFormData({
-      Name: "",
-      Surname: "",
-      Age: "",
-      Gender: "",
-      BMI: "",
-      Height: "",
-      Weight: "",
-      Status: "",
+      name: "",
+      surname: "",
+      age: "",
+      gender: "",
+      bmi: "",
+      height: "",
+      weight: "",
+      status: "",
     });
     
   }

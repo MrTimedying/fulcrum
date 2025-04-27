@@ -9,14 +9,14 @@ function Sidebar() {
   const [query, setQuery] = useState("");
   const [fetchingSwitch, setFetchingSwitch] = useState(false);
   const [formData, setFormData] = useState({
-    Name: "",
-    Surname: "",
-    Age: "",
-    Gender: "",
-    BMI: "",
-    Height: "",
-    Weight: "",
-    Status: "",
+    name: "",
+    surname: "",
+    age: "",
+    gender: "",
+    bmi: "",
+    height: "",
+    weight: "",
+    status: "",
   });
   
   const clientList = useFlowStore((state) => state.patients);
@@ -29,8 +29,8 @@ function Sidebar() {
     const searchWords = inputValue.toLowerCase().split(' ');
   
     const containsWord = (word, value) => {
-      const name = value?.Name?.toLowerCase() || '';
-      const surname = value?.Surname?.toLowerCase() || '';
+      const name = value?.name?.toLowerCase() || '';
+      const surname = value?.surname?.toLowerCase() || '';
       return (name + surname).includes(word);
     };    
   
@@ -77,7 +77,7 @@ function Sidebar() {
             <li key={key} className={` ${patientId === key ? 'text-slate-600 text-s' : 'text-stone-200 text-xs '} `} onClick={() => handleSelection(key)}>
               {/* Create a Link for each patient */}
               <Link to={patientId === key ? '/' : `/patients/${key}`}>
-                {value.Name} {value.Surname}
+                {value.name} {value.surname}
               </Link>
             </li>
           )) : 
@@ -87,7 +87,7 @@ function Sidebar() {
             <li key={key} className={` ${patientId === key ? 'text-slate-600 text-s' : 'text-stone-200 text-xs '} `} onClick={() => handleSelection(key)}>
               {/* Create a Link for each patient */}
               <Link to={patientId === key ? '/' : `/patients/${key}`}>
-                {value.Name} {value.Surname}
+                {value.name} {value.surname}
               </Link>
             </li>
           ))  }

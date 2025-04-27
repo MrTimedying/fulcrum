@@ -1,29 +1,49 @@
 import { Fragment } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import { v4 as uuidv4 } from 'uuid';
+import { useFormik } from 'formik';
+import * as Yup from 'yup';
 import useFlowStore from "../state/flowState";
 
-
-
-
 function NpForm({ isOpen, closeModal, formData, setFormData, setFetchingSwitch, isEditing, setIsEditing }) {
+  const { setNewEditor, setNewProfile } = useFlowStore();
 
-  const {setNewEditor, setNewProfile} = useFlowStore();
-  
-  
+  // Validation schema using Yup
+  const validationSchema = Yup.object({
+    name: Yup.string().required('Name is required'),
+    surname: Yup.string().required('Surname is required'),
+    age: Yup.number().required('Age is required').min(10, 'Age must be at least 10').max(100, 'Age must be less than 100'),
+    gender: Yup.string().required('Gender is required'),
+    height: Yup.number().required('Height is required').min(100, 'Height must be at least 100 cm').max(250, 'Height must be less than 250 cm'),
+    weight: Yup.number().required('Weight is required').min(30, 'Weight must be at least 30 kg').max(200, 'Weight must be less than 200 kg'),
+    status: Yup.string().required('Status is required'),
+  });
 
-  const handleSubmit = () => {
-    const patientId = formData.PatientId || uuidv4();
-    const heightInMeters = formData.Height / 100;
-    const weight = formData.Weight;
-    const bmi = (weight / (heightInMeters * heightInMeters)).toFixed(2);
-    const formDataWithBMI = { ...formData, BMI: bmi };
-    useFlowStore.getState().addPatient(patientId, formDataWithBMI);
-    setNewEditor(patientId);
-    setNewProfile(patientId);
-    closeModal();
-    console.log(useFlowStore.getState().patients);
-  };
+  // Initialize Formik
+  const formik = useFormik({
+    initialValues: {
+      name: formData.name || '',
+      surname: formData.surname || '',
+      age: formData.age || '',
+      gender: formData.gender || '',
+      height: formData.height || '',
+      weight: formData.weight || '',
+      status: formData.status || '',
+    },
+    validationSchema: validationSchema,
+    enableReinitialize: true,
+    onSubmit: (values) => {
+      const patientId = formData.PatientId || uuidv4();
+      const heightInMeters = values.height / 100;
+      const bmi = (values.weight / (heightInMeters * heightInMeters)).toFixed(2);
+      const formDataWithBMI = { ...values, bmi: bmi };
+      useFlowStore.getState().addPatient(patientId, formDataWithBMI);
+      setNewEditor(patientId);
+      setNewProfile(patientId);
+      closeModal();
+      console.log(useFlowStore.getState().patients);
+    },
+  });
 
   return (
     <>
@@ -47,69 +67,73 @@ function NpForm({ isOpen, closeModal, formData, setFormData, setFetchingSwitch, 
             </Transition.Child>
 
             <div className="inline-block w-full max-w-md p-6 my-8 overflow-hidden text-left font-mono text-slate-300 align-middle transition-all transform bg-zinc-900 shadow-xl rounded-2xl">
-              {/* Modal content goes here */}
               <Dialog.Title
                 as="h3"
                 className="text-lg font-medium leading-6 text-slate-300"
               >
-                Creating a New Patient entry
+                Creating a New Patient Entry
               </Dialog.Title>
               <div className="mt-2">
-                <form>
+                <form onSubmit={formik.handleSubmit}>
                   <Fragment>
                     <div className="mb-4">
                       <label
-                        htmlFor="Name"
+                        htmlFor="name"
                         className="block text-slate-300 text-sm font-bold mb-2"
                       >
                         Name
                       </label>
                       <input
                         type="text"
-                        id="Name"
-                        name="Name"
-                        value={formData.Name} // Add value
-                        onChange={(e) =>
-                          setFormData({ ...formData, Name: e.target.value })
-                        }
-                        className="shadow appearance-none rounded w-full py-2 px-3 bg-zinc-800 text-slate-300 leading-tight focus:outline-none focus:shadow-outline"
+                        id="name"
+                        name="name"
+                        value={formik.values.name}
+                        onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
+                        className="shadow appearance-none rounded w-full py-2 px-3 bg-zinc-800 text-slate-300 leading-tight focus:outline-none focus:shadow-outline transition-all duration-200 dark:bg-zinc-800 dark:text-slate-300"
+                        placeholder="Enter name"
                       />
+                      {formik.touched.name && formik.errors.name ? (
+                        <div className="text-red-500 text-xs mt-1">{formik.errors.name}</div>
+                      ) : null}
                     </div>
 
                     <div className="mb-4">
                       <label
-                        htmlFor="Surname"
+                        htmlFor="surname"
                         className="block text-slate-300 text-sm font-bold mb-2"
                       >
                         Surname
                       </label>
                       <input
                         type="text"
-                        id="Surname"
-                        name="Surname"
-                        value={formData.Surname} // Add value
-                        onChange={(e) =>
-                          setFormData({ ...formData, Surname: e.target.value })
-                        }
-                        className="shadow appearance-none rounded w-full py-2 px-3 bg-zinc-800 text-slate-300 leading-tight focus:outline-none focus:shadow-outline"
+                        id="surname"
+                        name="surname"
+                        value={formik.values.surname}
+                        onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
+                        className="shadow appearance-none rounded w-full py-2 px-3 bg-zinc-800 text-slate-300 leading-tight focus:outline-none focus:shadow-outline transition-all duration-200 dark:bg-zinc-800 dark:text-slate-300"
+                        placeholder="Enter surname"
                       />
+                      {formik.touched.surname && formik.errors.surname ? (
+                        <div className="text-red-500 text-xs mt-1">{formik.errors.surname}</div>
+                      ) : null}
                     </div>
 
                     <div className="mb-4">
                       <label
-                        htmlFor="Age"
+                        htmlFor="age"
                         className="block text-slate-300 text-sm font-bold mb-2"
                       >
                         Age
                       </label>
                       <select
-                        id="Age"
-                        name="Age"
-                        value={formData.Age} // Add value
-                        onChange={(e) =>
-                          setFormData({ ...formData, Age: e.target.value })
-                        }
-                        className="shadow appearance-none rounded w-full py-2 px-3 bg-zinc-800 text-slate-300 leading-tight focus:outline-none focus:shadow-outline"
+                        id="age"
+                        name="age"
+                        value={formik.values.age}
+                        onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
+                        className="shadow appearance-none rounded w-full py-2 px-3 bg-zinc-800 text-slate-300 leading-tight focus:outline-none focus:shadow-outline transition-all duration-200 dark:bg-zinc-800 dark:text-slate-300"
                       >
                         <option value="">Select Age</option>
                         {Array.from({ length: 90 }, (_, i) => (
@@ -118,116 +142,130 @@ function NpForm({ isOpen, closeModal, formData, setFormData, setFetchingSwitch, 
                           </option>
                         ))}
                       </select>
+                      {formik.touched.age && formik.errors.age ? (
+                        <div className="text-red-500 text-xs mt-1">{formik.errors.age}</div>
+                      ) : null}
                     </div>
 
                     <div className="mb-4">
                       <label
-                        htmlFor="Gender"
+                        htmlFor="gender"
                         className="block text-slate-300 text-sm font-bold mb-2"
                       >
                         Gender
                       </label>
                       <select
-                        id="Gender"
-                        name="Gender"
-                        value={formData.Gender} // Add value
-                        onChange={(e) =>
-                          setFormData({ ...formData, Gender: e.target.value })
-                        }
-                        className="shadow appearance-none rounded w-full py-2 px-3 bg-zinc-800 text-slate-300 leading-tight focus:outline-none focus:shadow-outline"
+                        id="gender"
+                        name="gender"
+                        value={formik.values.gender}
+                        onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
+                        className="shadow appearance-none rounded w-full py-2 px-3 bg-zinc-800 text-slate-300 leading-tight focus:outline-none focus:shadow-outline transition-all duration-200 dark:bg-zinc-800 dark:text-slate-300"
                       >
                         <option value="">Select Gender</option>
                         <option value="Male">Male</option>
                         <option value="Female">Female</option>
                       </select>
+                      {formik.touched.gender && formik.errors.gender ? (
+                        <div className="text-red-500 text-xs mt-1">{formik.errors.gender}</div>
+                      ) : null}
                     </div>
 
                     <div className="mb-4">
                       <label
-                        htmlFor="Height"
+                        htmlFor="height"
                         className="block text-slate-300 text-sm font-bold mb-2"
                       >
                         Height (cm)
                       </label>
                       <input
                         type="number"
-                        id="Height"
-                        name="Height"
+                        id="height"
+                        name="height"
                         min="100"
                         max="250"
                         step="0.1"
-                        value={formData.Height} // Add value
-                        onChange={(e) =>
-                          setFormData({ ...formData, Height: e.target.value })
-                        }
-                        className="shadow appearance-none rounded w-full py-2 px-3 bg-zinc-800 text-slate-300 leading-tight focus:outline-none focus:shadow-outline"
+                        value={formik.values.height}
+                        onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
+                        className="shadow appearance-none rounded w-full py-2 px-3 bg-zinc-800 text-slate-300 leading-tight focus:outline-none focus:shadow-outline transition-all duration-200 dark:bg-zinc-800 dark:text-slate-300"
+                        placeholder="Enter height"
                       />
+                      {formik.touched.height && formik.errors.height ? (
+                        <div className="text-red-500 text-xs mt-1">{formik.errors.height}</div>
+                      ) : null}
                     </div>
 
                     <div className="mb-4">
                       <label
-                        htmlFor="Weigth"
+                        htmlFor="weight"
                         className="block text-slate-300 text-sm font-bold mb-2"
                       >
-                        Weight (Kg)
+                        Weight (kg)
                       </label>
                       <input
                         type="number"
-                        id="Weight"
-                        name="Weight"
+                        id="weight"
+                        name="weight"
                         min="30"
                         max="200"
                         step="0.1"
-                        value={formData.Weight} // Add value
-                        onChange={(e) =>
-                          setFormData({ ...formData, Weight: e.target.value })
-                        }
-                        className="shadow appearance-none rounded w-full py-2 px-3 bg-zinc-800 text-slate-300 leading-tight focus:outline-none focus:shadow-outline"
+                        value={formik.values.weight}
+                        onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
+                        className="shadow appearance-none rounded w-full py-2 px-3 bg-zinc-800 text-slate-300 leading-tight focus:outline-none focus:shadow-outline transition-all duration-200 dark:bg-zinc-800 dark:text-slate-300"
+                        placeholder="Enter weight"
                       />
+                      {formik.touched.weight && formik.errors.weight ? (
+                        <div className="text-red-500 text-xs mt-1">{formik.errors.weight}</div>
+                      ) : null}
                     </div>
 
                     <div className="mb-4">
                       <label
-                        htmlFor="Status"
+                        htmlFor="status"
                         className="block text-slate-300 text-sm font-bold mb-2"
                       >
                         Status
                       </label>
                       <select
-                        id="Status"
-                        name="Status"
-                        value={formData.Status} // Add value
-                        onChange={(e) =>
-                          setFormData({ ...formData, Status: e.target.value })
-                        }
-                        className="shadow appearance-none rounded w-full py-2 px-3 bg-zinc-800 text-slate-300 leading-tight focus:outline-none focus:shadow-outline"
+                        id="status"
+                        name="status"
+                        value={formik.values.status}
+                        onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
+                        className="shadow appearance-none rounded w-full py-2 px-3 bg-zinc-800 text-slate-300 leading-tight focus:outline-none focus:shadow-outline transition-all duration-200 dark:bg-zinc-800 dark:text-slate-300"
                       >
                         <option value="">Select Status</option>
                         <option value="Rehabilitation">Rehabilitation</option>
                         <option value="Training">Training</option>
                       </select>
+                      {formik.touched.status && formik.errors.status ? (
+                        <div className="text-red-500 text-xs mt-1">{formik.errors.status}</div>
+                      ) : null}
                     </div>
                   </Fragment>
-                </form>
-              </div>
 
-              <div className="flex flex-row justify-between">
-                <div className="mt-4 justify-end">
-                  <button
-                    onClick={handleSubmit}
-                    className="inline-flex w-full justify-center rounded-md bg-zinc-950 px-2 py-2 text-sm font-medium text-slate-300 font-mono hover:bg-black/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/75"
-                  >
-                    Save
-                  </button>
-                </div>
-                <div className="mt-4 justify-start">
-                  <button
-                    onClick={closeModal}
-                    className="inline-flex w-full justify-center rounded-md bg-zinc-950 px-2 py-2 text-sm font-medium text-slate-300 font-mono hover:bg-black/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/75"
-                  >
-                    Close
-                  </button>
-                </div>
+                  <div className="flex flex-row justify-between">
+                    <div className="mt-4 justify-end">
+                      <button
+                        type="submit"
+                        disabled={!formik.isValid || formik.isSubmitting}
+                        className="inline-flex w-full justify-center rounded-md bg-zinc-950 px-2 py-2 text-sm font-medium text-slate-300 font-mono hover:bg-black/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/75 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 dark:bg-zinc-950 dark:text-slate-300"
+                      >
+                        Save
+                      </button>
+                    </div>
+                    <div className="mt-4 justify-start">
+                      <button
+                        onClick={closeModal}
+                        className="inline-flex w-full justify-center rounded-md bg-zinc-950 px-2 py-2 text-sm font-medium text-slate-300 font-mono hover:bg-black/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/75 transition-all duration-200 dark:bg-zinc-950 dark:text-slate-300"
+                      >
+                        Close
+                      </button>
+                    </div>
+                  </div>
+                </form>
               </div>
             </div>
           </div>

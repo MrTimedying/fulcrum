@@ -16,7 +16,7 @@ import {
   addEdge,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import NodeMenu from "../editor/NodeMenu";
+import NodeMenu from "../editor/nodeMenu";
 import PaneMenu from "./PaneMenu"; // Specific Node Context Menu
 import { v4 as uuidv4 } from "uuid";
 import useFlowStore from "../../state/flowState";
@@ -81,6 +81,7 @@ const nodeTemplates = {
 };
 
 const selector = (state) => ({
+  patientId: state.patientId,
   nodes: state.nodes,
   edges: state.edges,
   setNodes: state.setNodes,
@@ -91,6 +92,7 @@ const selector = (state) => ({
   clipboard: state.clipboard,
   dumpClipboard: state.dumpClipboard,
   updateNodeData: state.updateNodeData,
+  patients: state.patients,
 });
 
 function Profile({ isInspectorOpen, setIsInspectorOpen }) {
@@ -98,6 +100,7 @@ function Profile({ isInspectorOpen, setIsInspectorOpen }) {
   const { setToaster } = useTransientStore();
 
   const {
+    patientId,
     nodes,
     edges,
     setNodes,
@@ -108,6 +111,7 @@ function Profile({ isInspectorOpen, setIsInspectorOpen }) {
     clipboard,
     dumpClipboard,
     updateNodeData,
+    patients,
   } = useFlowStore(useShallow(selector));
 
   const {
@@ -363,6 +367,9 @@ function Profile({ isInspectorOpen, setIsInspectorOpen }) {
   const createProfileWithChildren = (canvasPosition) => {
     const spacingX = 200; // Constant spacing for child nodes
     const childTypes = ["bodyStructure", "activities", "participation"];
+    const currentPatientDetails = patients[patientId];
+
+    console.log(currentPatientDetails);
 
     const profileNode = {
       id: uuidv4(),
@@ -370,6 +377,10 @@ function Profile({ isInspectorOpen, setIsInspectorOpen }) {
       type: "profile",
       data: dataTemplates["profile"]?.() || {},
     };
+
+    const mergedProfileNode = { ...profileNode, data: {...profileNode.data, ...currentPatientDetails} };
+
+    console.log(mergedProfileNode);
 
     const childNodes = childTypes.map((childType, index) => ({
       id: uuidv4(),
@@ -381,7 +392,7 @@ function Profile({ isInspectorOpen, setIsInspectorOpen }) {
       data: dataTemplates[childType]?.() || {},
     }));
 
-    setNodes((nds) => [...nds, profileNode, ...childNodes]);
+    setNodes((nds) => [...nds, mergedProfileNode, ...childNodes]);
   };
 
   // Helper function to add a generic single node
