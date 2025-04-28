@@ -481,7 +481,12 @@ function Profile({ isInspectorOpen, setIsInspectorOpen }) {
           position={nodeMenu.position}
           targetNode={nodeMenu.targetNode}
           setIsInspectorOpen={setIsInspectorOpen}
-          actions={{ editNode, deleteNode }}
+          actions={{ 
+            cutNodesEdges,
+            copyNodesEdges,
+            deleteSelectedNodesEdges,
+            editNode, 
+            deleteNode }}
           onClose={closeMenus}
         />
         <PaneMenu

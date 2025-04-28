@@ -513,7 +513,7 @@ const useFlowStore = create(
           const { clipboard } = state;
           // Deep copy and assign new IDs
           const { newNodes, newEdges } = remapNodesAndEdgesWithNewIds(
-            clipboard.nodes,
+            clearDatesFromNodes(clipboard.nodes),
             clipboard.edges
           );
           // Offset position (if needed)

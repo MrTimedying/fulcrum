@@ -425,7 +425,13 @@ function Editor({ isInspectorOpen, setIsInspectorOpen }) {
           position={nodeMenu.position}
           targetNode={nodeMenu.targetNode}
           setIsInspectorOpen={setIsInspectorOpen}
-          actions={{ editNode, deleteNode, setIsTestModalOpen }}
+          actions={{ 
+            cutNodesEdges,
+            copyNodesEdges,
+            deleteSelectedNodesEdges,
+            editNode, 
+            deleteNode, 
+            setIsTestModalOpen }}
           onClose={closeMenus}
         />
         <PaneMenu
