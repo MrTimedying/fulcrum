@@ -25,7 +25,7 @@ import { getEditorComposerTemplates } from "../variables";
 import Inspector from "../Inspector";
 import SelectionMenu from "../selectionMenu";
 import TestModal from "./TestModal";
-
+import useKeyboardShortcuts from "../util/KeyboardShortcuts";
 
 
 const dataTemplates = {
@@ -103,12 +103,16 @@ function Editor({ isInspectorOpen, setIsInspectorOpen }) {
     copyNodesEdges,
     pasteNodesEdges,
     deleteSelectedNodesEdges,
+    undoNodesEdges,
+    redoNodesEdges,
   } = useFlowStore(
     useShallow((state) => ({
       cutNodesEdges: state.cutNodesEdges,
       copyNodesEdges: state.copyNodesEdges,
       pasteNodesEdges: state.pasteNodesEdges,
       deleteSelectedNodesEdges: state.deleteSelectedNodesEdges,
+      undoNodesEdges: state.undoNodesEdges,
+      redoNodesEdges: state.redoNodesEdges,
     }))
   );
 
@@ -382,6 +386,15 @@ function Editor({ isInspectorOpen, setIsInspectorOpen }) {
     };
   });
 
+  useKeyboardShortcuts({
+    cutNodesEdges,
+    copyNodesEdges,
+    pasteNodesEdges,
+    deleteSelectedNodesEdges,
+    undoNodesEdges,
+    redoNodesEdges,
+  });
+
   return (
     <div
       id="wrapper"
@@ -418,7 +431,6 @@ function Editor({ isInspectorOpen, setIsInspectorOpen }) {
           <Background variant="dots" />
           <Controls />
         </ReactFlow>
-
         {/* Node Context Menu */}
         <NodeMenu
           isOpen={nodeMenu.isOpen && nodeMenu.targetNode}

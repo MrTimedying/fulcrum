@@ -57,7 +57,7 @@ const dataTemplates = {
   record: () => ({
     id: uuidv4(),
     name: "New Record Element",
-  })
+  }),
 };
 
 // Updated nodeTemplates

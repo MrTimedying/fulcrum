@@ -13,6 +13,8 @@ import {
 } from "../components/utils";
 import { v4 as uuidv4 } from "uuid";
 
+const MAX_HISTORY_SIZE = 10; // Limit history to prevent memory issues
+
 const useFlowStore = create(
   persist(
     (set, get) => ({
@@ -29,6 +31,8 @@ const useFlowStore = create(
       columnsLayout: [],
       rowsData: [],
       clipboard: { nodes: [], edges: [] },
+      contextualMemory: [],
+      mirroredContextualMemory: [],
       nodes: [], // Global nodes
       edges: [], // Global edges
 
@@ -75,7 +79,6 @@ const useFlowStore = create(
         hydrateFlowState(id, activeTab);
       },
 
-      // In setActiveTab function: add explicit saving at the beginning
       setActiveTab: (tab) => {
         const { patientId, hydrateFlowState, tabStateLogic, activeTab } = get();
 
@@ -101,34 +104,30 @@ const useFlowStore = create(
 
       // Hydrate nodes and edges based on activeTab
       hydrateFlowState: (patientId, activeTab) => {
-        // set({ nodes: [], edges: [] });
-
         const { editorStates, profileStates } = get();
 
         if (activeTab === "Editor") {
           const editorState = editorStates[patientId] || {
             nodes: [],
             edges: [],
+            contextualMemory: [{ nodes: [], edges: [] }], // Initialize history
+            historyIndex: 0,
           };
-          if (editorState) {
-            set({
-              nodes: editorState.nodes || [],
-              edges: editorState.edges || [],
-            });
-          }
+          set({
+            nodes: editorState.nodes || [],
+            edges: editorState.edges || [],
+          });
         } else if (activeTab === "Profile") {
           const profileState = profileStates[patientId] || {
             nodes: [],
             edges: [],
+            contextualMemory: [{ nodes: [], edges: [] }], // Initialize history
+            historyIndex: 0,
           };
-          if (profileState) {
-            set({
-              nodes: profileState.nodes || [],
-              edges: profileState.edges || [],
-            });
-          } else {
-            return;
-          }
+          set({
+            nodes: profileState.nodes || [],
+            edges: profileState.edges || [],
+          });
         }
       },
 
@@ -144,7 +143,6 @@ const useFlowStore = create(
         }
       },
 
-      // Comment out the entire logic in tabStateLogic
       tabStateLogic: (trailingActiveTab, patientId) => {
         console.log("Tab logic triggered - trailing tab:", trailingActiveTab);
         // Temporarily comment out all state saving logic
@@ -160,6 +158,7 @@ const useFlowStore = create(
           nodes: applyNodeChanges(changes, state.nodes),
         }));
       },
+
       onEdgesChange: (changes) => {
         set((state) => ({
           edges: applyEdgeChanges(changes, state.edges),
@@ -171,7 +170,7 @@ const useFlowStore = create(
           nodes: typeof payload === "function" ? payload(state.nodes) : payload,
         }));
       },
-      // `setEdges` Implementation
+
       setEdges: (payload) => {
         set((state) => ({
           edges: typeof payload === "function" ? payload(state.edges) : payload,
@@ -186,37 +185,53 @@ const useFlowStore = create(
         set({ nodes: flowState.nodes, edges: flowState.edges });
       },
 
-      // Save Editor State
+      // Save Editor State with history
       setEditorState: (patientId) => {
         const { nodes, edges } = get();
-        console.log("Saving to Profile state:", nodes.length, "nodes");
+        console.log("Saving to Editor state:", nodes.length, "nodes");
         set((state) => ({
           editorStates: {
             ...state.editorStates,
-            [patientId]: { nodes, edges },
+            [patientId]: {
+              nodes,
+              edges,
+              contextualMemory: state.editorStates[patientId]
+                ?.contextualMemory || [{ nodes: [], edges: [] }],
+              historyIndex: state.editorStates[patientId]?.historyIndex || 0,
+            },
           },
         }));
       },
 
-      // Save Profile State
+      // Save Profile State with history
       setProfileState: (patientId) => {
         const { nodes, edges } = get();
-        console.log("Saving to Editor state:", nodes.length, "nodes");
+        console.log("Saving to Profile state:", nodes.length, "nodes");
         set((state) => ({
           profileStates: {
             ...state.profileStates,
-            [patientId]: { nodes, edges },
+            [patientId]: {
+              nodes,
+              edges,
+              contextualMemory: state.profileStates[patientId]
+                ?.contextualMemory || [{ nodes: [], edges: [] }],
+              historyIndex: state.profileStates[patientId]?.historyIndex || 0,
+            },
           },
         }));
       },
 
       // CREATING A NEW PATIENT REQUIRES INITIALIZATION OF THE STATE
-
       setNewEditor: (patientId) => {
         set((state) => ({
           editorStates: {
             ...state.editorStates,
-            [patientId]: { nodes: [], edges: [] },
+            [patientId]: {
+              nodes: [],
+              edges: [],
+              contextualMemory: [{ nodes: [], edges: [] }],
+              historyIndex: 0,
+            },
           },
         }));
       },
@@ -225,7 +240,12 @@ const useFlowStore = create(
         set((state) => ({
           profileStates: {
             ...state.profileStates,
-            [patientId]: { nodes: [], edges: [] },
+            [patientId]: {
+              nodes: [],
+              edges: [],
+              contextualMemory: [{ nodes: [], edges: [] }],
+              historyIndex: 0,
+            },
           },
         }));
       },
@@ -328,8 +348,6 @@ const useFlowStore = create(
         set({
           nodes: updatedNodes,
         });
-
-        console.log(`Updated node data field ${field} to ${value}`);
       },
 
       // Update a specific exercise in the selected node
@@ -533,17 +551,29 @@ const useFlowStore = create(
           };
         }),
 
-      deleteSelectedNodesEdges: () =>
-        set((state) => {
-          const remainingNodes = state.nodes.filter((n) => !n.selected);
-          const remainingEdges = state.edges.filter((e) => !e.selected);
+      deleteSelectedNodesEdges: () => {
+        let nodesDeleted = false;
+        let edgesDeleted = false;
 
+        get().recordState();
+
+        set((state) => {
+          const initialNodesCount = (state.nodes || []).length;
+          const initialEdgesCount = (state.edges || []).length;
+          const remainingNodes = (state.nodes || []).filter((n) => !n.selected);
+          const remainingEdges = (state.edges || []).filter((e) => !e.selected);
+
+          nodesDeleted = initialNodesCount !== remainingNodes.length;
+          edgesDeleted = initialEdgesCount !== remainingEdges.length;
+
+          // Return updated state with spread of previous state for clarity
           return {
             ...state,
             nodes: remainingNodes,
             edges: remainingEdges,
           };
-        }),
+        });
+      },
 
       dumpClipboard: () =>
         set((state) => ({
@@ -611,6 +641,128 @@ const useFlowStore = create(
               : node
           ),
         }));
+      },
+
+      recordState: () => {
+        const { nodes, edges, contextualMemory } = get();
+        
+        // Use fallback to empty array if nodes or edges are undefined to prevent TypeError
+        const safeNodes = nodes || [];
+        const safeEdges = edges || [];
+        
+        // Create a deep copy of current nodes and edges as a past state snapshot
+        const pastState = {
+          nodes: _.cloneDeep(safeNodes),
+          edges: _.cloneDeep(safeEdges),
+        };
+        
+        // Start with the current history array
+        let updatedContextualMemory = [...(contextualMemory || [])];
+        
+        // Append the current state as a past state to contextualMemory
+        updatedContextualMemory.push(pastState);
+        
+        // Limit contextualMemory size by removing oldest state if necessary
+        while (updatedContextualMemory.length > MAX_HISTORY_SIZE) {
+          updatedContextualMemory.shift();
+        }
+        
+        // Log for debugging (remove in production)
+        console.log("Recording past state - Contextual Memory Length:", updatedContextualMemory.length, "Mirrored Memory Cleared", "Past State:", pastState);
+        
+        // Update state: add past state to contextualMemory and clear mirroredContextualMemory
+        set({
+          contextualMemory: updatedContextualMemory,
+          mirroredContextualMemory: [], // Clear redo history on new action
+        });
+      },
+      
+      // Undo Logic: Reverts to the last past state in contextualMemory, or to initial state if none remain
+      undoNodesEdges: () => {
+        const { contextualMemory, mirroredContextualMemory } = get();
+        
+        // Start with current history arrays
+        let currentContextualMemory = [...(contextualMemory || [])];
+        let updatedMirroredMemory = [...(mirroredContextualMemory || [])];
+        
+        // Log current state before undo for debugging (remove in production)
+        console.log("Undo triggered - Contextual Memory Length:", currentContextualMemory.length, "Mirrored Memory Length:", updatedMirroredMemory.length, "Timestamp:", Date.now());
+        
+        // Capture the current state to move to mirrored memory for redo
+        const currentState = {
+          nodes: _.cloneDeep(get().nodes || []),
+          edges: _.cloneDeep(get().edges || []),
+        };
+        updatedMirroredMemory.push(currentState);
+        
+        // Limit mirroredContextualMemory size by removing oldest state if necessary
+        while (updatedMirroredMemory.length > MAX_HISTORY_SIZE) {
+          updatedMirroredMemory.shift();
+        }
+        
+        // If there are past states in contextualMemory, revert to the last one
+        if (currentContextualMemory.length > 0) {
+          const previousState = currentContextualMemory.pop();
+          console.log("Reverting to past state - Contextual Memory Length:", currentContextualMemory.length, "Previous State:", previousState);
+          
+          // Update state to revert to previous nodes/edges and update histories
+          set({
+            nodes: previousState.nodes || [],
+            edges: previousState.edges || [],
+            contextualMemory: currentContextualMemory,
+            mirroredContextualMemory: updatedMirroredMemory,
+          });
+        } else {
+          // If no past states remain, revert to an initial empty state
+          console.log("No past states in contextualMemory - Reverting to initial empty state.");
+          set({
+            nodes: [],
+            edges: [],
+            contextualMemory: currentContextualMemory,
+            mirroredContextualMemory: updatedMirroredMemory,
+          });
+        }
+      },
+      
+      // Redo Logic: Moves a state from mirroredContextualMemory back to become the current state
+      redoNodesEdges: () => {
+        const { contextualMemory, mirroredContextualMemory } = get();
+        
+        // Start with current history arrays
+        let updatedContextualMemory = [...(contextualMemory || [])];
+        let currentMirroredMemory = [...(mirroredContextualMemory || [])];
+        
+        // Log current state before redo for debugging (remove in production)
+        console.log("Redo triggered - Contextual Memory Length:", updatedContextualMemory.length, "Mirrored Memory Length:", currentMirroredMemory.length, "Timestamp:", Date.now());
+        
+        // If there's a state to redo (mirrored memory is not empty)
+        if (currentMirroredMemory.length > 0) {
+          // Pop the last state from mirrored memory to reapply it as current state
+          const redoState = currentMirroredMemory.pop();
+          // Add the current state to contextualMemory as a past state before applying redo
+          const currentState = {
+            nodes: _.cloneDeep(get().nodes || []),
+            edges: _.cloneDeep(get().edges || []),
+          };
+          updatedContextualMemory.push(currentState);
+          
+          // Limit contextualMemory size by removing oldest state if necessary
+          while (updatedContextualMemory.length > MAX_HISTORY_SIZE) {
+            updatedContextualMemory.shift();
+          }
+          
+          console.log("Reapplying redo state - Contextual Memory Length:", updatedContextualMemory.length, "Redo State:", redoState);
+          
+          // Update state to apply redo nodes/edges and update histories
+          set({
+            nodes: redoState.nodes || [],
+            edges: redoState.edges || [],
+            contextualMemory: updatedContextualMemory,
+            mirroredContextualMemory: currentMirroredMemory,
+          });
+        } else {
+          console.log("Cannot redo - No states in mirroredContextualMemory.");
+        }
       },
     }),
     {
