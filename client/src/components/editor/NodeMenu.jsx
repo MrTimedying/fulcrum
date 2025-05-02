@@ -1,7 +1,10 @@
 import React from "react";
 import ContextMenu from "./ContextMenu.jsx";
-import { BsMenuButtonFill } from "react-icons/bs";
-import { ThreeDButton } from "../util/UserInterfaceElements.jsx";
+import { PiListMagnifyingGlass } from "react-icons/pi";
+import { IoCalendarNumberSharp } from "react-icons/io5";
+import { IoIosCut } from "react-icons/io";
+import { MdOutlineContentCopy } from "react-icons/md";
+import { MdDeleteOutline } from "react-icons/md";
 
 const NodeMenu = ({
   isOpen,
@@ -15,89 +18,79 @@ const NodeMenu = ({
 
   return (
     <ContextMenu isOpen={isOpen} position={position} onClose={onClose}>
-      <p
-        style={{ fontWeight: "bold", marginBottom: "8px" }}
-        className="flex items-center gap-2 mb-0 text-sm text-slate-300 rounded-sm p-1"
-      >
-        <BsMenuButtonFill /> Node Actions
-      </p>
 
-      <ul style={{ marginTop: "10px" }}>
+
+      <ul style={{ marginTop: "5px" }}>
         <li
           style={{ marginBottom: "8px" }}
-          className="mb-0 text-sm text-slate-300 hover:bg-zinc-900 rounded-sm p-1"
-        >
-          <button
-            onClick={() => {
-              setIsInspectorOpen(true);
-              onClose();
-            }}
-          >
-            Inspect Node
+          className="mb-0 text-sm  text-slate-300 hover:bg-zinc-900 rounded-sm p-1"
+          onClick={() => {
+            setIsInspectorOpen(true);
+            onClose();
+          }}
+        > 
+          <button className="flex flex-row gap-2 px-2 cursor-default"> 
+           <PiListMagnifyingGlass size={20} /> Inspect Node
           </button>
         </li>
         {targetNode.type === "session" && (
           <li
             style={{ marginBottom: "8px" }}
             className="mb-0 text-sm text-slate-300 hover:bg-zinc-900 rounded-sm p-1"
-          >
-            <button
-              onClick={() => {
-                actions?.setIsTestModalOpen(true);
-                onClose();
-              }}
-            >
-              Schedule testing
-            </button>
-          </li>
-        )}
-        <hr className="border-zinc-500"></hr>
-        <li
-          style={{ marginBottom: "8px" }}
-          className="flex justify-between mb-0 text-sm text-slate-300 hover:bg-zinc-900 rounded-sm p-1"
-        >
-          <button
             onClick={() => {
-              actions?.cutNodesEdges(targetNode);
+              actions?.setIsTestModalOpen(true);
               onClose();
             }}
           >
-            Cut 
-          </button>
-          <span>
+            <a className="flex flex-row gap-2 px-2 cursor-default"> 
+            <IoCalendarNumberSharp size={20} />Schedule testing
+            </a>
+          </li>
+        )}
+        <hr className="border-zinc-500 w-full"></hr>
+        <li
+          style={{ marginBottom: "8px" }}
+          className="flex justify-between mb-0 text-sm text-slate-300 hover:bg-zinc-900 rounded-sm p-1"
+          onClick={() => {
+            actions?.cutNodesEdges(targetNode);
+            onClose();
+          }}
+        >
+          <a className="flex flex-row gap-2 px-2 cursor-default"> 
+            <IoIosCut size={20} />Cut
+            </a>
+          <span className="px-2 text-gray-500">
             CTRL + X
           </span>
         </li>
         <li
           style={{ marginBottom: "8px" }}
           className="flex justify-between mb-0 text-sm text-slate-300 hover:bg-zinc-900 rounded-sm p-1"
+          onClick={() => {
+            actions?.copyNodesEdges(targetNode);
+            onClose();
+          }}
         >
-          <button
-            onClick={() => {
-              actions?.copyNodesEdges(targetNode);
-              onClose();
-            }}
-          >
-            Copy
-          </button>
-          <span>
+          <a className="flex flex-row gap-2 px-2 cursor-default"> 
+            <MdOutlineContentCopy size={20} />Copy
+            </a>
+          <span className="px-2 text-gray-500">
             CTRL + C
           </span>
         </li>
         <li
           style={{ marginBottom: "8px" }}
           className="flex justify-between mb-0 text-sm text-slate-300 hover:bg-zinc-900 rounded-sm p-1"
+          onClick={() => {
+            actions?.deleteSelectedNodesEdges(targetNode);
+            onClose();
+          }}
         >
-          <button
-            onClick={() => {
-              actions?.deleteSelectedNodesEdges(targetNode);
-              onClose();
-            }}
-          >
-            Delete
-          </button>
-          <span>
-            Del (Canc)
+          <a className="flex flex-row gap-2 px-2 cursor-default"> 
+            <MdDeleteOutline size={20} />Delete
+            </a>
+          <span className="px-2 text-gray-500">
+            Canc
           </span>
         </li>
       </ul>

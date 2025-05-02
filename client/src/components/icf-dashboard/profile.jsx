@@ -32,6 +32,7 @@ import Dagre from "@dagrejs/dagre";
 import { getProfileComposerTemplates } from "../variables";
 import Inspector from "../Inspector";
 import SelectionMenu from "../selectionMenu";
+import useKeyboardShortcuts from "../util/KeyboardShortcuts";
 
 
 
@@ -119,12 +120,16 @@ function Profile({ isInspectorOpen, setIsInspectorOpen }) {
     copyNodesEdges,
     pasteNodesEdges,
     deleteSelectedNodesEdges,
+    undoNodesEdges,
+    redoNodesEdges,
   } = useFlowStore(
     useShallow((state) => ({
       cutNodesEdges: state.cutNodesEdges,
       copyNodesEdges: state.copyNodesEdges,
       pasteNodesEdges: state.pasteNodesEdges,
       deleteSelectedNodesEdges: state.deleteSelectedNodesEdges,
+      undoNodesEdges: state.undoNodesEdges,
+      redoNodesEdges: state.redoNodesEdges,
     }))
   );
 
@@ -432,6 +437,15 @@ function Profile({ isInspectorOpen, setIsInspectorOpen }) {
     ); // Remove edges
     closeMenus();
   };
+
+  useKeyboardShortcuts({
+    cutNodesEdges,
+    copyNodesEdges,
+    pasteNodesEdges,
+    deleteSelectedNodesEdges,
+    undoNodesEdges,
+    redoNodesEdges,
+  });
 
   return (
     <div
