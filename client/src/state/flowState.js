@@ -495,6 +495,16 @@ const useFlowStore = create(
           }),
         })),
 
+      updateNodeTestData: (id, testData) =>
+        set((state) => ({
+          nodes: state.nodes.map((node) => {
+            if (node.id !== id) return node;
+            const updatedNode = _.cloneDeep(node);
+            _.set(updatedNode, "data.tests", testData);
+            return updatedNode;
+          }),
+        })),
+
       cutNodesEdges: () =>
         set((state) => {
           const nodesToCut = state.nodes.filter((n) => n.selected);
@@ -645,66 +655,84 @@ const useFlowStore = create(
 
       recordState: () => {
         const { nodes, edges, contextualMemory } = get();
-        
+
         // Use fallback to empty array if nodes or edges are undefined to prevent TypeError
         const safeNodes = nodes || [];
         const safeEdges = edges || [];
-        
+
         // Create a deep copy of current nodes and edges as a past state snapshot
         const pastState = {
           nodes: _.cloneDeep(safeNodes),
           edges: _.cloneDeep(safeEdges),
         };
-        
+
         // Start with the current history array
         let updatedContextualMemory = [...(contextualMemory || [])];
-        
+
         // Append the current state as a past state to contextualMemory
         updatedContextualMemory.push(pastState);
-        
+
         // Limit contextualMemory size by removing oldest state if necessary
         while (updatedContextualMemory.length > MAX_HISTORY_SIZE) {
           updatedContextualMemory.shift();
         }
-        
+
         // Log for debugging (remove in production)
-        console.log("Recording past state - Contextual Memory Length:", updatedContextualMemory.length, "Mirrored Memory Cleared", "Past State:", pastState);
-        
+        console.log(
+          "Recording past state - Contextual Memory Length:",
+          updatedContextualMemory.length,
+          "Mirrored Memory Cleared",
+          "Past State:",
+          pastState
+        );
+
         // Update state: add past state to contextualMemory and clear mirroredContextualMemory
         set({
           contextualMemory: updatedContextualMemory,
           mirroredContextualMemory: [], // Clear redo history on new action
         });
       },
-      
+
       // Undo Logic: Reverts to the last past state in contextualMemory, or to initial state if none remain
       undoNodesEdges: () => {
         const { contextualMemory, mirroredContextualMemory } = get();
-        
+
         // Start with current history arrays
         let currentContextualMemory = [...(contextualMemory || [])];
         let updatedMirroredMemory = [...(mirroredContextualMemory || [])];
-        
+
         // Log current state before undo for debugging (remove in production)
-        console.log("Undo triggered - Contextual Memory Length:", currentContextualMemory.length, "Mirrored Memory Length:", updatedMirroredMemory.length, "Timestamp:", Date.now());
-        
+        console.log(
+          "Undo triggered - Contextual Memory Length:",
+          currentContextualMemory.length,
+          "Mirrored Memory Length:",
+          updatedMirroredMemory.length,
+          "Timestamp:",
+          Date.now()
+        );
+
         // Capture the current state to move to mirrored memory for redo
         const currentState = {
           nodes: _.cloneDeep(get().nodes || []),
           edges: _.cloneDeep(get().edges || []),
         };
         updatedMirroredMemory.push(currentState);
-        
+
         // Limit mirroredContextualMemory size by removing oldest state if necessary
         while (updatedMirroredMemory.length > MAX_HISTORY_SIZE) {
           updatedMirroredMemory.shift();
         }
-        
+
         // If there are past states in contextualMemory, revert to the last one
         if (currentContextualMemory.length > 0) {
           const previousState = currentContextualMemory.pop();
-          console.log("Reverting to past state - Contextual Memory Length:", currentContextualMemory.length, "Previous State:", previousState);
-          
+          console.log(
+            "Reverting to past state - Contextual Memory Length:",
+            currentContextualMemory.length,
+            "Previous State:",
+            previousState
+          );
+
           // Update state to revert to previous nodes/edges and update histories
           set({
             nodes: previousState.nodes || [],
@@ -714,7 +742,9 @@ const useFlowStore = create(
           });
         } else {
           // If no past states remain, revert to an initial empty state
-          console.log("No past states in contextualMemory - Reverting to initial empty state.");
+          console.log(
+            "No past states in contextualMemory - Reverting to initial empty state."
+          );
           set({
             nodes: [],
             edges: [],
@@ -723,18 +753,25 @@ const useFlowStore = create(
           });
         }
       },
-      
+
       // Redo Logic: Moves a state from mirroredContextualMemory back to become the current state
       redoNodesEdges: () => {
         const { contextualMemory, mirroredContextualMemory } = get();
-        
+
         // Start with current history arrays
         let updatedContextualMemory = [...(contextualMemory || [])];
         let currentMirroredMemory = [...(mirroredContextualMemory || [])];
-        
+
         // Log current state before redo for debugging (remove in production)
-        console.log("Redo triggered - Contextual Memory Length:", updatedContextualMemory.length, "Mirrored Memory Length:", currentMirroredMemory.length, "Timestamp:", Date.now());
-        
+        console.log(
+          "Redo triggered - Contextual Memory Length:",
+          updatedContextualMemory.length,
+          "Mirrored Memory Length:",
+          currentMirroredMemory.length,
+          "Timestamp:",
+          Date.now()
+        );
+
         // If there's a state to redo (mirrored memory is not empty)
         if (currentMirroredMemory.length > 0) {
           // Pop the last state from mirrored memory to reapply it as current state
@@ -745,14 +782,19 @@ const useFlowStore = create(
             edges: _.cloneDeep(get().edges || []),
           };
           updatedContextualMemory.push(currentState);
-          
+
           // Limit contextualMemory size by removing oldest state if necessary
           while (updatedContextualMemory.length > MAX_HISTORY_SIZE) {
             updatedContextualMemory.shift();
           }
-          
-          console.log("Reapplying redo state - Contextual Memory Length:", updatedContextualMemory.length, "Redo State:", redoState);
-          
+
+          console.log(
+            "Reapplying redo state - Contextual Memory Length:",
+            updatedContextualMemory.length,
+            "Redo State:",
+            redoState
+          );
+
           // Update state to apply redo nodes/edges and update histories
           set({
             nodes: redoState.nodes || [],

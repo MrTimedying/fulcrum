@@ -36,7 +36,7 @@ const useKeyboardShortcuts = ({
           default:
             break;
         }
-      } else if (event.key === 'Delete' || event.key === 'Backspace') {
+      } else if (event.key === 'Delete') {
         event.preventDefault();
         deleteSelectedNodesEdges();
       }
