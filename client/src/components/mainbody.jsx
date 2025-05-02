@@ -36,6 +36,27 @@ function MainBody() {
     const nodeSelected = nodes.find((node) => node.selected);
     const multipleNodesSelected = nodes.filter((node) => node.selected).length > 1;
 
+    if (id === "interventionMenu") {
+      if (activeTab !== "Editor") {
+        setToaster({
+          type: "error",
+          message: "Switch to the Editor tab to load or save an intervention to work on!",
+          show: true,
+        });
+        return;
+      }
+      // if (!nodeSelected) {
+      //   setToaster({
+      //     type: "error",
+      //     message: "No node is selected. Please select a node first.",
+      //     show: true,
+      //   });
+      //   return;
+      // }
+      setIsInterventionModalOpen(true);
+      return;
+    }
+
     if (!nodeSelected) {
       setToaster({
         type: "error",
@@ -78,28 +99,7 @@ function MainBody() {
       }
       setIsComposerOpen(true);
       return;
-    }
-  
-    if (id === "interventionMenu") {
-      if (activeTab !== "Editor") {
-        setToaster({
-          type: "error",
-          message: "Switch to the Editor tab to load or save an intervention to work on!",
-          show: true,
-        });
-        return;
-      }
-      if (!nodeSelected) {
-        setToaster({
-          type: "error",
-          message: "No node is selected. Please select a node first.",
-          show: true,
-        });
-        return;
-      }
-      setIsInterventionModalOpen(true);
-      return;
-    }
+    }  
   
     if (id === "templateMenu") {
 

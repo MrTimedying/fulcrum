@@ -16,12 +16,16 @@ const NodeMenu = ({
 }) => {
   if (!isOpen || !targetNode) return null;
 
+  const inspectorConditional = (targetNode.type === "bodyStructure" || targetNode.type === "activities" || targetNode.type === "participation");
+  const actionsConditional = (!inspectorConditional || targetNode.type === "session" );
+
+
   return (
     <ContextMenu isOpen={isOpen} position={position} onClose={onClose}>
 
 
       <ul style={{ marginTop: "5px" }}>
-        <li
+        { !inspectorConditional && (<li
           style={{ marginBottom: "8px" }}
           className="mb-0 text-sm  text-slate-300 hover:bg-zinc-900 rounded-sm p-1"
           onClick={() => {
@@ -32,7 +36,7 @@ const NodeMenu = ({
           <button className="flex flex-row gap-2 px-2 cursor-default"> 
            <PiListMagnifyingGlass size={20} /> Inspect Node
           </button>
-        </li>
+        </li>)}
         {targetNode.type === "session" && (
           <li
             style={{ marginBottom: "8px" }}
@@ -47,7 +51,7 @@ const NodeMenu = ({
             </a>
           </li>
         )}
-        <hr className="border-zinc-500 w-full"></hr>
+        {actionsConditional && (<hr className="border-zinc-500 w-full py-2"></hr>)}
         <li
           style={{ marginBottom: "8px" }}
           className="flex justify-between mb-0 text-sm text-slate-300 hover:bg-zinc-900 rounded-sm p-1"

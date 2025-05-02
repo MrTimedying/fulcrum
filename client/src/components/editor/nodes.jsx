@@ -69,7 +69,6 @@ export const PhaseNode = ({ data, selected }) => (
       />
       <strong>{data.label}</strong>
       <ul>
-        <li>Phase Name: {data.name || "Not defined yet"}</li>
         <li>Phase Scope: {data.scope || "Not defined yet"}</li>
         <li>Phase Description: {data.description || "Not defined yet"}</li>
       </ul>
@@ -110,8 +109,8 @@ export const MicroNode = ({ data, selected }) => (
       />
       <strong>{data.label}</strong>
       <ul>
-        <li>Micro Name: {data.name || "Not defined yet"}</li>
         <li>Micro Scope: {data.scope || "Not defined yet"}</li>
+        <li>Micro Description: {data.description || "Not defined yet"}</li>
       </ul>
       <Handle
         type="source"
