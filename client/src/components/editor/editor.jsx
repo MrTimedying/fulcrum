@@ -27,7 +27,6 @@ import SelectionMenu from "../selectionMenu";
 import TestModal from "./TestModal";
 import useKeyboardShortcuts from "../util/KeyboardShortcuts";
 
-
 const dataTemplates = {
   intervention: () => ({
     id: uuidv4(),
@@ -79,6 +78,7 @@ const selector = (state) => ({
   clipboard: state.clipboard,
   dumpClipboard: state.dumpClipboard,
   updateNodeData: state.updateNodeData,
+  applyLayout: state.applyLayout,
 });
 
 function Editor({ isInspectorOpen, setIsInspectorOpen }) {
@@ -95,7 +95,8 @@ function Editor({ isInspectorOpen, setIsInspectorOpen }) {
     setColumnsLayout,
     clipboard,
     dumpClipboard,
-    updateNodeData
+    updateNodeData,
+    applyLayout,
   } = useFlowStore(useShallow(selector));
 
   const {
@@ -428,6 +429,20 @@ function Editor({ isInspectorOpen, setIsInspectorOpen }) {
           maxZoom={5}
           minZoom={0.3}
         >
+          <div className="relative top-4 left-4 z-10 space-x-2">
+            <button
+              onClick={() => applyLayout("TB")}
+              className="bg-gray-700 hover:bg-gray-400 text-white font-medium py-1 px-1 rounded text-[9px]"
+            >
+              Layout TB
+            </button>
+            <button
+              onClick={() => applyLayout("LR")}
+              className="bg-gray-700 hover:bg-gray-400 text-white font-medium py-1 px-1 rounded text-[9px]"
+            >
+              Layout LR
+            </button>
+          </div>
           <Background variant="dots" />
           <Controls />
         </ReactFlow>
@@ -437,13 +452,14 @@ function Editor({ isInspectorOpen, setIsInspectorOpen }) {
           position={nodeMenu.position}
           targetNode={nodeMenu.targetNode}
           setIsInspectorOpen={setIsInspectorOpen}
-          actions={{ 
+          actions={{
             cutNodesEdges,
             copyNodesEdges,
             deleteSelectedNodesEdges,
-            editNode, 
-            deleteNode, 
-            setIsTestModalOpen }}
+            editNode,
+            deleteNode,
+            setIsTestModalOpen,
+          }}
           onClose={closeMenus}
         />
         <PaneMenu
@@ -473,7 +489,7 @@ function Editor({ isInspectorOpen, setIsInspectorOpen }) {
           isOpen={isTestModalOpen}
           onClose={() => setIsTestModalOpen(false)}
           multiple={multipleNodesSelected}
-          />
+        />
       </div>
     </div>
   );

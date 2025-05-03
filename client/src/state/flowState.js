@@ -12,8 +12,43 @@ import {
   offsetNodesEdgesPosition,
 } from "../components/utils";
 import { v4 as uuidv4 } from "uuid";
+import dagre from "@dagrejs/dagre";
 
 const MAX_HISTORY_SIZE = 10; // Limit history to prevent memory issues
+
+const dagreGraph = new dagre.graphlib.Graph();
+dagreGraph.setDefaultEdgeLabel(() => ({}));
+
+const getLayoutedElements = (nodes, edges, direction = "TB") => {
+  const isHorizontal = direction === "LR";
+  dagreGraph.setGraph({ rankdir: direction });
+
+  nodes.forEach((node) => {
+    // Use node dimensions if available, otherwise use defaults
+    const nodeWidth = node.width || 150; // Adjust default width as needed
+    const nodeHeight = node.height || 40; // Adjust default height as needed
+    dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight });
+  });
+
+  edges.forEach((edge) => {
+    dagreGraph.setEdge(edge.source, edge.target);
+  });
+
+  dagre.layout(dagreGraph);
+
+  const layoutedNodes = nodes.map((node) => {
+    const nodeWithPosition = dagreGraph.node(node.id);
+    // We need to center the node position because Dagre sets the top-left corner
+    const position = {
+      x: nodeWithPosition.x - (node.width || 150) / 2,
+      y: nodeWithPosition.y - (node.height || 40) / 2,
+    };
+
+    return { ...node, position };
+  });
+
+  return { nodes: layoutedNodes, edges };
+};
 
 const useFlowStore = create(
   persist(
@@ -400,7 +435,7 @@ const useFlowStore = create(
               duration: 0,
               sets: 0,
               reps: 0,
-              intensity: "low",
+              intensity: 0,
             };
 
             // Use lodash to add the exercise to the array
@@ -806,6 +841,26 @@ const useFlowStore = create(
           console.log("Cannot redo - No states in mirroredContextualMemory.");
         }
       },
+
+      applyLayout: (direction = "TB") => {
+        const { nodes, edges } = get(); // Get *all* current nodes and edges
+
+        // No filtering needed here
+        if (nodes.length === 0) return;
+
+        const { nodes: layoutedNodes } = getLayoutedElements( // Only need layoutedNodes
+          nodes,
+          edges,
+          direction
+        );
+
+        // Update all nodes with their new positions
+        set({ nodes: layoutedNodes });
+      },
+
+
+
+
     }),
     {
       name: "flow-store",

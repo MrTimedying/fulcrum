@@ -214,7 +214,6 @@ export const SessionNode = ({ id, data, selected }) => {
 
         <strong>{data.label}</strong>
         <ul>
-          <li>Session Name: {data.name || "Not defined yet"}</li>
           <li>Session Scope: {data.scope || "Not defined yet"}</li>
           <li>Date: {data.date || "Not defined yet"}</li>
           <li>

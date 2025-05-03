@@ -248,7 +248,7 @@ const TemplateModal = ({ isOpen, onClose }) => {
                         <p>This template contains {previewNodes.length} nodes.</p>
                         <ul className="list-disc list-inside mt-2">
                           {previewNodes.slice(0, 5).map((node) => (
-                            <li key={node.id}>{node.data?.label || "Unnamed node"}</li>
+                            <li key={node.id}>{node.type || "Unnamed node"}</li>
                           ))}
                           {previewNodes.length > 5 && <li>...and {previewNodes.length - 5} more</li>}
                         </ul>
