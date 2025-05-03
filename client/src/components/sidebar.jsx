@@ -71,13 +71,13 @@ function Sidebar() {
       </div>
       <div className="flex flex-col h-5/6">
         <h2
-          className="text-slate-300 bg-zinc-900 pl-2 text-m font-mono text-xs py-2"
+          className="text-slate-300 bg-zinc-900 pl-2 font-bold font-sans text-base py-2"
           style={{ borderBottom: "solid 1px #1c1c1c" }}
         >
           Patients List
         </h2>
         <ul
-          className="bg-zinc-900 p-5 rounded-lg mt-2 mx-2 h-full"
+          className="bg-zinc-900 py-3 rounded-lg mt-2 mx-2 h-full"
           style={{ borderBottom: "solid 2px rgb(53 51 51)" }}
         >
           {(query ? filteredClientList : Object.entries(clientList)).map(
@@ -86,8 +86,8 @@ function Sidebar() {
                 key={key}
                 className={`${
                   patientId === key
-                    ? "text-slate-600 text-s"
-                    : "text-stone-200 text-xs"
+                    ? "text-stone-200 px-2 h-5 text-xs bg-zinc-600 hover:bg-slate-500 "
+                    : "text-stone-200 px-2 h-5 text-xs hover:bg-slate-500"
                 }`}
                 onClick={() => handleSelection(key)}
               >

@@ -3,7 +3,7 @@ import { Handle, Position, NodeToolbar, NodeResizer } from "@xyflow/react";
 import { IoSwapVertical, IoSwapHorizontal } from "react-icons/io5";
 import useFlowStore from "../../state/flowState";
 
-export const InterventionNode = ({ data, selected }) => (
+export const InterventionNode = ({ data, selected, type }) => (
   <>
     <NodeResizer isVisible={selected} minWidth={100} minHeight={30} />
     <div
@@ -24,13 +24,13 @@ export const InterventionNode = ({ data, selected }) => (
       }}
       className="w-full h-full"
     >
-      <strong>{data.label}</strong>
+      <strong className="text-2xl font-bold font-serif">{type}</strong>
       <ul>
-        <li>Intervention Name: {data.name || "Not defined yet"}</li>
-        <li>Intervention Type: {data.type || "Not defined yet"}</li>
-        <li>
-          Intervention Description: {data.description || "Not defined yet"}
-        </li>
+        <li className="text-stone-300"><a className="text-white font-bold">Name:</a> {data.name || "Not defined yet"}</li>
+        <li className="text-stone-300"><a className="text-white font-bold">Type:</a> {data.type || "Not defined yet"}</li>
+        <li className="text-stone-300"><a className="text-white font-bold">Description:</a> {data.description || "Not defined yet"}</li>
+        <li className="text-stone-300"><a className="text-white font-bold">Global goal:</a> {data.global || "Not defined yet"}</li>
+        <li className="text-stone-300"><a className="text-white font-bold">Service goal:</a> {data.service || "Not defined yet"}</li>
       </ul>
       <Handle
         type="source"
@@ -41,7 +41,7 @@ export const InterventionNode = ({ data, selected }) => (
   </>
 );
 
-export const PhaseNode = ({ data, selected }) => (
+export const PhaseNode = ({ data, selected, type }) => (
   <>
     <NodeResizer isVisible={selected} minWidth={100} minHeight={30} />
     <div
@@ -67,10 +67,10 @@ export const PhaseNode = ({ data, selected }) => (
         position="top"
         style={{ background: selected ? "#6366F1" : "black" }}
       />
-      <strong>{data.label}</strong>
+      <strong className="text-2xl font-bold font-serif ">{type}</strong>
       <ul>
-        <li>Phase Scope: {data.scope || "Not defined yet"}</li>
-        <li>Phase Description: {data.description || "Not defined yet"}</li>
+        <li className="text-stone-300"><a className="text-white font-bold">Scope:</a> {data.scope || "Not defined yet"}</li>
+        <li className="text-stone-300"><a className="text-white font-bold">Description:</a> {data.description || "Not defined yet"}</li>
       </ul>
       <Handle
         type="source"
