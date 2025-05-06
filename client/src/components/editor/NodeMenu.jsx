@@ -5,6 +5,7 @@ import { IoCalendarNumberSharp } from "react-icons/io5";
 import { IoIosCut } from "react-icons/io";
 import { MdOutlineContentCopy } from "react-icons/md";
 import { MdDeleteOutline } from "react-icons/md";
+import { CiViewTable } from "react-icons/ci";
 
 const NodeMenu = ({
   isOpen,
@@ -37,6 +38,20 @@ const NodeMenu = ({
            <PiListMagnifyingGlass size={20} /> Inspect Node
           </button>
         </li>)}
+        {targetNode.type === "session" && (
+          <li
+            style={{ marginBottom: "8px" }}
+            className="mb-0 text-sm text-slate-300 hover:bg-zinc-900 rounded-sm p-1"
+            onClick={() => {
+              actions?.setIsExerciseModalOpen(true);
+              onClose();
+            }}
+          >
+            <a className="flex flex-row gap-2 px-2 cursor-default"> 
+            <CiViewTable size={20} />Exercises/Activities
+            </a>
+          </li>
+        )}
         {targetNode.type === "session" && (
           <li
             style={{ marginBottom: "8px" }}

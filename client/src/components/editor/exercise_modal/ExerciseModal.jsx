@@ -1,0 +1,598 @@
+import React, { useState, useRef, useEffect, useMemo } from "react";
+import Modal from "react-modal";
+import { Rnd } from "react-rnd";
+import { FiCheck, FiX, FiTrash2 } from "react-icons/fi";
+import useFlowStore from "../../../state/flowState";
+import {
+  createDefaultField,
+  createDefaultContainer,
+  generateId,
+  generateFieldNameFromLabel,
+} from "./helpers";
+import { InlineEdit } from "./InlineEdit";
+import { createValidationSchema } from "./validationSchema";
+import Field  from "./Field";
+import { FieldTypeButtons } from "./FieldsButtons";
+
+// --- Accessibility Setup ---
+if (typeof window !== "undefined") {
+  Modal.setAppElement(document.getElementById("root") || document.body);
+}
+
+// --- ExerciseModal Component ---
+function ExerciseModal({ isOpen, onClose }) {
+  const [containers, setContainers] = useState([]);
+  const [formValues, setFormValues] = useState({});
+  const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+
+  const { nodes, updateNodeExerciseData } = useFlowStore();
+  const nodeSelected = useMemo(
+    () => nodes.find((node) => node.selected),
+    [nodes]
+  );
+
+  const defaultModalConfig = {
+    width: window.innerWidth, // Set to full width
+    height: window.innerHeight, // Set to full height
+    x: 0,
+    y: 0,
+  };
+
+  // --- Effect to Reconstruct or Set Default Structure/Values on Open ---
+  useEffect(() => {
+    if (isOpen) {
+      console.log(
+        `--- Effect Start: Modal Open for Node ${nodeSelected?.id} ---`
+      );
+
+      const existingExerciseData = nodeSelected?.data?.exercises || {};
+      console.log(
+        "Existing exercise data fetched:",
+        JSON.stringify(existingExerciseData, null, 2)
+      );
+
+      let structureToSet = [];
+      let valuesToSet = {};
+
+      if (
+        existingExerciseData &&
+        typeof existingExerciseData === "object" &&
+        Object.keys(existingExerciseData).length > 0
+      ) {
+        console.log(
+          "Saved data found. Reconstructing structure and values from it."
+        );
+
+        Object.keys(existingExerciseData).forEach((containerName) => {
+          const savedContainerData = existingExerciseData[containerName];
+          if (!savedContainerData || typeof savedContainerData !== "object") {
+            console.warn(
+              `Skipping invalid data found for container name '${containerName}'`
+            );
+            return;
+          }
+
+          const newContainerId = generateId();
+          const reconstructedFields = [];
+          const containerValues = {};
+
+          console.log(
+            `  Reconstructing container: Name='${containerName}', Temp ID=${newContainerId}`
+          );
+
+          Object.keys(savedContainerData).forEach((fieldName) => {
+            const savedValue = savedContainerData[fieldName];
+            const newFieldId = generateId();
+
+            let fieldType = "text";
+            if (fieldName.startsWith("number_")) fieldType = "number";
+            else if (fieldName.startsWith("textarea_")) fieldType = "textarea";
+            else if (/^\d+(\.\d+)?$/.test(String(savedValue)))
+              fieldType = "number"; // Infer number type if value looks like a number
+
+            let fieldLabel = fieldName
+              .replace(/_([a-z0-9]+)$/i, "")
+              .replace(/_/g, " ");
+            fieldLabel =
+              fieldLabel.charAt(0).toUpperCase() + fieldLabel.slice(1);
+
+            const isRequired = false; // Defaulting required to false
+
+            console.log(
+              `    -> Reconstructing field: Name='${fieldName}', Temp ID=${newFieldId}, Inferred Type='${fieldType}', Label='${fieldLabel}', Value='${savedValue}'`
+            );
+
+            reconstructedFields.push({
+              id: newFieldId,
+              type: fieldType,
+              label: fieldLabel,
+              name: fieldName,
+              required: isRequired,
+              subtype: savedContainerData[fieldName]?.subtype ?? "",
+            });
+            containerValues[fieldName] = savedValue ?? "";
+          });
+
+          structureToSet.push({
+            id: newContainerId,
+            name: containerName,
+            fields: reconstructedFields,
+          });
+          valuesToSet[newContainerId] = containerValues;
+        });
+      } else {
+        console.log(
+          "No saved data found. Using default structure and empty values."
+        );
+        structureToSet = [createDefaultContainer()]; // Use helper for default
+        structureToSet.forEach((container) => {
+          valuesToSet[container.id] = {};
+          container.fields.forEach((field) => {
+            valuesToSet[container.id][field.name] = "";
+          });
+        });
+      }
+
+      console.log(
+        "Setting containers state to:",
+        JSON.stringify(structureToSet, null, 2)
+      );
+      setContainers(structureToSet);
+
+      console.log(
+        "Setting formValues state to:",
+        JSON.stringify(valuesToSet, null, 2)
+      );
+      setFormValues(valuesToSet);
+
+      console.log("Resetting errors and submission state.");
+      setErrors({});
+      setIsSubmitting(false);
+      setSuccessMessage("");
+      console.log("--- Effect End ---");
+    }
+  }, [isOpen, nodeSelected?.id]); // Dependencies
+
+  // --- Input Change Handler ---
+  const handleInputChange = (containerId, fieldName, value) => {
+    setFormValues((prev) => {
+      const updatedContainerValues = {
+        ...(prev[containerId] || {}),
+        [fieldName]: value,
+      };
+      return { ...prev, [containerId]: updatedContainerValues };
+    });
+
+    if (errors[containerId]?.[fieldName]) {
+      setErrors((prev) => {
+        const newContainerErrors = { ...prev[containerId] };
+        delete newContainerErrors[fieldName];
+        if (Object.keys(newContainerErrors).length === 0) {
+          const { [containerId]: _, ...rest } = prev;
+          return rest;
+        }
+        return { ...prev, [containerId]: newContainerErrors };
+      });
+    }
+  };
+
+  // --- Structure Update Functions (Names/Labels) ---
+  const updateContainerName = (containerId, newName) => {
+    setContainers((currentContainers) =>
+      currentContainers.map((c) =>
+        c.id === containerId ? { ...c, name: newName } : c
+      )
+    );
+  };
+
+  // UPDATED: Handles Label and Name changes for fields
+  const updateFieldProperties = (containerId, fieldId, newLabel) => {
+    let oldFieldName = null;
+    let newFieldName = null;
+    let valueToTransfer = undefined;
+
+    // Update containers state first
+    setContainers((currentContainers) =>
+      currentContainers.map((container) => {
+        if (container.id === containerId) {
+          return {
+            ...container,
+            fields: container.fields.map((field) => {
+              if (field.id === fieldId) {
+                oldFieldName = field.name;
+                newFieldName = generateFieldNameFromLabel(newLabel, field.id); // Use helper
+                console.log(
+                  `Updating field label & name: ID=${fieldId}, Old Name='${oldFieldName}', New Label='${newLabel}', New Name='${newFieldName}'`
+                );
+                return { ...field, label: newLabel, name: newFieldName };
+              }
+              return field;
+            }),
+          };
+        }
+        return container;
+      })
+    );
+
+    // Update formValues state based on the name change
+    if (oldFieldName && newFieldName && oldFieldName !== newFieldName) {
+      setFormValues((currentValues) => {
+        const containerVals = currentValues[containerId] || {};
+        valueToTransfer = containerVals[oldFieldName];
+        const { [oldFieldName]: _, ...restFields } = containerVals;
+        const updatedContainerValues = {
+          ...restFields,
+          [newFieldName]: valueToTransfer ?? "",
+        };
+        console.log(
+          `Updating formValues: ContainerID=${containerId}, Removing key='${oldFieldName}', Adding key='${newFieldName}', Value='${
+            valueToTransfer ?? ""
+          }'`
+        );
+        return { ...currentValues, [containerId]: updatedContainerValues };
+      });
+
+      // Update errors state
+      setErrors((currentErrors) => {
+        const containerErrs = currentErrors[containerId] || {};
+        if (containerErrs[oldFieldName]) {
+          const { [oldFieldName]: _, ...restErrors } = containerErrs;
+          console.log(
+            `Updating errors: ContainerID=${containerId}, Removing error for key='${oldFieldName}'`
+          );
+          if (Object.keys(restErrors).length === 0) {
+            const { [containerId]: __, ...restContainerErrors } = currentErrors;
+            return restContainerErrors;
+          }
+          return { ...currentErrors, [containerId]: restErrors };
+        }
+        return currentErrors;
+      });
+    } else {
+      console.log(
+        "Field name did not change or update failed. No formValues/errors update needed for name change."
+      );
+    }
+  };
+
+  // --- Container/Field Actions ---
+  const addContainer = () => {
+    const newContainer = createDefaultContainer(undefined, containers);
+    setContainers((currentContainers) => [...currentContainers, newContainer]);
+
+    const newContainerValues = {};
+    newContainer.fields.forEach((field) => {
+      newContainerValues[field.name] = "";
+    });
+    setFormValues((prev) => ({
+      ...prev,
+      [newContainer.id]: newContainerValues,
+    }));
+
+    setErrors((prev) => {
+      const { [newContainer.id]: _, ...rest } = prev;
+      return rest;
+    });
+  };
+
+  const removeContainer = (containerIdToRemove) => {
+    const containerToRemove = containers.find(
+      (c) => c.id === containerIdToRemove
+    );
+    if (
+      containerToRemove &&
+      !window.confirm(
+        `Are you sure you want to delete the container "${containerToRemove.name}"? This cannot be undone.`
+      )
+    ) {
+      return;
+    }
+    setContainers((currentContainers) =>
+      currentContainers.filter((c) => c.id !== containerIdToRemove)
+    );
+    setFormValues((prev) => {
+      const { [containerIdToRemove]: _, ...rest } = prev;
+      return rest;
+    });
+    setErrors((prev) => {
+      const { [containerIdToRemove]: _, ...rest } = prev;
+      return rest;
+    });
+  };
+
+  const addField = (containerId, type, subtype, label) => {
+    let newField = null;
+    setContainers((currentContainers) =>
+      currentContainers.map((container) => {
+        if (container.id === containerId) {
+          newField = createDefaultField(type, label, subtype); // Use helper
+          return { ...container, fields: [...container.fields, newField] };
+        }
+        return container;
+      })
+    );
+
+    if (newField) {
+      handleInputChange(containerId, newField.name, ""); // Set default value
+    }
+  };
+
+  const removeField = (containerId, fieldIdToRemove) => {
+    let fieldNameToRemove = null;
+    setContainers((currentContainers) =>
+      currentContainers.map((container) => {
+        if (container.id === containerId) {
+          const fieldToRemove = container.fields.find(
+            (f) => f.id === fieldIdToRemove
+          );
+          if (fieldToRemove) fieldNameToRemove = fieldToRemove.name;
+          return {
+            ...container,
+            fields: container.fields.filter((f) => f.id !== fieldIdToRemove),
+          };
+        }
+        return container;
+      })
+    );
+
+    if (fieldNameToRemove) {
+      setFormValues((prev) => {
+        const containerVals = prev[containerId] || {};
+        const { [fieldNameToRemove]: _, ...restFields } = containerVals;
+        return { ...prev, [containerId]: restFields };
+      });
+      setErrors((prev) => {
+        const containerErrs = prev[containerId] || {};
+        const { [fieldNameToRemove]: _, ...restFieldErrors } = containerErrs;
+        if (Object.keys(restFieldErrors).length === 0) {
+          const { [containerId]: __, ...restContainerErrors } = prev;
+          return restContainerErrors;
+        }
+        return { ...prev, [containerId]: restFieldErrors };
+      });
+    }
+  };
+
+  // --- Submit Handler ---
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    if (!nodeSelected) {
+      setErrors({ form: "Error: No node selected to save data for." });
+      return;
+    }
+
+    const validationSchema = createValidationSchema(containers);
+    setIsSubmitting(true);
+    setSuccessMessage("");
+    setErrors({});
+
+    try {
+      await validationSchema.validate(formValues, { abortEarly: false });
+      // Validation succeeded — build output data and save
+      const outputData = {};
+      containers.forEach((container) => {
+        const containerName = container.name;
+        const containerValues = formValues[container.id] || {};
+        const valuesToSave = {};
+        container.fields.forEach((field) => {
+          if (containerValues.hasOwnProperty(field.name)) {
+            valuesToSave[field.name] = containerValues[field.name];
+          }
+        });
+        if (Object.keys(valuesToSave).length > 0) {
+          outputData[containerName] = valuesToSave;
+        }
+      });
+
+      await updateNodeExerciseData(nodeSelected.id, outputData);
+      setSuccessMessage("Exercise data saved successfully!");
+      setTimeout(() => setSuccessMessage(""), 3000);
+      setIsSubmitting(false);
+      onClose();
+    } catch (validationErrors) {
+      if (validationErrors.inner && validationErrors.inner.length > 0) {
+        const formattedErrors = {};
+        validationErrors.inner.forEach((err) => {
+          const [containerId, fieldName] = err.path.split(".");
+          if (!formattedErrors[containerId]) formattedErrors[containerId] = {};
+          formattedErrors[containerId][fieldName] = err.message;
+        });
+        setErrors(formattedErrors);
+      } else {
+        setErrors({ form: "Failed to validate form data." });
+      }
+      setIsSubmitting(false);
+    }
+  };
+
+  // --- Render ---
+  return (
+    <Modal
+      isOpen={isOpen}
+      onRequestClose={onClose}
+      aria={{
+        labelledby: "modular-form-title",
+        describedby: "modular-form-description",
+      }}
+      style={{
+        overlay: { backgroundColor: "rgba(0, 0, 0, 0.6)", zIndex: 1000 },
+        content: {
+          background: "transparent",
+          border: "none",
+          padding: 0,
+          inset: 0,
+          overflow: "hidden",
+        },
+      }}
+      contentLabel="Exercise Data Editor"
+    >
+      <Rnd
+        default={defaultModalConfig}
+        minWidth={950}
+        minHeight={950}
+        bounds="window"
+        dragHandleClassName="modal-handle"
+        className="w-full h-full"
+      >
+        <div className="w-full h-full flex flex-col bg-white dark:bg-gray-800 text-gray-900 dark:text-white shadow-xl rounded-lg overflow-hidden border border-zinc-800">
+          {/* Header */}
+          <div className="modal-handle bg-zinc-900 p-1 flex justify-between items-center cursor-move border-b border-zinc-800 flex-shrink-0">
+            <h2
+              id="modular-form-title"
+              className="text-gray-300 text-base font-medium"
+            >
+              {nodeSelected
+                ? `Edit exercises data for ${
+                    nodeSelected.data.type || "this session"
+                  }`
+                : "Exercise Data Editor"}
+            </h2>
+            <button
+              onClick={onClose}
+              className="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition duration-150 p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600"
+              aria-label="Close modal"
+              title="Close"
+            >
+              <FiX size={20} />
+            </button>
+          </div>
+          {/* Body */}
+          <form
+            onSubmit={handleSubmit}
+            className="p-4 flex-grow overflow-y-auto space-y-4 bg-zinc-900 flex flex-col"
+          >
+            <div className="flex-grow space-y-4">
+              {" "}
+              {/* Scrollable Content Area */}
+              <p
+                id="modular-form-description"
+                className="text-sm text-gray-600 dark:text-gray-300 mb-4"
+              >
+                Each container is an exercise. Add the relevant field such as
+                name, volume, intensity fields or others. Keep in mind that the
+                fields you add here will be used to save the data for the
+                exercise. Consider also that data analysis heavily relies on
+                these fields inputs.
+              </p>
+              {successMessage && (
+                <div className="mb-4 p-3 bg-green-100 dark:bg-green-800/50 border border-green-200 dark:border-green-700 text-green-700 dark:text-green-200 rounded-md text-sm">
+                  {successMessage}
+                </div>
+              )}
+              {errors.form && (
+                <div className="mb-4 p-3 bg-red-100 dark:bg-red-800/50 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-200 rounded-md text-sm">
+                  {errors.form}
+                </div>
+              )}
+              {/* Containers */}
+              <div className="space-y-4">
+                {containers.map((container) => (
+                  <div
+                    key={container.id}
+                    className="pb-2 px-2 border border-gray-600 rounded-lg bg-neutral-800 space-y-2 relative group"
+                  >
+                    {/* Container Header */}
+                    <div className="flex justify-between items-center border-b border-gray-200 dark:border-gray-600/50">
+                      <div className="flex-grow mr-2">
+                        {/* Pass container.name for InlineEdit value */}
+                        <InlineEdit
+                          value={container.name}
+                          onSave={(newName) =>
+                            updateContainerName(container.id, newName)
+                          }
+                          inputClassName="text-md font-semibold w-full"
+                          displayClassName="text-md font-semibold text-gray-800 dark:text-gray-100"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeContainer(container.id)}
+                        className="p-1.5 opacity-60 hover:opacity-100 transition-opacity text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-full flex-shrink-0"
+                        aria-label={`Delete Container ${container.name}`}
+                        title={`Delete ${container.name}`}
+                      >
+                        <FiTrash2 size={16} />
+                      </button>
+                    </div>
+                    {/* Fields */}
+                    <div className="space-x-3 flex flex-row">
+                      {container.fields.map((field) => (
+                        <Field
+                          key={field.id}
+                          containerId={container.id}
+                          field={field}
+                          value={formValues[container.id]?.[field.name] ?? ""}
+                          error={errors[container.id]?.[field.name]}
+                          onChange={handleInputChange}
+                          onLabelSave={updateFieldProperties}
+                          onRemove={removeField}
+                        />
+                      ))}
+                    </div>{" "}
+                    {/* End Fields */}
+                    {/* Add Field Buttons */}
+                    <div className="pt-3 mt-3 border-t border-gray-200 dark:border-gray-600/50 flex flex-wrap items-center gap-2">
+                      <span className="text-xs font-medium mr-2 text-gray-600 dark:text-gray-400">
+                        Add Field:
+                      </span>
+                      <FieldTypeButtons containerId={container.id} onAddField={addField} />
+                    </div>
+                  </div> // End Container Div
+                ))}
+              </div>{" "}
+              {/* End Container Management */}
+              {/* Add Container Button */}
+              <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                <button
+                  type="button"
+                  onClick={addContainer}
+                  className="w-full px-4 py-2 border border-dashed border-blue-400 dark:border-blue-600 rounded-md bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2"
+                >
+                  <span className="text-lg">+</span> Add New Exercise
+                </button>
+              </div>
+            </div>{" "}
+            {/* End Scrollable Content Area */}
+            {/* Form Actions (Fixed Footer Area) */}
+            <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700 flex-shrink-0 mt-auto">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-600 transition-all duration-200"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isSubmitting || !nodeSelected}
+                className="px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center gap-2"
+              >
+                {isSubmitting ? (
+                  <>
+                    <span
+                      className="animate-spin inline-block w-4 h-4 border-[2px] border-current border-t-transparent text-white rounded-full"
+                      role="status"
+                      aria-label="loading"
+                    ></span>
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <FiCheck size={18} /> Save Data
+                  </>
+                )}
+              </button>
+            </div>
+          </form>{" "}
+          {/* End Form */}
+        </div>{" "}
+        {/* End Modal Content */}
+      </Rnd>
+    </Modal>
+  );
+}
+
+export default ExerciseModal;

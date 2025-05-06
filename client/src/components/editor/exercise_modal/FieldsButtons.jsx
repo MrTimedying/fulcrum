@@ -1,0 +1,31 @@
+import React from 'react';
+
+export function FieldTypeButtons({ containerId, onAddField }) {
+  const subtypes = [
+    { type: "text", subtype: "name", label: "Name Input", classStyle: "bg-zinc-800 border-2 border-zinc-600 text-white" },
+    { type: "number", subtype: "sets", label: "Sets Number", classStyle: "bg-zinc-800 border-2 border-zinc-600 text-white" },
+    { type: "text", subtype: "sets_repetitions", label: "Sets/Reps Text", classStyle: "bg-zinc-800 border-2 border-zinc-600 text-white" },
+    { type: "number", subtype: "volume_duration", label: "Volume/Duration", classStyle: "bg-zinc-800 border-2 border-zinc-600 text-white" },
+    { type: "textarea", subtype: "sets_durations", label: "Sets/Durations", classStyle: "bg-zinc-800 border-2 border-zinc-600 text-white" },
+    { type: "textarea", subtype: "intensity_type", label: "Intensity Type", classStyle: "bg-zinc-800 border-2 border-zinc-600 text-white" },
+    { type: "textarea", subtype: "intensity_string", label: "Intensity String", classStyle: "bg-zinc-800 border-2 border-zinc-600 text-white" },
+    { type: "number", subtype: "intensity_number", label: "Intensity Number", classStyle: "bg-zinc-800 border-2 border-zinc-600 text-white" },
+  ];
+
+  return (
+    <div className="flex flex-wrap gap-2 p-4 border-b border-gray-200 dark:border-gray-700">
+      {subtypes.map((item) => (
+        <button
+          key={`${item.type}-${item.subtype}`} // More robust key
+          type="button"
+          onClick={() => onAddField(containerId, item.type, item.subtype, item.label)}
+          className={`px-2 py-1 rounded-md text-[9px] font-medium transition-colors duration-200 ease-in-out ${item.classStyle}`} // Use item.classStyle
+        >
+          + {item.label} {/* Using a label property for clearer button text */}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+// export default FieldTypeButtons; // Export as default if used directly

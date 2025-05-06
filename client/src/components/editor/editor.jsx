@@ -15,7 +15,7 @@ import {
   addEdge,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import NodeMenu from "./nodeMenu";
+import NodeMenu from "./NodeMenu";
 import PaneMenu from "./PaneMenu"; // Specific Node Context Menu
 import { v4 as uuidv4 } from "uuid";
 import useFlowStore from "../../state/flowState";
@@ -26,6 +26,7 @@ import Inspector from "../Inspector";
 import SelectionMenu from "../selectionMenu";
 import TestModal from "./TestModal";
 import useKeyboardShortcuts from "../util/KeyboardShortcuts";
+import ExerciseModal from "./exercise_modal/ExerciseModal";
 
 const dataTemplates = {
   intervention: () => ({
@@ -118,6 +119,7 @@ function Editor({ isInspectorOpen, setIsInspectorOpen }) {
   );
 
   const [isTestModalOpen, setIsTestModalOpen] = useState(false);
+  const [isExerciseModalOpen, setIsExerciseModalOpen] = useState(false);
 
   const columnTemplates = getEditorComposerTemplates(updateNodeData);
 
@@ -459,6 +461,7 @@ function Editor({ isInspectorOpen, setIsInspectorOpen }) {
             editNode,
             deleteNode,
             setIsTestModalOpen,
+            setIsExerciseModalOpen,
           }}
           onClose={closeMenus}
         />
@@ -490,6 +493,11 @@ function Editor({ isInspectorOpen, setIsInspectorOpen }) {
           onClose={() => setIsTestModalOpen(false)}
           multiple={multipleNodesSelected}
         />
+        <ExerciseModal
+          isOpen={isExerciseModalOpen}
+          onClose={() => setIsExerciseModalOpen(false)}
+          multiple={multipleNodesSelected}
+          />
       </div>
     </div>
   );

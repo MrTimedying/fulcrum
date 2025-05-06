@@ -5,33 +5,14 @@ import {
   getSortedRowModel,
   flexRender,
 } from "@tanstack/react-table";
-
 import EditableCell from "./EditableCell"; // Import updated EditableCell
 import useFlowStore from "../../state/flowState";
 import { Close } from "@mui/icons-material";
 import Modal from "react-modal";
 import { Rnd } from "react-rnd";
-import { formatDuration, parseDuration } from "./customEditors"; // Import both format and parse
+ // Import both format and parse
 
 // --- IndeterminateCheckbox component remains the same ---
-function IndeterminateCheckbox({ indeterminate, className = "", ...rest }) {
-  const ref = React.useRef(null);
-
-  React.useEffect(() => {
-    if (typeof indeterminate === "boolean" && ref.current) {
-      ref.current.indeterminate = !rest.checked && indeterminate;
-    }
-  }, [ref, indeterminate, rest.checked]);
-
-  return (
-    <input
-      type="checkbox"
-      ref={ref}
-      className={className + " cursor-pointer"}
-      {...rest}
-    />
-  );
-}
 
 
 export const Composer = ({ isComposerOpen, setIsComposerOpen }) => {
@@ -52,13 +33,13 @@ export const Composer = ({ isComposerOpen, setIsComposerOpen }) => {
     () => (selectedNode ? [{ ...selectedNode.data }] : []),
     [selectedNode]
   );
-  const exercisesData = useMemo(
-    () =>
-      selectedNode?.data.exercises
-        ? selectedNode.data.exercises.map((exercise) => ({ ...exercise }))
-        : [],
-    [selectedNode?.data?.exercises]
-  );
+  // const exercisesData = useMemo(
+  //   () =>
+  //     selectedNode?.data.exercises
+  //       ? selectedNode.data.exercises.map((exercise) => ({ ...exercise }))
+  //       : [],
+  //   [selectedNode?.data?.exercises]
+  // );
 
   // --- Delete Handler (remains the same) ---
    const handleDeleteClick = () => {
@@ -115,127 +96,7 @@ export const Composer = ({ isComposerOpen, setIsComposerOpen }) => {
 
 
   // --- Exercises Columns ---
-  const exercisesColumns = useMemo(() => [
-    // Selection Column (Implement IndeterminateCheckbox fully)
-    {
-      id: 'select',
-      header: ({ table }) => (
-         <IndeterminateCheckbox
-           {...{
-             checked: table.getIsAllRowsSelected(),
-             indeterminate: table.getIsSomeRowsSelected(),
-             onChange: table.getToggleAllRowsSelectedHandler(),
-           }}
-         />
-       ),
-       cell: ({ row }) => (
-         <IndeterminateCheckbox
-           {...{
-             checked: row.getIsSelected(),
-             disabled: !row.getCanSelect(),
-             indeterminate: row.getIsSomeSelected(),
-             onChange: row.getToggleSelectedHandler(),
-           }}
-         />
-       ),
-       size: 40,
-    },
-    // Editable Data Columns
-    {
-      accessorKey: 'name',
-      header: 'Name',
-      cell: (info) => (
-          <EditableCell
-              initialValue={info.getValue()}
-              rowId={info.row.original.id}
-              columnId={info.column.id}
-              updateDataFunction={updateExerciseData}
-              dataType="exercise"
-              inputType="text" // Explicitly text
-          />
-      ),
-      minSize: 150
-    },
-    {
-      accessorKey: 'duration',
-      header: 'Duration',
-      cell: (info) => (
-          <EditableCell
-              initialValue={info.getValue()} // Raw value (seconds)
-              rowId={info.row.original.id}
-              columnId={info.column.id}
-              updateDataFunction={updateExerciseData}
-              dataType="exercise"
-              displayFormatter={formatDuration} // Format for display
-              inputType="text" // Use text input to allow "1m 30s" format
-              valueParser={parseDuration} // Parse string back to seconds on save
-          />
-      ),
-      size: 120
-    },
-    {
-      accessorKey: 'sets',
-      header: 'Sets',
-      cell: (info) => (
-          <EditableCell
-              initialValue={info.getValue()}
-              rowId={info.row.original.id}
-              columnId={info.column.id}
-              updateDataFunction={updateExerciseData}
-              dataType="exercise"
-              inputType="number" // Use number input
-          />
-      ),
-      size: 70
-    },
-    {
-      accessorKey: 'reps',
-      header: 'Reps',
-      cell: (info) => (
-          <EditableCell
-              initialValue={info.getValue()}
-              rowId={info.row.original.id}
-              columnId={info.column.id}
-              updateDataFunction={updateExerciseData}
-              dataType="exercise"
-              inputType="number" // Use number input
-          />
-      ),
-      size: 70
-    },
-    {
-      accessorKey: 'intensity type',
-      header: 'Intensity type',
-      cell: (info) => (
-          <EditableCell
-              initialValue={info.getValue()}
-              rowId={info.row.original.id}
-              columnId={info.column.id}
-              updateDataFunction={updateExerciseData}
-              dataType="exercise"
-              inputType="text" // Or number, depending on expected format
-              // If intensity has specific format (e.g., "80%"), use text and potentially a parser
-          />
-      ),
-      size: 100
-    },
-    {
-      accessorKey: 'intensity',
-      header: 'Intensity',
-      cell: (info) => (
-          <EditableCell
-              initialValue={info.getValue()}
-              rowId={info.row.original.id}
-              columnId={info.column.id}
-              updateDataFunction={updateExerciseData}
-              dataType="exercise"
-              inputType="number" // Or number, depending on expected format
-              // If intensity has specific format (e.g., "80%"), use text and potentially a parser
-          />
-      ),
-      size: 100
-    },
-  ], [updateExerciseData]); // Dependency array includes update function
+
 
 
   // --- TanStack Table Instances (remain the same) ---
@@ -245,17 +106,7 @@ export const Composer = ({ isComposerOpen, setIsComposerOpen }) => {
      getCoreRowModel: getCoreRowModel(),
    });
 
-   const exercisesTable = useReactTable({
-     data: exercisesData,
-     columns: exercisesColumns,
-     state: {
-       rowSelection,
-     },
-     enableRowSelection: true,
-     onRowSelectionChange: setRowSelection,
-     getCoreRowModel: getCoreRowModel(),
-     getSortedRowModel: getSortedRowModel(),
-   });
+
 
   // --- Default Modal Config (remains the same) ---
   const defaultModalConfig = {
@@ -382,47 +233,7 @@ export const Composer = ({ isComposerOpen, setIsComposerOpen }) => {
                 </p>
               ) : null}
 
-              {/* Conditional Exercises Section */}
-              {selectedNode?.type === "session" && (
-                <>
-                  <hr className="border-gray-700" />
-                  <div className="space-y-4">
-                    {/* Action Buttons */}
-                    <div className="flex justify-end space-x-2">
-                       <button
-                          className="bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium py-1.5 px-3 rounded transition-colors shadow"
-                          onClick={addExercise}
-                       >
-                          Add Exercise
-                       </button>
-                       <button
-                          className={`text-sm font-medium py-1.5 px-3 rounded transition-colors shadow ${
-                            Object.keys(rowSelection).length === 0
-                              ? "bg-red-800 opacity-60 cursor-not-allowed text-gray-300"
-                              : "bg-red-600 hover:bg-red-500 text-white"
-                          }`}
-                          onClick={handleDeleteClick}
-                          disabled={Object.keys(rowSelection).length === 0}
-                        >
-                          Delete Selected ({Object.keys(rowSelection).length})
-                        </button>
-                    </div>
-                    {/* Exercises Table Render */}
-                    {renderTable(
-                        exercisesTable,
-                        "No exercises yet. Click 'Add Exercise'."
-                      )}
-                  </div>
-                </>
-              )}
-              {/* Informational Message */}
-               {selectedNode &&
-                 selectedNode.type !== "session" &&
-                 nodeDetailsData.length > 0 && (
-                   <p className="text-gray-500 text-center py-4">
-                     This node type does not have exercises.
-                   </p>
-               )}
+
            </div> {/* End Content Area */}
          </div> {/* End Outer container */}
        </Rnd>

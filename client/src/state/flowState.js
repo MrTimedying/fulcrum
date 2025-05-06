@@ -540,6 +540,16 @@ const useFlowStore = create(
           }),
         })),
 
+      updateNodeExerciseData: (id, exerciseData) =>
+        set((state) => ({
+          nodes: state.nodes.map((node) => {
+            if (node.id !== id) return node;
+            const updatedNode = _.cloneDeep(node);
+            _.set(updatedNode, "data.exercises", exerciseData);
+            return updatedNode;
+          }),
+        })),
+
       cutNodesEdges: () =>
         set((state) => {
           const nodesToCut = state.nodes.filter((n) => n.selected);

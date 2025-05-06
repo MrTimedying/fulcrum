@@ -81,7 +81,7 @@ export const PhaseNode = ({ data, selected, type }) => (
   </>
 );
 
-export const MicroNode = ({ data, selected }) => (
+export const MicroNode = ({ data, selected, type }) => (
   <>
     <NodeResizer isVisible={selected} minWidth={100} minHeight={30} />
     <div
@@ -107,7 +107,7 @@ export const MicroNode = ({ data, selected }) => (
         position="top"
         style={{ background: selected ? "#6366F1" : "black" }}
       />
-      <strong>{data.label}</strong>
+      <strong className="text-2xl font-bold font-serif ">{type}</strong>
       <ul>
         <li>Micro Scope: {data.scope || "Not defined yet"}</li>
         <li>Micro Description: {data.description || "Not defined yet"}</li>
@@ -121,7 +121,7 @@ export const MicroNode = ({ data, selected }) => (
   </>
 );
 
-export const SessionNode = ({ id, data, selected }) => {
+export const SessionNode = ({ id, data, selected, type }) => {
   const { setNodes, setEdges } = useFlowStore();
 
   // Default target handle position to 'left' if not set in data
@@ -212,7 +212,7 @@ export const SessionNode = ({ id, data, selected }) => {
         {/* If you need a source handle always on right, you can add it here */}
         {/* <Handle type="source" id="source-handle" position={Position.Right} style={{ background: selected ? "#32a852" : "black" }} /> */}
 
-        <strong>{data.label}</strong>
+        <strong className="text-2xl font-bold font-serif ">{type}</strong>
         <ul>
           <li>Session Scope: {data.scope || "Not defined yet"}</li>
           <li>Date: {data.date || "Not defined yet"}</li>
