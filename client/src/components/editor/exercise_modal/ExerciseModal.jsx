@@ -465,6 +465,7 @@ function ExerciseModal({ isOpen, onClose }) {
                    formattedErrors.form = formattedErrors.form ? `${formattedErrors.form}\n${err.message}` : err.message;
                }
             });
+            console.log("just checking the formatted errors", formattedErrors);
             setErrors(formattedErrors);
         } else {
              // Handle general validation errors not tied to specific fields

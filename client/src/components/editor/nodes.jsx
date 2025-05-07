@@ -26,11 +26,26 @@ export const InterventionNode = ({ data, selected, type }) => (
     >
       <strong className="text-2xl font-bold font-serif">{type}</strong>
       <ul>
-        <li className="text-stone-300"><a className="text-white font-bold">Name:</a> {data.name || "Not defined yet"}</li>
-        <li className="text-stone-300"><a className="text-white font-bold">Type:</a> {data.type || "Not defined yet"}</li>
-        <li className="text-stone-300"><a className="text-white font-bold">Description:</a> {data.description || "Not defined yet"}</li>
-        <li className="text-stone-300"><a className="text-white font-bold">Global goal:</a> {data.global || "Not defined yet"}</li>
-        <li className="text-stone-300"><a className="text-white font-bold">Service goal:</a> {data.service || "Not defined yet"}</li>
+        <li className="text-stone-300">
+          <a className="text-white font-bold">Name:</a>{" "}
+          {data.name || "Not defined yet"}
+        </li>
+        <li className="text-stone-300">
+          <a className="text-white font-bold">Type:</a>{" "}
+          {data.type || "Not defined yet"}
+        </li>
+        <li className="text-stone-300">
+          <a className="text-white font-bold">Description:</a>{" "}
+          {data.description || "Not defined yet"}
+        </li>
+        <li className="text-stone-300">
+          <a className="text-white font-bold">Global goal:</a>{" "}
+          {data.global || "Not defined yet"}
+        </li>
+        <li className="text-stone-300">
+          <a className="text-white font-bold">Service goal:</a>{" "}
+          {data.service || "Not defined yet"}
+        </li>
       </ul>
       <Handle
         type="source"
@@ -69,8 +84,14 @@ export const PhaseNode = ({ data, selected, type }) => (
       />
       <strong className="text-2xl font-bold font-serif ">{type}</strong>
       <ul>
-        <li className="text-stone-300"><a className="text-white font-bold">Scope:</a> {data.scope || "Not defined yet"}</li>
-        <li className="text-stone-300"><a className="text-white font-bold">Description:</a> {data.description || "Not defined yet"}</li>
+        <li className="text-stone-300">
+          <a className="text-white font-bold">Scope:</a>{" "}
+          {data.scope || "Not defined yet"}
+        </li>
+        <li className="text-stone-300">
+          <a className="text-white font-bold">Description:</a>{" "}
+          {data.description || "Not defined yet"}
+        </li>
       </ul>
       <Handle
         type="source"
@@ -209,25 +230,42 @@ export const SessionNode = ({ id, data, selected, type }) => {
           }}
         />
 
-        {/* If you need a source handle always on right, you can add it here */}
-        {/* <Handle type="source" id="source-handle" position={Position.Right} style={{ background: selected ? "#32a852" : "black" }} /> */}
-
         <strong className="text-2xl font-bold font-serif ">{type}</strong>
         <ul>
           <li>Session Scope: {data.scope || "Not defined yet"}</li>
           <li>Date: {data.date || "Not defined yet"}</li>
           <li>
-            Exercises:
-            {Array.isArray(data.exercises) && data.exercises.length > 0 ? (
-              <ul>
-                {data.exercises.map((exercise, index) => (
-                  <li key={index}>
-                    {exercise.name || "Unnamed Exercise"} -{" "}
-                    {exercise.reps || "No reps"} reps -{" "}
-                    {exercise.duration || "No duration"} duration
-                  </li>
-                ))}
-              </ul>
+            <h3 className="mt-2 font-semibold text-[14px]">Activities</h3>
+            {/* Check if data.exercises exists, is an object, and has keys */}
+            {data.exercises &&
+            typeof data.exercises === "object" &&
+            Object.keys(data.exercises).length > 0 ? (
+              <div>
+                {" "}
+                {Object.values(data.exercises).map(
+                  (container, containerIndex) =>
+                    container &&
+                    typeof container === "object" &&
+                    Array.isArray(container.fields) ? (
+                      <div
+                        key={`container-${containerIndex}`}
+                        className="my-1"
+                      >
+                        <h4 className="font-medium text-[12px]">
+                          {container.name || `Exercise ${containerIndex + 1}`}
+                        </h4>
+                        <ul>
+                          {container.fields.map((field, fieldIndex) => (
+                            <li key={`${containerIndex}-${fieldIndex}`}>
+                              {field?.label || field?.name || "Unnamed Field"}:{" "}
+                              {field?.value ?? "N/A"}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ) : null // Render nothing if a container is invalid
+                )}
+              </div>
             ) : (
               <span> No exercises defined</span>
             )}
@@ -249,7 +287,7 @@ export const SessionNode = ({ id, data, selected, type }) => {
           className="p-1 text-gray-300 hover:text-green-400 transition-colors rounded-full hover:bg-gray-700 bg-gray-800 border border-gray-600 shadow-sm"
           aria-label="Toggle target handle position"
           title={`Target handle on: ${currentHandlePosition}`}
-        >         
+        >
           {currentHandlePosition === "left" ? (
             <IoSwapHorizontal size={14} />
           ) : (

@@ -4,12 +4,13 @@ export function FieldTypeButtons({ containerId, onAddField }) {
   const subtypes = [
     { type: "text", subtype: "name", label: "Name Input", classStyle: "bg-zinc-800 border-2 border-zinc-600 text-white" },
     { type: "number", subtype: "sets", label: "Sets Number", classStyle: "bg-zinc-800 border-2 border-zinc-600 text-white" },
-    { type: "text", subtype: "sets_repetitions", label: "Sets/Reps Text", classStyle: "bg-zinc-800 border-2 border-zinc-600 text-white" },
-    { type: "number", subtype: "volume_duration", label: "Volume/Duration", classStyle: "bg-zinc-800 border-2 border-zinc-600 text-white" },
-    { type: "textarea", subtype: "sets_durations", label: "Sets/Durations", classStyle: "bg-zinc-800 border-2 border-zinc-600 text-white" },
-    { type: "textarea", subtype: "intensity_type", label: "Intensity Type", classStyle: "bg-zinc-800 border-2 border-zinc-600 text-white" },
-    { type: "textarea", subtype: "intensity_string", label: "Intensity String", classStyle: "bg-zinc-800 border-2 border-zinc-600 text-white" },
-    { type: "number", subtype: "intensity_number", label: "Intensity Number", classStyle: "bg-zinc-800 border-2 border-zinc-600 text-white" },
+    { type: "numer", subtype: "reps_constant", label: "Repetitions", classStyle: "bg-zinc-800 border-2 border-zinc-600 text-white" },
+    { type: "textarea", subtype: "reps_variant", label: "Repetitions schema", classStyle: "bg-zinc-800 border-2 border-zinc-600 text-white" },
+    { type: "number", subtype: "duration_constant", label: "Duration", classStyle: "bg-zinc-800 border-2 border-zinc-600 text-white" },
+    { type: "textarea", subtype: "duration_variant", label: "Duration schema", classStyle: "bg-zinc-800 border-2 border-zinc-600 text-white" },
+    { type: "text", subtype: "intensity_type", label: "Intensity Type", classStyle: "bg-zinc-800 border-2 border-zinc-600 text-white" },
+    { type: "textarea", subtype: "intensity_string", label: "Intensity Schema", classStyle: "bg-zinc-800 border-2 border-zinc-600 text-white" },
+    { type: "number", subtype: "intensity_number", label: "Intensity", classStyle: "bg-zinc-800 border-2 border-zinc-600 text-white" },
   ];
 
   return (
