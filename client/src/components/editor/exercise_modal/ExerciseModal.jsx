@@ -13,6 +13,7 @@ import { InlineEdit } from "./InlineEdit";
 import { createValidationSchema } from "./validationSchema";
 import Field  from "./Field";
 import { FieldTypeButtons } from "./FieldsButtons";
+import useTransientStore from "../../../state/transientState";
 
 // --- Accessibility Setup ---
 if (typeof window !== "undefined") {
@@ -28,6 +29,7 @@ function ExerciseModal({ isOpen, onClose }) {
   const [successMessage, setSuccessMessage] = useState("");
 
   const { nodes, updateNodeExerciseData } = useFlowStore();
+  const {setToaster} = useTransientStore();
   const nodeSelected = useMemo(
     () => nodes.find((node) => node.selected),
     [nodes]
@@ -43,117 +45,147 @@ function ExerciseModal({ isOpen, onClose }) {
   // --- Effect to Reconstruct or Set Default Structure/Values on Open ---
   useEffect(() => {
     if (isOpen) {
-      console.log(
-        `--- Effect Start: Modal Open for Node ${nodeSelected?.id} ---`
-      );
-
-      const existingExerciseData = nodeSelected?.data?.exercises || {};
-      console.log(
-        "Existing exercise data fetched:",
-        JSON.stringify(existingExerciseData, null, 2)
-      );
-
-      let structureToSet = [];
-      let valuesToSet = {};
-
-      if (
-        existingExerciseData &&
-        typeof existingExerciseData === "object" &&
-        Object.keys(existingExerciseData).length > 0
-      ) {
         console.log(
-          "Saved data found. Reconstructing structure and values from it."
+            `--- Effect Start: Modal Open for Node ${nodeSelected?.id} ---`
         );
 
-        Object.keys(existingExerciseData).forEach((containerName) => {
-          const savedContainerData = existingExerciseData[containerName];
-          if (!savedContainerData || typeof savedContainerData !== "object") {
-            console.warn(
-              `Skipping invalid data found for container name '${containerName}'`
-            );
-            return;
-          }
+        // Existing exercise data will now potentially contain the full structure
+        const existingExerciseData = nodeSelected?.data?.exercises || {};
+        console.log(
+            "Existing exercise data fetched:",
+            JSON.stringify(existingExerciseData, null, 2)
+        );
 
-          const newContainerId = generateId();
-          const reconstructedFields = [];
-          const containerValues = {};
+        let structureToSet = [];
+        let valuesToSet = {};
 
-          console.log(
-            `  Reconstructing container: Name='${containerName}', Temp ID=${newContainerId}`
-          );
-
-          Object.keys(savedContainerData).forEach((fieldName) => {
-            const savedValue = savedContainerData[fieldName];
-            const newFieldId = generateId();
-
-            let fieldType = "text";
-            if (fieldName.startsWith("number_")) fieldType = "number";
-            else if (fieldName.startsWith("textarea_")) fieldType = "textarea";
-            else if (/^\d+(\.\d+)?$/.test(String(savedValue)))
-              fieldType = "number"; // Infer number type if value looks like a number
-
-            let fieldLabel = fieldName
-              .replace(/_([a-z0-9]+)$/i, "")
-              .replace(/_/g, " ");
-            fieldLabel =
-              fieldLabel.charAt(0).toUpperCase() + fieldLabel.slice(1);
-
-            const isRequired = false; // Defaulting required to false
-
+        // Check if saved data exists and is in the expected new structure format
+        if (
+            existingExerciseData &&
+            typeof existingExerciseData === "object" &&
+            Object.keys(existingExerciseData).length > 0
+        ) {
             console.log(
-              `    -> Reconstructing field: Name='${fieldName}', Temp ID=${newFieldId}, Inferred Type='${fieldType}', Label='${fieldLabel}', Value='${savedValue}'`
+                "Saved data found. Reconstructing structure and values from it (using full data)."
             );
 
-            reconstructedFields.push({
-              id: newFieldId,
-              type: fieldType,
-              label: fieldLabel,
-              name: fieldName,
-              required: isRequired,
-              subtype: savedContainerData[fieldName]?.subtype ?? "",
+            Object.keys(existingExerciseData).forEach(containerName => {
+                const savedContainerWrapper = existingExerciseData[containerName]; // Expected format: { fields: [...] }
+                // Validate the saved container structure
+                if (
+                    !savedContainerWrapper ||
+                    typeof savedContainerWrapper !== "object" ||
+                    !Array.isArray(savedContainerWrapper.fields)
+                ) {
+                    console.warn(
+                        `Skipping invalid or old-format data found for container name '${containerName}'`
+                    );
+                    return; // Skip this container if data is invalid or not in the new format
+                }
+
+                const savedFields = savedContainerWrapper.fields;
+                // Generate a new container ID for the state structure
+                const newContainerId = generateId();
+                const reconstructedFields = [];
+                const containerValues = {};
+
+                console.log(
+                    `  Reconstructing container: Name='${containerName}', Temp ID=${newContainerId}`
+                );
+
+                savedFields.forEach(savedField => {
+                    // Directly use properties from savedField as they contain the definition
+                    if (
+                        !savedField ||
+                        typeof savedField !== "object" ||
+                        !savedField.name ||
+                        savedField.value === undefined // Ensure essential properties exist
+                    ) {
+                         console.warn(`Skipping invalid field data in container '${containerName}':`, savedField);
+                         return;
+                    }
+
+                    // Generate a new field ID for the state structure for React keys
+                    const newFieldId = generateId();
+                    const fieldName = savedField.name;
+                    const fieldValue = savedField.value; // Use the saved value
+                    const fieldType = savedField.type || "text"; // Use saved type, default
+                    const fieldLabel = savedField.label || fieldName; // Use saved label, default to name
+                    const isRequired = savedField.required ?? false; // Use saved required, default
+                    const fieldSubtype = savedField.subtype ?? ""; // Use saved subtype, default
+
+                    console.log(
+                        `    -> Reconstructing field: Name='${fieldName}', Temp ID=${newFieldId}, Type='${fieldType}', Label='${fieldLabel}', Required=${isRequired}, Subtype='${fieldSubtype}', Value='${fieldValue}'`
+                    );
+
+                    reconstructedFields.push({
+                        id: newFieldId, // Use new ID for state structure
+                        originalSavedId: savedField.id, // Optionally keep the original saved ID if needed
+                        type: fieldType,
+                        label: fieldLabel,
+                        name: fieldName,
+                        required: isRequired,
+                        subtype: fieldSubtype,
+                    });
+                    // Store the value using the field name under the new container ID
+                    containerValues[fieldName] = fieldValue;
+                });
+
+                // Only add the container if it has valid fields
+                if(reconstructedFields.length > 0) {
+                    structureToSet.push({
+                        id: newContainerId, // Use new ID for state structure
+                        name: containerName,
+                        fields: reconstructedFields,
+                    });
+                    valuesToSet[newContainerId] = containerValues; // Map values by the new container ID
+                }
             });
-            containerValues[fieldName] = savedValue ?? "";
-          });
+             // If after trying to load saved data, no valid structure is found, fall back to default
+            if (structureToSet.length === 0) {
+                 console.log("No valid saved data structure found after processing. Using default structure.");
+                 structureToSet = [createDefaultContainer()]; // Use helper for default
+                 structureToSet.forEach((container) => {
+                     valuesToSet[container.id] = {};
+                     container.fields.forEach((field) => {
+                         valuesToSet[container.id][field.name] = "";
+                     });
+                 });
+            }
 
-          structureToSet.push({
-            id: newContainerId,
-            name: containerName,
-            fields: reconstructedFields,
-          });
-          valuesToSet[newContainerId] = containerValues;
-        });
-      } else {
+        } else {
+            console.log(
+                "No saved data found or data is empty. Using default structure and empty values."
+            );
+            structureToSet = [createDefaultContainer()]; // Use helper for default
+            structureToSet.forEach((container) => {
+                valuesToSet[container.id] = {};
+                container.fields.forEach((field) => {
+                    valuesToSet[container.id][field.name] = "";
+                });
+            });
+        }
+
+
         console.log(
-          "No saved data found. Using default structure and empty values."
+            "Setting containers state to:",
+            JSON.stringify(structureToSet, null, 2)
         );
-        structureToSet = [createDefaultContainer()]; // Use helper for default
-        structureToSet.forEach((container) => {
-          valuesToSet[container.id] = {};
-          container.fields.forEach((field) => {
-            valuesToSet[container.id][field.name] = "";
-          });
-        });
-      }
+        setContainers(structureToSet);
 
-      console.log(
-        "Setting containers state to:",
-        JSON.stringify(structureToSet, null, 2)
-      );
-      setContainers(structureToSet);
+        console.log(
+            "Setting formValues state to:",
+            JSON.stringify(valuesToSet, null, 2)
+        );
+        setFormValues(valuesToSet);
 
-      console.log(
-        "Setting formValues state to:",
-        JSON.stringify(valuesToSet, null, 2)
-      );
-      setFormValues(valuesToSet);
-
-      console.log("Resetting errors and submission state.");
-      setErrors({});
-      setIsSubmitting(false);
-      setSuccessMessage("");
-      console.log("--- Effect End ---");
+        console.log("Resetting errors and submission state.");
+        setErrors({});
+        setIsSubmitting(false);
+        setSuccessMessage("");
+        console.log("--- Effect End ---");
     }
-  }, [isOpen, nodeSelected?.id]); // Dependencies
+}, [isOpen, nodeSelected?.id]);
 
   // --- Input Change Handler ---
   const handleInputChange = (containerId, fieldName, value) => {
@@ -360,53 +392,87 @@ function ExerciseModal({ isOpen, onClose }) {
     event.preventDefault();
 
     if (!nodeSelected) {
-      setErrors({ form: "Error: No node selected to save data for." });
-      return;
+        setErrors({ form: "Error: No node selected to save data for." });
+        return;
     }
 
+    // createValidationSchema needs to work with the current `containers` state structure
     const validationSchema = createValidationSchema(containers);
     setIsSubmitting(true);
     setSuccessMessage("");
     setErrors({});
 
     try {
-      await validationSchema.validate(formValues, { abortEarly: false });
-      // Validation succeeded — build output data and save
-      const outputData = {};
-      containers.forEach((container) => {
-        const containerName = container.name;
-        const containerValues = formValues[container.id] || {};
-        const valuesToSave = {};
-        container.fields.forEach((field) => {
-          if (containerValues.hasOwnProperty(field.name)) {
-            valuesToSave[field.name] = containerValues[field.name];
-          }
-        });
-        if (Object.keys(valuesToSave).length > 0) {
-          outputData[containerName] = valuesToSave;
-        }
-      });
+        // Validate formValues which is { containerId: { fieldName: fieldValue, ... } }
+        await validationSchema.validate(formValues, { abortEarly: false });
 
-      await updateNodeExerciseData(nodeSelected.id, outputData);
-      setSuccessMessage("Exercise data saved successfully!");
-      setTimeout(() => setSuccessMessage(""), 3000);
-      setIsSubmitting(false);
-      onClose();
-    } catch (validationErrors) {
-      if (validationErrors.inner && validationErrors.inner.length > 0) {
-        const formattedErrors = {};
-        validationErrors.inner.forEach((err) => {
-          const [containerId, fieldName] = err.path.split(".");
-          if (!formattedErrors[containerId]) formattedErrors[containerId] = {};
-          formattedErrors[containerId][fieldName] = err.message;
+        // Validation succeeded — build output data in the new structure
+        const outputData = {};
+
+        containers.forEach(container => {
+            const containerName = container.name;
+            // Get the values for this specific container from the formValues state
+            const containerValues = formValues[container.id] || {};
+            const fieldsToSave = [];
+
+            container.fields.forEach(field => {
+                // Get the value for this specific field using its name from containerValues
+                const fieldValue = containerValues.hasOwnProperty(field.name) ? containerValues[field.name] : "";
+
+                // Push the full field definition and its value to the array
+                fieldsToSave.push({
+                    id: field.id, // Save the field's ID from the current state
+                    name: field.name,
+                    value: fieldValue, // Include the value here
+                    type: field.type,
+                    label: field.label,
+                    required: field.required,
+                    subtype: field.subtype,
+                });
+            });
+
+            // Store the array of fields under the container's name in the output data
+            if (fieldsToSave.length > 0) {
+                outputData[containerName] = { fields: fieldsToSave };
+            }
         });
-        setErrors(formattedErrors);
-      } else {
-        setErrors({ form: "Failed to validate form data." });
-      }
-      setIsSubmitting(false);
+
+        console.log("Output data (full structure):", outputData);
+
+        // Assuming updateNodeExerciseData can handle this new structure
+        await updateNodeExerciseData(nodeSelected.id, outputData);
+        setToaster({
+            type: "success",
+            message: "Exercise data saved successfully.",
+            show: true,
+        })
+        setIsSubmitting(false);
+        onClose();
+
+    } catch (validationErrors) {
+        if (validationErrors.inner && validationErrors.inner.length > 0) {
+            const formattedErrors = {};
+            // The validation errors are likely keyed by containerId.fieldName
+            validationErrors.inner.forEach((err) => {
+              // The path might look like containerId.fieldName based on the schema
+              const [containerId, fieldName] = err.path.split(".");
+               if (containerId && fieldName) { // Basic check that path was split as expected
+                if (!formattedErrors[containerId]) formattedErrors[containerId] = {};
+                formattedErrors[containerId][fieldName] = err.message;
+               } else {
+                   console.warn("Unexpected validation error path format:", err.path, err.message);
+                   // Handle unexpected paths, maybe put them under a general form error
+                   formattedErrors.form = formattedErrors.form ? `${formattedErrors.form}\n${err.message}` : err.message;
+               }
+            });
+            setErrors(formattedErrors);
+        } else {
+             // Handle general validation errors not tied to specific fields
+            setErrors({ form: validationErrors.message || "Failed to validate form data." });
+        }
+        setIsSubmitting(false);
     }
-  };
+};
 
   // --- Render ---
   return (

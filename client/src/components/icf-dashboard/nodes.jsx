@@ -1,6 +1,6 @@
 import { Handle, NodeResizer } from "@xyflow/react";
 
-export const ProfileNode = ({ data, selected }) => (
+export const ProfileNode = ({ data, selected, type }) => (
   <>
     <NodeResizer isVisible={selected} minWidth={100} minHeight={30} />
     <div
@@ -20,7 +20,7 @@ export const ProfileNode = ({ data, selected }) => (
       className="w-full h-full"
     >
       {/* Profile is input-only */}
-      <label htmlFor="profile-input">Profile</label>
+      <strong className="text-2xl font-bold font-serif ">{type}</strong>
       <ul>
         <li>Name: {data.name || "Insert name"}</li>
         <li>Surname: {data.surname || "Insert surname"}</li>
@@ -66,7 +66,7 @@ export const BodyStructureNode = ({ data, selected }) => (
       <strong>{data.label}</strong>
       <ul>
         
-        <li>Body Functions and Structures</li>
+      <strong className="text-2xl font-bold font-serif ">Body functions and structures</strong>
       </ul>
       <Handle
         type="source"
@@ -104,7 +104,7 @@ export const ActivitiesNode = ({ data, selected }) => (
       <strong>{data.label}</strong>
       <ul>
         
-        <li>Activities</li>
+      <strong className="text-2xl font-bold font-serif ">Activities</strong>
       </ul>
       <Handle
         type="source"
@@ -142,7 +142,7 @@ export const ParticipationNode = ({ data, selected }) => (
       <strong>{data.label}</strong>
       <ul>
         
-        <li>Participations</li>
+      <strong className="text-2xl font-bold font-serif ">Participations</strong>
       </ul>
       <Handle
         type="source"
