@@ -11,6 +11,7 @@ export function FieldTypeButtons({ containerId, onAddField }) {
     { type: "text", subtype: "intensity_type", label: "Intensity Type", classStyle: "bg-zinc-800 border-2 border-zinc-600 text-white" },
     { type: "textarea", subtype: "intensity_string", label: "Intensity Schema", classStyle: "bg-zinc-800 border-2 border-zinc-600 text-white" },
     { type: "number", subtype: "intensity_number", label: "Intensity", classStyle: "bg-zinc-800 border-2 border-zinc-600 text-white" },
+    { type: "textarea", subtype: "tags", label: "Tags", classStyle: "bg-zinc-800 border-2 border-purple-600 text-white" },
   ];
 
   return (

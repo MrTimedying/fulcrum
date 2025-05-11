@@ -85,7 +85,12 @@ const subtypesValidationRules = {
     errorMessage: (label) => `${label} must be a sequence of 2 digits followed by a semicolon (e.g., "75;80;85;").`,
      // No custom .test() needed
   },
-  intensity_number: { type: "number", positive: true }, // Assuming a single positive number
+  intensity_number: { type: "number", positive: true },
+  tags: {
+    type: "string",
+    regex: /^(#\w;)+$/,
+    errorMessage: (label) => `${label} must be a sequence of hash symbol (#) followed by a lower case word (tag) and a semicolon (;), repeated for more entries.`,
+  }
 };
 
 
