@@ -21,7 +21,12 @@ dagreGraph.setDefaultEdgeLabel(() => ({}));
 
 const getLayoutedElements = (nodes, edges, direction = "TB") => {
   const isHorizontal = direction === "LR";
-  dagreGraph.setGraph({ rankdir: direction });
+  dagreGraph.setGraph({
+    rankdir: direction,
+    ranksep: 200, // Example: increase separation between ranks
+    nodesep: 50,
+    ranker: "longest-path",
+  });
 
   nodes.forEach((node) => {
     // Use node dimensions if available, otherwise use defaults
@@ -581,7 +586,7 @@ const useFlowStore = create(
           };
         }),
 
-      pasteNodesEdges: () =>
+      pasteNodesEdges: (position) =>
         set((state) => {
           const { clipboard } = state;
           // Deep copy and assign new IDs
@@ -593,8 +598,8 @@ const useFlowStore = create(
           const { offsetedNodes, offsetedEdges } = offsetNodesEdgesPosition(
             newNodes,
             newEdges,
-            400,
-            400
+            position.x ? position.x : 400, 
+            position.y ? position.y : 400,
           );
           // Clear selection state on new nodes/edges
           offsetedNodes.forEach((n) => (n.selected = false));
@@ -788,14 +793,9 @@ const useFlowStore = create(
         } else {
           // If no past states remain, revert to an initial empty state
           console.log(
-            "No past states in contextualMemory - Reverting to initial empty state."
+            "No past states in contextualMemory - Nothing should happen!"
           );
-          set({
-            nodes: [],
-            edges: [],
-            contextualMemory: currentContextualMemory,
-            mirroredContextualMemory: updatedMirroredMemory,
-          });
+          return;
         }
       },
 
@@ -858,7 +858,8 @@ const useFlowStore = create(
         // No filtering needed here
         if (nodes.length === 0) return;
 
-        const { nodes: layoutedNodes } = getLayoutedElements( // Only need layoutedNodes
+        const { nodes: layoutedNodes } = getLayoutedElements(
+          // Only need layoutedNodes
           nodes,
           edges,
           direction
@@ -867,10 +868,6 @@ const useFlowStore = create(
         // Update all nodes with their new positions
         set({ nodes: layoutedNodes });
       },
-
-
-
-
     }),
     {
       name: "flow-store",

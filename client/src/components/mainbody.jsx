@@ -57,6 +57,20 @@ function MainBody() {
       return;
     }
 
+        if (id === "templateMenu") {
+
+      if (activeTab !== "Editor") {
+        setToaster({
+          type: "error",
+          message: "Templater only works in the Editor environment.",
+          show: true,
+        });
+        return;
+      }
+      setIsTemplateModalOpen(true);
+      return;
+    }
+
     if (!nodeSelected) {
       setToaster({
         type: "error",
@@ -100,23 +114,6 @@ function MainBody() {
       setIsComposerOpen(true);
       return;
     }  
-  
-    if (id === "templateMenu") {
-
-      if (
-        (nodeSelected && nodeSelected.type !== "phase" && nodeSelected.type !== "micro" && nodeSelected.type !== "session") ||
-        activeTab !== "Editor"
-      ) {
-        setToaster({
-          type: "error",
-          message: "Templater only works on phases, micros and sessions, in the intervention editor tool only.",
-          show: true,
-        });
-        return;
-      }
-      setIsTemplateModalOpen(true);
-      return;
-    }
 
     if (id === "calendarMenu") {
       if (nodeSelected.type !== 'session' || activeTab !== "Editor") {

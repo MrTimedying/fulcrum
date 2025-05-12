@@ -260,12 +260,21 @@ const TemplateModal = ({ isOpen, onClose }) => {
                 </div>
 
                 <div className="flex justify-end">
-                  <button
+
+                  { nodeSelected ? (<button
                     onClick={handleSaveTemplate}
-                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-md font-medium transition duration-150"
+                    className="flex items-center text-xs gap-2 px-2 bg-zinc-900 rounded-md font-medium transition duration-150"
                   >
                     <Save fontSize="small" /> Save Template
-                  </button>
+                  </button>) : (
+                    <button
+                      disabled
+                      className="flex items-center text-xs gap-2 px-2 bg-rose-800 rounded-md font-medium transition duration-150 opacity-50 cursor-not-allowed"
+                    >
+                      No selected node
+                    </button>
+                  )}
+                  
                 </div>
               </Tab.Panel>
 

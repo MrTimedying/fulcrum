@@ -23,7 +23,7 @@ const useKeyboardShortcuts = ({
             break;
           case 'v':
             event.preventDefault();
-            pasteNodesEdges();
+            pasteNodesEdges({position: 0});
             break;
           case 'z':
             event.preventDefault();

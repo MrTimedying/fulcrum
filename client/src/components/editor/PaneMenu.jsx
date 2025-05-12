@@ -43,7 +43,7 @@ const PaneMenu = ({ isOpen, position, onClose, actions, clipboard }) => {
           <li className="mb-0 text-sm text-slate-300 hover:bg-zinc-900 rounded-sm p-1">
             <button
               onClick={() => {
-                actions.pasteNodesEdges();
+                actions.pasteNodesEdges(position);
                 onClose();
               }}
             >
