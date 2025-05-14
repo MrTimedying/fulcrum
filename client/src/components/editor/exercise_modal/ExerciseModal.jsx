@@ -14,6 +14,8 @@ import { createValidationSchema } from "./validationSchema";
 import Field  from "./Field";
 import { FieldTypeButtons } from "./FieldsButtons";
 import useTransientStore from "../../../state/transientState";
+import CustomAutocompleteSelect from "./CustomAutocompleteSelect";
+import { MdOutlineDataSaverOn } from "react-icons/md";
 
 // --- Accessibility Setup ---
 if (typeof window !== "undefined") {
@@ -28,7 +30,7 @@ function ExerciseModal({ isOpen, onClose }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
 
-  const { nodes, updateNodeExerciseData } = useFlowStore();
+  const { nodes, updateNodeExerciseData, exercises, saveExercise } = useFlowStore();
   const {setToaster} = useTransientStore();
   const nodeSelected = useMemo(
     () => nodes.find((node) => node.selected),
@@ -310,17 +312,17 @@ function ExerciseModal({ isOpen, onClose }) {
   };
 
   const removeContainer = (containerIdToRemove) => {
-    const containerToRemove = containers.find(
-      (c) => c.id === containerIdToRemove
-    );
-    if (
-      containerToRemove &&
-      !window.confirm(
-        `Are you sure you want to delete the container "${containerToRemove.name}"? This cannot be undone.`
-      )
-    ) {
-      return;
-    }
+    // const containerToRemove = containers.find(
+    //   (c) => c.id === containerIdToRemove
+    // );
+    // if (
+    //   containerToRemove &&
+    //   !window.confirm(
+    //     `Are you sure you want to delete the container "${containerToRemove.name}"? This cannot be undone.`
+    //   )
+    // ) {
+    //   return;
+    // }
     setContainers((currentContainers) =>
       currentContainers.filter((c) => c.id !== containerIdToRemove)
     );
@@ -385,6 +387,30 @@ function ExerciseModal({ isOpen, onClose }) {
         return { ...prev, [containerId]: restFieldErrors };
       });
     }
+  };
+
+  const handleSave = (c) => {
+
+    if (c.name && c.name !== null && c.name !== "") {
+      saveExercise(c);
+      setToaster({
+        show: true,
+        message: "Exercise saved successfully",
+        type: "success",
+      }) //The container name is saved, not the exercise name. The container name is a broad descriptor of the specific template or variant of the exercise such as a decorator. The actual name of the exercise is contained in the form values
+  }
+};
+
+  const handleSelection = (selectedOption) => {
+    setContainers((currentContainers) => [...currentContainers, selectedOption]); // Remember to make sure that the id of the container has to be changed
+    
+    setFormValues((prev) => ({
+      ...prev,
+      [selectedOption.id]: selectedOption.fields.reduce((acc, field) => {
+        acc[field.name] = "";
+        return acc;
+      }, {})
+    }));
   };
 
   // --- Submit Handler ---
@@ -526,7 +552,17 @@ function ExerciseModal({ isOpen, onClose }) {
               <FiX size={20} />
             </button>
           </div>
-          {/* Body */}
+        {/*Subheader*/}
+        <div className="bg-neutral-800">
+          <CustomAutocompleteSelect
+            label="Select exercise"
+            options={exercises}
+            onSelect={handleSelection}
+          />
+          
+        </div>
+          
+        {/* Body */}
           <form
             onSubmit={handleSubmit}
             className="p-4 flex-grow overflow-y-auto space-y-4 bg-zinc-900 flex flex-col"
@@ -574,6 +610,16 @@ function ExerciseModal({ isOpen, onClose }) {
                           displayClassName="text-md font-semibold text-gray-800 dark:text-gray-100"
                         />
                       </div>
+                      <>
+                      <button
+                        type="button"
+                        onClick={() => handleSave(container)}
+                        className="p-1.5 opacity-60 hover:opacity-100 transition-opacity text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-full flex-shrink-0"
+                        aria-label={`Save container ${container.name}`}
+                        title={`Save ${container.name}`}
+                      >
+                        <MdOutlineDataSaverOn size={16} />
+                      </button>
                       <button
                         type="button"
                         onClick={() => removeContainer(container.id)}
@@ -583,6 +629,7 @@ function ExerciseModal({ isOpen, onClose }) {
                       >
                         <FiTrash2 size={16} />
                       </button>
+                      </>
                     </div>
                     {/* Fields */}
                     <div className="space-x-3 flex flex-row">

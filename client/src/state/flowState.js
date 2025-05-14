@@ -12,47 +12,47 @@ import {
   offsetNodesEdgesPosition,
 } from "../components/utils";
 import { v4 as uuidv4 } from "uuid";
-import dagre from "@dagrejs/dagre";
+import ELK from "elkjs";
 
 const MAX_HISTORY_SIZE = 10; // Limit history to prevent memory issues
 
-const dagreGraph = new dagre.graphlib.Graph();
-dagreGraph.setDefaultEdgeLabel(() => ({}));
+const elk = new ELK();
 
-const getLayoutedElements = (nodes, edges, direction = "TB") => {
-  const isHorizontal = direction === "LR";
-  dagreGraph.setGraph({
-    rankdir: direction,
-    ranksep: 200, // Example: increase separation between ranks
-    nodesep: 50,
-    ranker: "longest-path",
-  });
+const elkOptions = {
+  "elk.algorithm": "layered",
+  "elk.layered.spacing.nodeNodeBetweenLayers": "100",
+  "elk.spacing.nodeNode": "80",
+};
 
-  nodes.forEach((node) => {
-    // Use node dimensions if available, otherwise use defaults
-    const nodeWidth = node.width || 150; // Adjust default width as needed
-    const nodeHeight = node.height || 40; // Adjust default height as needed
-    dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight });
-  });
+const getLayoutedElements = (nodes, edges, options = {}) => {
+  const isHorizontal = options?.["elk.direction"] === "DOWN";
+  const graph = {
+    id: "root",
+    layoutOptions: options,
+    children: nodes.map((node) => ({
+      ...node,
+      // Adjust the target and source handle positions based on the layout
+      // direction.
+      targetPosition: isHorizontal ? "left" : "top",
+      sourcePosition: isHorizontal ? "right" : "bottom",
 
-  edges.forEach((edge) => {
-    dagreGraph.setEdge(edge.source, edge.target);
-  });
+    })),
+    edges: edges,
+  };
 
-  dagre.layout(dagreGraph);
+  return elk
+    .layout(graph)
+    .then((layoutedGraph) => ({
+      nodes: layoutedGraph.children.map((node) => ({
+        ...node,
+        // React Flow expects a position property on the node instead of `x`
+        // and `y` fields.
+        position: { x: node.x, y: node.y },
+      })),
 
-  const layoutedNodes = nodes.map((node) => {
-    const nodeWithPosition = dagreGraph.node(node.id);
-    // We need to center the node position because Dagre sets the top-left corner
-    const position = {
-      x: nodeWithPosition.x - (node.width || 150) / 2,
-      y: nodeWithPosition.y - (node.height || 40) / 2,
-    };
-
-    return { ...node, position };
-  });
-
-  return { nodes: layoutedNodes, edges };
+      edges: layoutedGraph.edges,
+    }))
+    .catch(console.error);
 };
 
 const useFlowStore = create(
@@ -68,6 +68,7 @@ const useFlowStore = create(
       editorStates: {},
       profileStates: {},
       templates: [],
+      exercises: [],
       columnsLayout: [],
       rowsData: [],
       clipboard: { nodes: [], edges: [] },
@@ -598,8 +599,8 @@ const useFlowStore = create(
           const { offsetedNodes, offsetedEdges } = offsetNodesEdgesPosition(
             newNodes,
             newEdges,
-            position.x ? position.x : 400, 
-            position.y ? position.y : 400,
+            position.x ? position.x : 400,
+            position.y ? position.y : 400
           );
           // Clear selection state on new nodes/edges
           offsetedNodes.forEach((n) => (n.selected = false));
@@ -855,19 +856,50 @@ const useFlowStore = create(
       applyLayout: (direction = "TB") => {
         const { nodes, edges } = get(); // Get *all* current nodes and edges
 
-        // No filtering needed here
         if (nodes.length === 0) return;
 
-        const { nodes: layoutedNodes } = getLayoutedElements(
-          // Only need layoutedNodes
-          nodes,
-          edges,
-          direction
-        );
+        console.log("Nodes before layout:", nodes); // <-- Add this line
+        console.log("Edges before layout:", edges);
 
-        // Update all nodes with their new positions
-        set({ nodes: layoutedNodes });
+        const options = {
+          ...elkOptions,
+          "elk.direction": direction === "TB" ? "DOWN" : direction, // Map "TB" to ELK's "DOWN"
+        };
+
+        // Call getLayoutedElements which returns a Promise
+        getLayoutedElements(nodes, edges, options)
+          .then(({ nodes: layoutedNodes, edges: layoutedEdges }) => {
+            // This block executes ONLY after the Promise resolves
+            // and layoutedNodes/layoutedEdges are available.
+            set((state) => ({ ...state,
+              nodes: layoutedNodes,
+              edges: layoutedEdges, // Update edges as well if ELK modified them
+              
+            }));
+          })
+          .catch(console.error); // Catch potential errors during layout
       },
+
+      saveExercise: (exercise) => {
+
+        const exerciseNewId = {...exercise, id: uuidv4()};
+
+        set((state) => ({
+          ...state,
+          exercises: [...state.exercises, exerciseNewId],
+        }));
+      },
+
+      deleteExercise: (name) => {
+        set((state) => ({
+          ...state,
+          exercises: state.exercises.filter((exercise) => exercise.name !== name),
+        }));
+      }
+
+
+
+    //This is the end of the store  
     }),
     {
       name: "flow-store",

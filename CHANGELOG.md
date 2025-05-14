@@ -1,5 +1,20 @@
 # Changelog - Fulcrum App
 
+## 0.9.1 - 14/05/2025
+
+### Features
+
+#### Layouting features:
+- Changed Dagree for Elkjs and added more vertical space and more order;
+
+### Fixes
+
+- Templating menu now can be opened even without a node being selected, the save feature is just disabled;
+- Fixed the bug of "undo" reverting eventually to an empty state;
+- Better handling of the position of the paste functionality in the React flow diagram;
+
+
+
 ## 0.9.0 - 11/05/2025
 
 ### Features
