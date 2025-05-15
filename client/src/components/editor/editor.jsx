@@ -15,7 +15,7 @@ import {
   addEdge,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import NodeMenu from "./NodeMenu";
+import NodeMenu from "./nodeMenu";
 import PaneMenu from "./PaneMenu"; // Specific Node Context Menu
 import { v4 as uuidv4 } from "uuid";
 import useFlowStore from "../../state/flowState";
@@ -80,6 +80,7 @@ const selector = (state) => ({
   dumpClipboard: state.dumpClipboard,
   updateNodeData: state.updateNodeData,
   applyLayout: state.applyLayout,
+  stackSessionNodes: state.stackSessionNodes,
 });
 
 function Editor({ isInspectorOpen, setIsInspectorOpen }) {
@@ -98,6 +99,7 @@ function Editor({ isInspectorOpen, setIsInspectorOpen }) {
     dumpClipboard,
     updateNodeData,
     applyLayout,
+    stackSessionNodes,
   } = useFlowStore(useShallow(selector));
 
   const {
@@ -443,6 +445,12 @@ function Editor({ isInspectorOpen, setIsInspectorOpen }) {
               className="bg-gray-700 hover:bg-gray-400 text-white font-medium py-1 px-1 rounded text-[9px]"
             >
               Layout LR
+            </button>
+            <button
+              onClick={stackSessionNodes}
+              className="bg-gray-700 hover:bg-gray-400 text-white font-medium py-1 px-1 rounded text-[9px]"
+            >
+              Stack Sessions
             </button>
           </div>
           <Background variant="dots" />

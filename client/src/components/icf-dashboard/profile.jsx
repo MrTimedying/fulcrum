@@ -28,7 +28,6 @@ import {
   ParticipationNode,
   RecordElement,
 } from "./nodes";
-import Dagre from "@dagrejs/dagre";
 import { getProfileComposerTemplates } from "../variables";
 import Inspector from "../Inspector";
 import SelectionMenu from "../selectionMenu";

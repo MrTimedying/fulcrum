@@ -312,17 +312,7 @@ function ExerciseModal({ isOpen, onClose }) {
   };
 
   const removeContainer = (containerIdToRemove) => {
-    // const containerToRemove = containers.find(
-    //   (c) => c.id === containerIdToRemove
-    // );
-    // if (
-    //   containerToRemove &&
-    //   !window.confirm(
-    //     `Are you sure you want to delete the container "${containerToRemove.name}"? This cannot be undone.`
-    //   )
-    // ) {
-    //   return;
-    // }
+
     setContainers((currentContainers) =>
       currentContainers.filter((c) => c.id !== containerIdToRemove)
     );
@@ -537,11 +527,7 @@ function ExerciseModal({ isOpen, onClose }) {
               id="modular-form-title"
               className="text-gray-300 text-base font-medium"
             >
-              {nodeSelected
-                ? `Edit exercises data for ${
-                    nodeSelected.data.type || "this session"
-                  }`
-                : "Exercise Data Editor"}
+              Session editor
             </h2>
             <button
               onClick={onClose}
@@ -553,13 +539,14 @@ function ExerciseModal({ isOpen, onClose }) {
             </button>
           </div>
         {/*Subheader*/}
-        <div className="bg-neutral-800">
+        <div className="bg-zinc-900 flex flex-row">
           <CustomAutocompleteSelect
             label="Select exercise"
             options={exercises}
             onSelect={handleSelection}
           />
-          
+
+
         </div>
           
         {/* Body */}
@@ -570,16 +557,7 @@ function ExerciseModal({ isOpen, onClose }) {
             <div className="flex-grow space-y-4">
               {" "}
               {/* Scrollable Content Area */}
-              <p
-                id="modular-form-description"
-                className="text-sm text-gray-600 dark:text-gray-300 mb-4"
-              >
-                Each container is an exercise. Add the relevant field such as
-                name, volume, intensity fields or others. Keep in mind that the
-                fields you add here will be used to save the data for the
-                exercise. Consider also that data analysis heavily relies on
-                these fields inputs.
-              </p>
+              
               {successMessage && (
                 <div className="mb-4 p-3 bg-green-100 dark:bg-green-800/50 border border-green-200 dark:border-green-700 text-green-700 dark:text-green-200 rounded-md text-sm">
                   {successMessage}
@@ -614,7 +592,7 @@ function ExerciseModal({ isOpen, onClose }) {
                       <button
                         type="button"
                         onClick={() => handleSave(container)}
-                        className="p-1.5 opacity-60 hover:opacity-100 transition-opacity text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-full flex-shrink-0"
+                        className="p-1.5 opacity-60 hover:opacity-100 transition-opacity text-green-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-full flex-shrink-0"
                         aria-label={`Save container ${container.name}`}
                         title={`Save ${container.name}`}
                       >

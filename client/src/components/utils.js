@@ -15,18 +15,46 @@ function debounce(func, wait) {
 export {debounce};
 
 export function remapNodesAndEdgesWithNewIds(nodes, edges) {
+  // Create a map of old IDs to new IDs
   const idMap = {};
+  
+  // First pass: create new IDs for all nodes
   const newNodes = nodes.map(node => {
+    // Ensure node has an ID
+    if (!node.id) {
+      console.warn("Node missing ID during remap operation");
+      return null;
+    }
+    
     const newId = uuidv4();
     idMap[node.id] = newId;
     return { ...node, id: newId, selected: false };
-  });
-  const newEdges = edges.map(edge => ({
-    ...edge,
-    id: uuidv4(),
-    source: idMap[edge.source],
-    target: idMap[edge.target],
-  }));
+  }).filter(Boolean); // Filter out any null nodes
+  
+  // Second pass: process edges, keeping only those where both source and target are in idMap
+  const newEdges = edges
+    .filter(edge => {
+      // Skip edges without source or target
+      if (!edge.source || !edge.target) {
+        console.warn("Edge missing source or target:", edge);
+        return false;
+      }
+      
+      // Skip edges that reference nodes not in our selection
+      if (!idMap[edge.source] || !idMap[edge.target]) {
+        console.info("Skipping edge connecting to non-copied node:", edge);
+        return false;
+      }
+      
+      return true;
+    })
+    .map(edge => ({
+      ...edge,
+      id: uuidv4(),
+      source: idMap[edge.source],
+      target: idMap[edge.target],
+    }));
+    
   return { newNodes, newEdges };
 }
 

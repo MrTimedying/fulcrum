@@ -26,33 +26,125 @@ const elkOptions = {
 
 const getLayoutedElements = (nodes, edges, options = {}) => {
   const isHorizontal = options?.["elk.direction"] === "DOWN";
+  
+  // Validate input before processing
+  if (!nodes || !edges) {
+    console.error("Missing nodes or edges for layout");
+    return Promise.resolve({ nodes: nodes || [], edges: edges || [] });
+  }
+  
+  // Create a simplified version of nodes for ELK that only includes what ELK needs
+  const nodesForLayout = nodes
+    .filter(node => {
+      // Filter out nodes without IDs
+      if (!node?.id) {
+        console.error("Found node without ID during layout:", node);
+        return false;
+      }
+      return true;
+    })
+    .map(node => {
+      // Create a minimal node object for ELK to avoid issues
+      return {
+        id: node.id,
+        width: node.width || 150, // Provide default if missing
+        height: node.height || 50, // Provide default if missing
+        // Only these basic properties needed for layout
+        type: node.type, 
+        // ELK specific data
+        targetPosition: node.type === "session" 
+          ? (isHorizontal ? "top" : "left")
+          : (isHorizontal ? "left" : "top"),
+        sourcePosition: node.type === "session"
+          ? (isHorizontal ? "bottom" : "right")
+          : (isHorizontal ? "right" : "bottom")
+      };
+    });
+
+  // Create a simplified version of edges for ELK, filtering out any with missing source/target
+  const edgesForLayout = edges
+    .filter(edge => {
+      if (!edge?.id || !edge?.source || !edge?.target) {
+        console.error("Found edge with missing id/source/target during layout:", edge);
+        return false;
+      }
+      
+      // Check that source and target nodes exist in the nodes array
+      const sourceExists = nodesForLayout.some(node => node.id === edge.source);
+      const targetExists = nodesForLayout.some(node => node.id === edge.target);
+      
+      if (!sourceExists || !targetExists) {
+        console.warn("Edge references non-existent node:", edge);
+        return false;
+      }
+      
+      return true;
+    })
+    .map(edge => ({
+      id: edge.id,
+      source: edge.source,
+      target: edge.target
+    }));
+
+  // If we filtered out all nodes or edges, return early
+  if (nodesForLayout.length === 0) {
+    console.warn("No valid nodes for layout after filtering");
+    return Promise.resolve({ nodes, edges });
+  }
+
   const graph = {
     id: "root",
     layoutOptions: options,
-    children: nodes.map((node) => ({
-      ...node,
-      // Adjust the target and source handle positions based on the layout
-      // direction.
-      targetPosition: isHorizontal ? "left" : "top",
-      sourcePosition: isHorizontal ? "right" : "bottom",
-
-    })),
-    edges: edges,
+    children: nodesForLayout,
+    edges: edgesForLayout
   };
 
   return elk
     .layout(graph)
-    .then((layoutedGraph) => ({
-      nodes: layoutedGraph.children.map((node) => ({
-        ...node,
-        // React Flow expects a position property on the node instead of `x`
-        // and `y` fields.
-        position: { x: node.x, y: node.y },
-      })),
+    .then((layoutedGraph) => {
+      if (!layoutedGraph || !layoutedGraph.children) {
+        console.error("ELK layout returned invalid result", layoutedGraph);
+        return { nodes, edges }; // Return original nodes and edges if layout fails
+      }
+      
+      // Map the layout positions back to the original nodes
+      const updatedNodes = nodes.map(originalNode => {
+        // Skip nodes without IDs
+        if (!originalNode?.id) return originalNode;
+        
+        const layoutedNode = layoutedGraph.children.find(n => n.id === originalNode.id);
+        
+        if (!layoutedNode) {
+          // If layout didn't return this node, keep it as is
+          return originalNode;
+        }
+        
+        // Update only the position from layout, preserving all other properties
+        return {
+          ...originalNode,
+          position: { 
+            x: layoutedNode.x !== undefined ? layoutedNode.x : originalNode.position?.x || 0,
+            y: layoutedNode.y !== undefined ? layoutedNode.y : originalNode.position?.y || 0
+          },
+          // Update handle positions based on node type
+          targetPosition: originalNode.type === "session" 
+            ? (isHorizontal ? "top" : "left")
+            : (isHorizontal ? "left" : "top"),
+          sourcePosition: originalNode.type === "session"
+            ? (isHorizontal ? "bottom" : "right") 
+            : (isHorizontal ? "right" : "bottom")
+        };
+      });
 
-      edges: layoutedGraph.edges,
-    }))
-    .catch(console.error);
+      return {
+        nodes: updatedNodes,
+        edges: edges // Keep original edges, ELK only changes node positions
+      };
+    })
+    .catch(error => {
+      console.error("ELK layout error:", error);
+      return { nodes, edges }; // Return original nodes and edges on error
+    });
 };
 
 const useFlowStore = create(
@@ -590,25 +682,65 @@ const useFlowStore = create(
       pasteNodesEdges: (position) =>
         set((state) => {
           const { clipboard } = state;
+          
+          // Skip paste if clipboard is empty
+          if (!clipboard || !clipboard.nodes || clipboard.nodes.length === 0) {
+            console.info("Nothing to paste: clipboard is empty or contains no nodes");
+            return state;
+          }
+          
           // Deep copy and assign new IDs
           const { newNodes, newEdges } = remapNodesAndEdgesWithNewIds(
             clearDatesFromNodes(clipboard.nodes),
-            clipboard.edges
+            clipboard.edges || [] // Handle case where clipboard.edges might be undefined
           );
-          // Offset position (if needed)
+          
+          // Skip if no valid nodes were created
+          if (!newNodes || newNodes.length === 0) {
+            console.warn("No valid nodes to paste");
+            return state;
+          }
+          
+          // Ensure position has valid values
+          const pastePosition = {
+            x: position?.x || 400,
+            y: position?.y || 400
+          };
+          
+          // Offset position
           const { offsetedNodes, offsetedEdges } = offsetNodesEdgesPosition(
             newNodes,
             newEdges,
-            position.x ? position.x : 400,
-            position.y ? position.y : 400
+            pastePosition.x,
+            pastePosition.y
           );
-          // Clear selection state on new nodes/edges
-          offsetedNodes.forEach((n) => (n.selected = false));
-          offsetedEdges.forEach((e) => (e.selected = false));
+          
+          // Final validation pass to ensure no null IDs
+          const validNodes = offsetedNodes.filter(node => {
+            if (!node.id) {
+              console.error("Found node with null id after offset", node);
+              return false;
+            }
+            node.selected = false; // Clear selection state
+            return true;
+          });
+          
+          const validEdges = offsetedEdges.filter(edge => {
+            if (!edge.id || !edge.source || !edge.target) {
+              console.error("Found edge with null id, source, or target after offset", edge);
+              return false;
+            }
+            edge.selected = false; // Clear selection state
+            return true;
+          });
+          
+          // Record state before paste for undo support
+          get().recordState();
+          
           return {
             ...state,
-            nodes: [...state.nodes, ...offsetedNodes],
-            edges: [...state.edges, ...offsetedEdges],
+            nodes: [...state.nodes, ...validNodes],
+            edges: [...state.edges, ...validEdges],
           };
         }),
 
@@ -853,31 +985,185 @@ const useFlowStore = create(
         }
       },
 
+      // Add hybrid layout function
+      hybridLayout: async (direction = "TB") => {
+        const { nodes, edges, recordState } = get();
+        
+        if (!nodes || nodes.length === 0) {
+          console.log("No nodes to layout");
+          return;
+        }
+        
+        // Record current state for history
+        recordState();
+        
+        try {
+          console.log("Applying hybrid layout...");
+          
+          // Step 1: Separate session nodes from other nodes
+          const sessionNodes = nodes.filter(node => node.type === "session");
+          const nonSessionNodes = nodes.filter(node => node.type !== "session");
+          
+          // Step 2: Apply ELK layout to non-session nodes only
+          const elkDirection = direction === "TB" ? "DOWN" : 
+                               direction === "LR" ? "RIGHT" : direction;
+                               
+          const options = {
+            ...elkOptions,
+            "elk.direction": elkDirection,
+          };
+          
+          // Create a copy of edges that only connect non-session nodes
+          const nonSessionEdges = edges.filter(edge => {
+            const sourceNode = nonSessionNodes.find(node => node.id === edge.source);
+            const targetNode = nonSessionNodes.find(node => node.id === edge.target);
+            return sourceNode && targetNode;
+          });
+          
+          // Apply ELK layout to non-session nodes
+          let layoutedNonSessionNodes = nonSessionNodes;
+          if (nonSessionNodes.length > 0) {
+            try {
+              const elkResult = await getLayoutedElements(nonSessionNodes, nonSessionEdges, options);
+              if (elkResult && elkResult.nodes) {
+                layoutedNonSessionNodes = elkResult.nodes;
+              }
+            } catch (error) {
+              console.error("Error in ELK layout:", error);
+            }
+          }
+          
+          // Step 3: Create a merged node array with both the layouted non-session nodes
+          // and the original session nodes (which we'll position separately)
+          const mergedNodes = [
+            ...layoutedNonSessionNodes,
+            ...sessionNodes
+          ];
+          
+          // Step 4: Update the state with these nodes first
+          set({ nodes: mergedNodes });
+          
+          // Step 5: Now stack the session nodes below their parents
+          // Find all session nodes and organize by parent
+          const parentMap = new Map(); // Maps parent ID to array of child session nodes
+          
+          // Group session nodes by their parent
+          sessionNodes.forEach(node => {
+            // Find edges where this node is the target (i.e., incoming edges)
+            const parentEdges = edges.filter(edge => edge.target === node.id);
+            
+            if (parentEdges.length > 0) {
+              // Use the first parent found (assuming a node has only one parent)
+              const parentId = parentEdges[0].source;
+              
+              if (!parentMap.has(parentId)) {
+                parentMap.set(parentId, []);
+              }
+              
+              parentMap.get(parentId).push(node);
+            }
+          });
+          
+          // Create new positions for nodes based on their parent groups
+          const updatedNodes = [...mergedNodes]; // Create a copy of nodes to update
+          
+          // Process each parent group
+          parentMap.forEach((childNodes, parentId) => {
+            // Find the parent node - it should now have its layouted position
+            const parentNode = updatedNodes.find(node => node.id === parentId);
+            if (!parentNode) return;
+            
+            // Calculate starting position below the parent
+            const startX = parentNode.position.x; // Same X as parent
+            let startY = parentNode.position.y + 150; // Start below parent with some spacing
+            
+            // Sort nodes by existing X position to maintain relative horizontal order
+            const sortedChildren = [...childNodes].sort((a, b) => 
+              (a.position?.x || 0) - (b.position?.x || 0)
+            );
+            
+            // Position each child node in a vertical column beneath the parent
+            sortedChildren.forEach((node, index) => {
+              // Find the node in our updatedNodes array
+              const nodeIndex = updatedNodes.findIndex(n => n.id === node.id);
+              if (nodeIndex !== -1) {
+                // Update the position
+                updatedNodes[nodeIndex] = {
+                  ...updatedNodes[nodeIndex],
+                  position: {
+                    x: startX,
+                    y: startY + (index * 150) // Stack vertically with 150px spacing
+                  }
+                };
+              }
+            });
+          });
+          
+          // Step 6: Update the state with the final node positions
+          set({ nodes: updatedNodes });
+          console.log("Hybrid layout applied successfully");
+        } catch (error) {
+          console.error("Error in hybrid layout:", error);
+        }
+      },
+
+      // Update applyLayout to use hybridLayout for TB direction
       applyLayout: (direction = "TB") => {
-        const { nodes, edges } = get(); // Get *all* current nodes and edges
+        const { hybridLayout } = get();
+        
+        // Use hybrid layout for TB direction, standard ELK for others
+        if (direction === "TB") {
+          hybridLayout(direction);
+          return;
+        }
+        
+        // Original implementation for other directions
+        const { nodes, edges } = get();
 
-        if (nodes.length === 0) return;
+        if (!nodes || nodes.length === 0) {
+          console.log("No nodes to layout");
+          return;
+        }
 
-        console.log("Nodes before layout:", nodes); // <-- Add this line
-        console.log("Edges before layout:", edges);
+        console.log("Applying layout direction:", direction);
+
+        // Map direction to ELK options
+        const elkDirection = direction === "TB" ? "DOWN" : 
+                             direction === "LR" ? "RIGHT" :
+                             direction;
 
         const options = {
           ...elkOptions,
-          "elk.direction": direction === "TB" ? "DOWN" : direction, // Map "TB" to ELK's "DOWN"
+          "elk.direction": elkDirection,
+          // Add a special property to track the original direction for session nodes
+          "originalDirection": direction
         };
 
-        // Call getLayoutedElements which returns a Promise
-        getLayoutedElements(nodes, edges, options)
-          .then(({ nodes: layoutedNodes, edges: layoutedEdges }) => {
-            // This block executes ONLY after the Promise resolves
-            // and layoutedNodes/layoutedEdges are available.
-            set((state) => ({ ...state,
-              nodes: layoutedNodes,
-              edges: layoutedEdges, // Update edges as well if ELK modified them
-              
-            }));
-          })
-          .catch(console.error); // Catch potential errors during layout
+        // Record current state in history
+        get().recordState();
+
+        try {
+          // Call getLayoutedElements which returns a Promise
+          getLayoutedElements(nodes, edges, options)
+            .then((result) => {
+              // Safe destructuring - check if result exists first
+              if (result && result.nodes) {
+                set((state) => ({ 
+                  ...state,
+                  nodes: result.nodes,
+                  edges: result.edges,
+                }));
+                console.log("Layout applied successfully");
+              } else {
+                console.error("Layout failed - invalid result", result);
+              }
+            })
+            .catch((error) => {
+              console.error("Layout failed with error:", error);
+            });
+        } catch (error) {
+          console.error("Error in applyLayout:", error);
+        }
       },
 
       saveExercise: (exercise) => {
@@ -895,9 +1181,84 @@ const useFlowStore = create(
           ...state,
           exercises: state.exercises.filter((exercise) => exercise.name !== name),
         }));
-      }
+      },
 
-
+      stackSessionNodes: () => {
+        const { nodes, edges, recordState } = get();
+        
+        if (nodes.length === 0) {
+          console.log("No nodes to stack");
+          return;
+        }
+        
+        // Record current state for undo
+        recordState();
+        
+        try {
+          // Step 1: Find all session nodes and organize by parent
+          const sessionNodes = nodes.filter(node => node.type === "session");
+          const parentMap = new Map(); // Maps parent ID to array of child session nodes
+          
+          // Group session nodes by their parent
+          sessionNodes.forEach(node => {
+            // Find edges where this node is the target (i.e., incoming edges)
+            const parentEdges = edges.filter(edge => edge.target === node.id);
+            
+            if (parentEdges.length > 0) {
+              // Use the first parent found (assuming a node has only one parent)
+              const parentId = parentEdges[0].source;
+              
+              if (!parentMap.has(parentId)) {
+                parentMap.set(parentId, []);
+              }
+              
+              parentMap.get(parentId).push(node);
+            }
+          });
+          
+          // Step 2: Create new positions for nodes based on their parent groups
+          const updatedNodes = [...nodes]; // Create a copy of nodes to update
+          
+          // Process each parent group
+          parentMap.forEach((childNodes, parentId) => {
+            // Find the parent node
+            const parentNode = nodes.find(node => node.id === parentId);
+            if (!parentNode) return;
+            
+            // Calculate starting position below the parent
+            const startX = parentNode.position.x; // Same X as parent
+            let startY = parentNode.position.y + 150; // Start below parent with some spacing
+            
+            // Sort nodes by existing X position to maintain relative horizontal order
+            const sortedChildren = [...childNodes].sort((a, b) => 
+              (a.position?.x || 0) - (b.position?.x || 0)
+            );
+            
+            // Position each child node in a vertical column beneath the parent
+            sortedChildren.forEach((node, index) => {
+              // Find the node in our updatedNodes array
+              const nodeIndex = updatedNodes.findIndex(n => n.id === node.id);
+              if (nodeIndex !== -1) {
+                // Update the position
+                updatedNodes[nodeIndex] = {
+                  ...updatedNodes[nodeIndex],
+                  position: {
+                    x: startX,
+                    y: startY + (index * 150) // Stack vertically with 150px spacing
+                  }
+                };
+              }
+            });
+          });
+          
+          // Step 3: Update the nodes in the store
+          set({ nodes: updatedNodes });
+          console.log("Session nodes stacked successfully");
+          
+        } catch (error) {
+          console.error("Error stacking session nodes:", error);
+        }
+      },
 
     //This is the end of the store  
     }),

@@ -12,7 +12,7 @@ const CustomAutocompleteSelect = ({ options, onSelect }) => {
   const colors = {
     primary: 'indigo-600',       // A nice primary color
     secondary: 'indigo-200',     // A lighter shade for focus/hover
-    background: 'gray-50',       // Light background for the page
+    background: 'neutral-900',       // Light background for the page
     cardBackground: 'white',     // Card background
     textPrimary: 'gray-800',     // Primary text color
     textSecondary: 'gray-500',   // Secondary text color
@@ -70,10 +70,10 @@ const CustomAutocompleteSelect = ({ options, onSelect }) => {
 
   // Basic styling using Tailwind CSS classes
   return (
-    <div className={`flex items-center justify-center bg-\${colors.background}`}>
-      <div ref={containerRef} className={`relative w-full max-w-xs p-6 rounded-2xl shadow-lg bg-\${colors.cardBackground}`}>
+    <div className={`flex items-start w-1/3 flex-1 justify-start bg-\${colors.background}`}>
+      <div ref={containerRef} className={`relative w-full max-w-xs p-6 rounded-2xl bg-\${colors.cardBackground}`}>
         <label htmlFor="autocomplete-input" className={`block text-sm font-medium mb-2 text-\${colors.textPrimary}`}>
-          Select an Option
+          Exercise templates
         </label>
         <input
           id="autocomplete-input"
@@ -84,7 +84,7 @@ const CustomAutocompleteSelect = ({ options, onSelect }) => {
           placeholder="Type to search..."
           aria-autocomplete="list"
           aria-controls="autocomplete-list"
-          className={`w-full px-4 py-3 rounded-xl text-sm focus:outline-none border border-\${colors.border} focus:ring-2 focus:ring-\${colors.focusRing} transition-all duration-200 dark:bg-gray-700 dark:text-white dark:border-gray-600 dark:focus:ring-indigo-700`}
+          className={`w-full px-4 py-1 rounded-xl text-sm focus:outline-none border border-\${colors.border} focus:ring-1 focus:ring-\${colors.focusRing} transition-all duration-200 dark:bg-neutral-700 dark:text-white dark:border-neutral-600 dark:focus:ring-zinc-700`}
         />
 
         {isDropdownVisible && filteredOptions.length > 0 && (
@@ -94,17 +94,17 @@ const CustomAutocompleteSelect = ({ options, onSelect }) => {
             className={`absolute z-10 w-full mt-2 bg-\${colors.cardBackground} border border-\${colors.border} rounded-xl shadow-lg max-h-60 overflow-y-auto dark:bg-gray-700 dark:border-gray-600`}
           >
             {filteredOptions.map((option, index) => (
-             <div key={option.id} className="bg-black flex flex-row justify-between"> 
+             <div key={option.id} className="bg-zinc-900 flex flex-row justify-between"> 
              <li
                 key={index}
                 role="option"
                 aria-selected={inputValue.toLowerCase() === option.name.toLowerCase()} // Basic aria-selected
                 onClick={() => handleOptionClick(option)}
-                className={`px-4 py-3 cursor-pointer text-sm text-\${colors.textPrimary} hover:bg-\${colors.secondary} transition-colors duration-150 dark:text-white dark:hover:bg-gray-600`}
+                className={`flex flex-auto px-4 py-3 cursor-pointer text-sm text-\${colors.textPrimary} hover:bg-\${colors.secondary} transition-colors duration-150 dark:text-white dark:hover:bg-neutral-700`}
               >
                 {option.name}
               </li>
-              <button className='p-1'>x</button></div>
+              <button className='flex w-8 text-xs my-4 mr-2 px-2 items-center border-solid border border-neutral-400 rounded-md'>del</button></div>
             ))}
           </ul>
         )}

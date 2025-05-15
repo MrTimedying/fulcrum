@@ -122,9 +122,9 @@ const DatepickerModal = ({ isOpen, onClose }) => {
         dragHandleClassName="date-modal-drag"
         style={{ display:"flex", flexDirection:"column"}}
       >
-        <div className="bg-gray-800 rounded-lg shadow-lg text-gray-100 h-full flex flex-col min-h-[380px]">
+        <div className="bg-zinc-900 rounded-lg shadow-lg text-gray-100 h-full flex flex-col min-h-[380px]">
           {/* Modal Title */}
-          <div className="flex justify-between items-center p-3 bg-gray-900 date-modal-drag cursor-move rounded-t-lg">
+          <div className="flex justify-between items-center p-3 bg-zinc-900 date-modal-drag cursor-move rounded-t-lg">
             <div className="flex items-center gap-2">
               <CalendarMonth fontSize="medium" />
               <span className="font-semibold text-lg" id="node-datepicker-title">Assign Date to Node</span>
@@ -139,12 +139,12 @@ const DatepickerModal = ({ isOpen, onClose }) => {
             </button>
           </div>
           {/* Node name */}
-          {nodeSelected && (
+          {/* {nodeSelected && (
             <div className="p-4 pt-2">
               <div className="text-xs text-gray-400 uppercase mb-1">Node</div>
               <div className="font-semibold text-sm text-white">{nodeSelected.data?.label || nodeSelected.id}</div>
             </div>
-          )}
+          )} */}
           {/* Date Picker */}
           <div className="flex-1 flex flex-col items-center justify-center w-full h-full min-h-[280px]">
             <Calendar
@@ -171,15 +171,8 @@ const DatepickerModal = ({ isOpen, onClose }) => {
                   };
                 }
               }}
-              className="h-full w-full"
+              className="h-full w-full custom-calendar"
               plugins={[]}
-              style={{
-                marginTop: "1rem",
-                marginBottom: "1rem",
-                borderRadius: "0.5rem",
-                background: "#3f3f46",
-                color: "#e5e7eb"
-              }}
               weekDays={["S", "M", "T", "W", "T", "F", "S"]}
               inputClass="w-full"
             />
