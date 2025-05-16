@@ -86,6 +86,7 @@ const selector = (state) => ({
 function Editor({ isInspectorOpen, setIsInspectorOpen }) {
   // STATE MANAGEMENT
   const { setToaster } = useTransientStore();
+  const reactFlowWrapper = useRef(null);
 
   const {
     nodes,
@@ -287,34 +288,49 @@ function Editor({ isInspectorOpen, setIsInspectorOpen }) {
   // NODE CONTEXT MENU HANDLING
   const onNodeContextMenu = useCallback((event, node) => {
     event.preventDefault();
-    setNodeMenu({
-      isOpen: true,
-      position: { x: event.clientX, y: event.clientY },
-      targetNode: node,
-    });
-    setPaneMenu({ isOpen: false });
-    setSelectionMenu({ isOpen: false });
+    // Get the ReactFlow container's position
+    if (reactFlowWrapper.current) {
+      const rect = reactFlowWrapper.current.getBoundingClientRect();
+      setNodeMenu({
+        isOpen: true,
+        // Adjust coordinates relative to the ReactFlow container
+        position: { x: event.clientX - rect.left, y: event.clientY - rect.top },
+        targetNode: node,
+      });
+      setPaneMenu({ isOpen: false });
+      setSelectionMenu({ isOpen: false });
+    }
   }, []);
 
   // PANE CONTEXT MENU HANDLING
   const onPaneContextMenu = useCallback((event) => {
     event.preventDefault();
-    setPaneMenu({
-      isOpen: true,
-      position: { x: event.clientX, y: event.clientY },
-    });
-    setNodeMenu({ isOpen: false });
-    setSelectionMenu({ isOpen: false });
+    // Get the ReactFlow container's position
+    if (reactFlowWrapper.current) {
+      const rect = reactFlowWrapper.current.getBoundingClientRect();
+      setPaneMenu({
+        isOpen: true,
+        // Adjust coordinates relative to the ReactFlow container
+        position: { x: event.clientX - rect.left, y: event.clientY - rect.top },
+      });
+      setNodeMenu({ isOpen: false });
+      setSelectionMenu({ isOpen: false });
+    }
   }, []);
 
   const onSelectionContextMenu = useCallback((event) => {
     event.preventDefault();
-    setSelectionMenu({
-      isOpen: true,
-      position: { x: event.clientX, y: event.clientY },
-    });
-    setPaneMenu({ isOpen: false }); // Close PaneMenu
-    setNodeMenu({ isOpen: false }); // Close NodeMenu
+    // Get the ReactFlow container's position
+    if (reactFlowWrapper.current) {
+      const rect = reactFlowWrapper.current.getBoundingClientRect();
+      setSelectionMenu({
+        isOpen: true,
+        // Adjust coordinates relative to the ReactFlow container
+        position: { x: event.clientX - rect.left, y: event.clientY - rect.top },
+      });
+      setPaneMenu({ isOpen: false }); // Close PaneMenu
+      setNodeMenu({ isOpen: false }); // Close NodeMenu
+    }
   }, []);
 
   // ACTION HANDLERS FOR MENUS
@@ -331,30 +347,39 @@ function Editor({ isInspectorOpen, setIsInspectorOpen }) {
   };
 
   const addNode = (position, type) => {
-    const canvasPosition = reactFlowInstance.screenToFlowPosition(position);
+    // Convert the position back to screen coordinates by adding the container's offset
+    if (reactFlowWrapper.current) {
+      const rect = reactFlowWrapper.current.getBoundingClientRect();
+      const screenPosition = {
+        x: position.x + rect.left,
+        y: position.y + rect.top
+      };
+      // Now convert screen position to flow position
+      const canvasPosition = reactFlowInstance.screenToFlowPosition(screenPosition);
 
-    // Validate node addition for types like "intervention"
-    if (!validateNodeAddition(type, nodes)) {
-      setToaster({
-        type: "error",
-        message: "Only one intervention node is allowed",
-        show: true,
-      });
-      return;
+      // Validate node addition for types like "intervention"
+      if (!validateNodeAddition(type, nodes)) {
+        setToaster({
+          type: "error",
+          message: "Only one intervention node is allowed",
+          show: true,
+        });
+        return;
+      }
+
+      // Dynamically create node based on type
+      const id = uuidv4();
+      const newNode = {
+        id,
+        position: canvasPosition,
+        data: dataTemplates[type]?.() || {}, // Generate node data dynamically
+        ...(nodeTemplates[type] || { type, data: {} }), // Use template or fallback
+      };
+
+      // Add the new node to the flow
+      setNodes((nds) => [...nds, newNode]);
+      closeMenus(); // Close any open context menus
     }
-
-    // Dynamically create node based on type
-    const id = uuidv4();
-    const newNode = {
-      id,
-      position: canvasPosition,
-      data: dataTemplates[type]?.() || {}, // Generate node data dynamically
-      ...(nodeTemplates[type] || { type, data: {} }), // Use template or fallback
-    };
-
-    // Add the new node to the flow
-    setNodes((nds) => [...nds, newNode]);
-    closeMenus(); // Close any open context menus
   };
 
   const zoomToFit = () => {
@@ -408,7 +433,8 @@ function Editor({ isInspectorOpen, setIsInspectorOpen }) {
     >
       <div
         id="left-block"
-        className="bg-zinc-900 flex flex-col h-full w-full overflow-y-auto"
+        className="flex flex-col h-full w-full overflow-y-auto"
+        ref={reactFlowWrapper}
       >
         {/* React Flow Canvas */}
         <ReactFlow

@@ -14,7 +14,7 @@ const ContextMenu = ({ isOpen, position, onClose, children }) => {
         zIndex: 1000,
       }}
       onClick={(e) => e.stopPropagation()}
-      className="bg-neutral-800 rounded-md w-64" // Prevent clicks from propagating and closing the menu
+      className="bg-zinc-900 rounded-md w-64" // Prevent clicks from propagating and closing the menu
     >
       {children}
       <div style={{ marginTop: "8px", textAlign: "right" }}>

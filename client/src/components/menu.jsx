@@ -59,7 +59,7 @@ export default function MyDropdown({ formData, setFormData, setFetchingSwitch}) 
     <div className="px-2">
       <Menu as="div" className="relative inline-block text-left">
         <div>
-          <Menu.Button className="inline-flex w-full justify-center rounded-md bg-zinc-900 px-2 py-1 text-sm font-medium text-slate-300 font-sans hover:bg-black/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/75">
+          <Menu.Button className="inline-flex w-full justify-center border border-zinc-700 rounded-md bg-zinc-900 px-2 py-1 text-sm text-slate-300 font-sans hover:bg-black/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/75">
             Options
             <ChevronDownIcon
               className="ml-2 -mr-1 h-5 w-5 text-white"

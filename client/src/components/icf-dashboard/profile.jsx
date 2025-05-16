@@ -295,36 +295,53 @@ function Profile({ isInspectorOpen, setIsInspectorOpen }) {
   );
 
   // NODE CONTEXT MENU HANDLING
+  const reactFlowWrapper = useRef(null);
+
   const onNodeContextMenu = useCallback((event, node) => {
     event.preventDefault();
-    setNodeMenu({
-      isOpen: true,
-      position: { x: event.clientX, y: event.clientY },
-      targetNode: node,
-    });
-    setPaneMenu({ isOpen: false });
-    setSelectionMenu({ isOpen: false });
+    // Get the ReactFlow container's position
+    if (reactFlowWrapper.current) {
+      const rect = reactFlowWrapper.current.getBoundingClientRect();
+      setNodeMenu({
+        isOpen: true,
+        // Adjust coordinates relative to the ReactFlow container
+        position: { x: event.clientX - rect.left, y: event.clientY - rect.top },
+        targetNode: node,
+      });
+      setPaneMenu({ isOpen: false });
+      setSelectionMenu({ isOpen: false });
+    }
   }, []);
 
   // PANE CONTEXT MENU HANDLING
   const onPaneContextMenu = useCallback((event) => {
     event.preventDefault();
-    setPaneMenu({
-      isOpen: true,
-      position: { x: event.clientX, y: event.clientY },
-    });
-    setNodeMenu({ isOpen: false });
-    setSelectionMenu({ isOpen: false });
+    // Get the ReactFlow container's position
+    if (reactFlowWrapper.current) {
+      const rect = reactFlowWrapper.current.getBoundingClientRect();
+      setPaneMenu({
+        isOpen: true,
+        // Adjust coordinates relative to the ReactFlow container
+        position: { x: event.clientX - rect.left, y: event.clientY - rect.top },
+      });
+      setNodeMenu({ isOpen: false });
+      setSelectionMenu({ isOpen: false });
+    }
   }, []);
 
   const onSelectionContextMenu = useCallback((event) => {
     event.preventDefault();
-    setSelectionMenu({
-      isOpen: true,
-      position: { x: event.clientX, y: event.clientY },
-    });
-    setPaneMenu({ isOpen: false }); // Close PaneMenu
-    setNodeMenu({ isOpen: false }); // Close NodeMenu
+    // Get the ReactFlow container's position
+    if (reactFlowWrapper.current) {
+      const rect = reactFlowWrapper.current.getBoundingClientRect();
+      setSelectionMenu({
+        isOpen: true,
+        // Adjust coordinates relative to the ReactFlow container
+        position: { x: event.clientX - rect.left, y: event.clientY - rect.top },
+      });
+      setPaneMenu({ isOpen: false }); // Close PaneMenu
+      setNodeMenu({ isOpen: false }); // Close NodeMenu
+    }
   }, []);
 
   // ACTION HANDLERS FOR MENUS
@@ -345,26 +362,35 @@ function Profile({ isInspectorOpen, setIsInspectorOpen }) {
   };
 
   const addNode = (position, type) => {
-    const canvasPosition = reactFlowInstance.screenToFlowPosition(position);
+    // Convert the position back to screen coordinates by adding the container's offset
+    if (reactFlowWrapper.current) {
+      const rect = reactFlowWrapper.current.getBoundingClientRect();
+      const screenPosition = {
+        x: position.x + rect.left,
+        y: position.y + rect.top
+      };
+      // Now convert screen position to flow position
+      const canvasPosition = reactFlowInstance.screenToFlowPosition(screenPosition);
 
-    // Validate node addition for certain types
-    if (!validateNodeAddition(type, nodes)) {
-      setToaster({
-        type: "error",
-        message: `A ${type} node is already present because a profile has been already initialized!`,
-        show: true,
-      });
-      return;
+      // Validate node addition for certain types
+      if (!validateNodeAddition(type, nodes)) {
+        setToaster({
+          type: "error",
+          message: `A ${type} node is already present because a profile has been already initialized!`,
+          show: true,
+        });
+        return;
+      }
+
+      // Create child nodes for "profile" type or add a simple node
+      if (type === "profile") {
+        createProfileWithChildren(canvasPosition);
+      } else {
+        addSingleNode(canvasPosition, type);
+      }
+
+      closeMenus();
     }
-
-    // Create child nodes for "profile" type or add a simple node
-    if (type === "profile") {
-      createProfileWithChildren(canvasPosition);
-    } else {
-      addSingleNode(canvasPosition, type);
-    }
-
-    closeMenus();
   };
 
   // Helper function to create "profile" and child nodes
@@ -454,7 +480,8 @@ function Profile({ isInspectorOpen, setIsInspectorOpen }) {
     >
       <div
         id="left-block"
-        className="bg-zinc-900 flex flex-col h-full w-full overflow-y-auto"
+        className="flex flex-col h-full w-full overflow-y-auto"
+        ref={reactFlowWrapper}
       >
         {/* React Flow Canvas */}
         <ReactFlow

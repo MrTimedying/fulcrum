@@ -185,7 +185,7 @@ function MainBody() {
         as="div" 
         className="flex flex-col h-full w-full"
         defaultIndex={initialIndex}>
-        <div className="grid grid-cols-11 h-14 bg-zinc-850 w-full mb-2">
+        <div className="grid grid-cols-11 h-14 w-full mb-2">
           <div className="bg-zinc-900 rounded-full h-8 flex flex-row items-center place-self-center ml-36 col-span-4">
             <Tab.List className="flex mx-auto h-auto text-xs">
               <Tab as={Fragment}>
@@ -240,8 +240,8 @@ function MainBody() {
   if (patientId) {
     return (
       <div
-        className="w-4/5 bg-neutral-800 p-4 h-full"
-        style={{ borderLeft: "solid 2px #1c1c1c" }}
+        className=" bg-neutral-800 h-full"
+        
       >
         {TabStructure()}
         <Composer
@@ -261,8 +261,8 @@ function MainBody() {
   } else {
     return (
       <div
-        className="w-4/5 flex items-center justify-center text-stone-400 bg-neutral-800 p-4 h-full"
-        style={{ borderLeft: "solid 2px #1c1c1c" }}
+        className="flex items-center justify-center text-stone-400 bg-neutral-800 p-4 h-full"
+        // style={{ borderLeft: "solid 2px #1c1c1c" }}
       >
         Select a patient to view their information.
         <button

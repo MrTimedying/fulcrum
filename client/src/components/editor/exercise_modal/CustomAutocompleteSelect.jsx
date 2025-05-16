@@ -94,17 +94,23 @@ const CustomAutocompleteSelect = ({ options, onSelect }) => {
             className={`absolute z-10 w-full mt-2 bg-\${colors.cardBackground} border border-\${colors.border} rounded-xl shadow-lg max-h-60 overflow-y-auto dark:bg-gray-700 dark:border-gray-600`}
           >
             {filteredOptions.map((option, index) => (
-             <div key={option.id} className="bg-zinc-900 flex flex-row justify-between"> 
+             <div key={option.id} className="bg-zinc-900 hover:bg-\${colors.secondary} dark:text-white dark:hover:bg-neutral-700 transition-colors duration-150 flex flex-row justify-between"> 
              <li
                 key={index}
                 role="option"
                 aria-selected={inputValue.toLowerCase() === option.name.toLowerCase()} // Basic aria-selected
                 onClick={() => handleOptionClick(option)}
-                className={`flex flex-auto px-4 py-3 cursor-pointer text-sm text-\${colors.textPrimary} hover:bg-\${colors.secondary} transition-colors duration-150 dark:text-white dark:hover:bg-neutral-700`}
+                className={`flex flex-auto flex-col px-4 py-3 cursor-pointer text-sm text-\${colors.textPrimary}   `}
               >
-                {option.name}
+                <p className='text-zinc-400 font-thin text-lg'>@{option.name}</p>
+                <p className='text-zinc-400 text-xs'>Fields:</p>
+                <ul>
+                {option.fields.map((field) => (
+                  <li className='text-zinc-200 text-xs ml-4 border border-zinc-400 rounded-md p-1 m-1 w-fit' key={field.id}>{field.label}</li>
+                ))}
+                </ul>
               </li>
-              <button className='flex w-8 text-xs my-4 mr-2 px-2 items-center border-solid border border-neutral-400 rounded-md'>del</button></div>
+              <button className='flex w-8 text-xs h-4 mt-3 mr-2 px-2 items-center border-solid border border-neutral-400 rounded-md'>del</button></div>
             ))}
           </ul>
         )}

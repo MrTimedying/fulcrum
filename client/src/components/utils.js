@@ -10,11 +10,16 @@ function debounce(func, wait) {
       clearTimeout(timeout);
       timeout = setTimeout(later, wait);
     };
-  }
+}
 
-export {debounce};
+function clearDatesFromNodes(nodes) {
+  return nodes.map(node => ({
+    ...node,
+    data: { ...(node.data || {}), date: undefined },
+  }));
+}
 
-export function remapNodesAndEdgesWithNewIds(nodes, edges) {
+function remapNodesAndEdgesWithNewIds(nodes, edges) {
   // Create a map of old IDs to new IDs
   const idMap = {};
   
@@ -58,16 +63,8 @@ export function remapNodesAndEdgesWithNewIds(nodes, edges) {
   return { newNodes, newEdges };
 }
 
-// Clear the 'date' property from node.data
-export function clearDatesFromNodes(nodes) {
-  return nodes.map(node => ({
-    ...node,
-    data: { ...(node.data || {}), date: undefined },
-  }));
-}
-
 // Offset positions of nodes and edges by (dx, dy)
-export function offsetNodesEdgesPosition(nodes, edges, dx = 100, dy = 100) {
+function offsetNodesEdgesPosition(nodes, edges, dx = 100, dy = 100) {
   const offsetedNodes = nodes.map(node => ({
     ...node,
     position: {
@@ -84,3 +81,11 @@ export function offsetNodesEdgesPosition(nodes, edges, dx = 100, dy = 100) {
   }));
   return { offsetedNodes, offsetedEdges };
 }
+
+// Export all functions as named exports
+export { 
+  debounce, 
+  clearDatesFromNodes, 
+  remapNodesAndEdgesWithNewIds, 
+  offsetNodesEdgesPosition 
+};

@@ -28,7 +28,7 @@ const WindowControls = () => {
 
 
   return (
-    <div id="custom-frame" className="bg-zinc-900 flex flex-row justify-between text-slate-300 items-end pr-2" style={{height:"18px"}}>
+    <div id="custom-frame" className="bg-zinc-900 border-b border-zinc-700 flex flex-row justify-between text-slate-300 items-end pr-2" style={{height:"18px"}}>
       <div id="title" className='font-mono font-semibold pl-2 text-xs'>Fulcrum</div>
       <div id="buttons">
       <button className='ml-2' onClick={() => minimizeWindow()}>-</button>

@@ -1,0 +1,52 @@
+/* Custom styles for the SplitPane component */
+
+.split-pane-row {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  overflow: hidden;
+}
+
+.sidebar-pane {
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+}
+
+.mainbody-pane {
+  height: 100%;
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+}
+
+/* Override default sash/resizer styles */
+/* Target the actual sash element from split-pane-react */
+.sash-vertical {
+  width: 4px !important;
+  background-color: #444 !important;
+  cursor: col-resize !important;
+  z-index: 10 !important;
+  
+}
+
+.sash-vertical:hover {
+  background-color: #666 !important;
+}
+
+.split-sash-content.split-sash-content-vscode.split-sash-content-active {
+    background-color: #2f3835 !important;
+}
+
+/* Style for when the sash is being dragged */
+.sash-vertical.dragging,
+body.resizing .sash-vertical {
+  background-color: #202926 !important; /* Bright blue highlight color */
+  width: 6px !important; /* Make it slightly wider when active */
+}
+
+/* Ensure content inside panes fills the available space */
+.split-pane-row > div {
+  height: 100%;
+  min-height: 100%;
+} 

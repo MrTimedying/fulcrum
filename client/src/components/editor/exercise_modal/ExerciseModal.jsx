@@ -641,7 +641,7 @@ function ExerciseModal({ isOpen, onClose }) {
                 <button
                   type="button"
                   onClick={addContainer}
-                  className="w-full px-4 py-2 border border-dashed border-blue-400 dark:border-blue-600 rounded-md bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2"
+                  className="w-full px-4 py-2 border border-dashed rounded-md border-neutral-900 text-neutral-400 bg-neutral-800 hover:bg-neutral-700 hover:text-neutral-200 text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2"
                 >
                   <span className="text-lg">+</span> Add New Exercise
                 </button>
@@ -653,14 +653,14 @@ function ExerciseModal({ isOpen, onClose }) {
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-600 transition-all duration-200"
+                className="px-2 text-xs border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-gray-600 transition-all duration-200"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting || !nodeSelected}
-                className="px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center gap-2"
+                className="px-2 text-xs bg-zinc-800 hover:bg-zinc-700 text-white rounded-md  disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center"
               >
                 {isSubmitting ? (
                   <>

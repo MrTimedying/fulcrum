@@ -51,8 +51,8 @@ function Sidebar() {
 
   return (
     <div
-      className="w-1/5 bg-neutral-800 py-4 h-full min-w-80"
-      style={{ borderRight: "solid 1px rgb(53 51 51)" }}
+      className="h-full w-full bg-zinc-900 py-4 overflow-auto"
+      // style={{ borderRight: "solid 1px rgb(53 51 51)" }}
     >
       <div className="flex flex-row flex-wrap items-center pb-2">
         <input
@@ -60,7 +60,7 @@ function Sidebar() {
           placeholder="Search..."
           value={query}
           onChange={handleListParsing}
-          className="rounded-full bg-zinc-900 text-gray-200"
+          className="rounded-full bg-zinc-900 text-gray-200 focus:outline focus:outline-1 focus:outline-zinc-700"
           style={{ minWidth: "150px", paddingLeft: "15px", margin: "5px" }}
         />
         <MyDropdown
@@ -71,14 +71,13 @@ function Sidebar() {
       </div>
       <div className="flex flex-col h-5/6">
         <h2
-          className="text-slate-300 bg-zinc-900 pl-2 font-bold font-sans text-base py-2"
+          className="text-neutral-600 bg-zinc-900 pl-2 font-sans text-base font-thin py-2"
           style={{ borderBottom: "solid 1px #1c1c1c" }}
         >
-          Patients List
+          @ Patients List
         </h2>
         <ul
-          className="bg-zinc-900 py-3 rounded-lg mt-2 mx-2 h-full"
-          style={{ borderBottom: "solid 2px rgb(53 51 51)" }}
+          className="bg-zinc-900 py-3 rounded-lg mt-2 h-full overflow-y-auto"
         >
           {(query ? filteredClientList : Object.entries(clientList)).map(
             ([key, value]) => (
@@ -86,7 +85,7 @@ function Sidebar() {
                 key={key}
                 className={`${
                   patientId === key
-                    ? "text-stone-200 px-2 h-5 text-xs bg-zinc-600 hover:bg-slate-500 "
+                    ? "text-stone-200 px-2 h-5 text-xs bg-zinc-700 bg-opacity-50 transition-all duration-1000 hover:bg-slate-600 "
                     : "text-stone-200 px-2 h-5 text-xs hover:bg-slate-500"
                 }`}
                 onClick={() => handleSelection(key)}
