@@ -679,8 +679,7 @@ const useFlowStore = create(
           };
         }),
 
-      pasteNodesEdges: (position) => {
-
+      pasteNodesEdges: (position, reactFlowInstance = null) => {
         get().recordState();
 
         set((state) => {
@@ -704,11 +703,26 @@ const useFlowStore = create(
             return state;
           }
           
-          // Ensure position has valid values
-          const pastePosition = {
-            x: position?.x || 400,
-            y: position?.y || 400
-          };
+          // Determine paste position
+          let pastePosition;
+          
+          if (position) {
+            // Use provided position if available
+            pastePosition = position;
+          } else if (reactFlowInstance) {
+            // Use center of current viewport if ReactFlow instance is provided
+            const { x, y, zoom } = reactFlowInstance.getViewport();
+            const { width, height } = reactFlowInstance.getContainer().getBoundingClientRect();
+            
+            // Calculate center of viewport in flow coordinates
+            pastePosition = {
+              x: (width / 2 - x) / zoom,
+              y: (height / 2 - y) / zoom
+            };
+          } else {
+            // Fallback to default position
+            pastePosition = { x: 400, y: 400 };
+          }
           
           // Offset position
           const { offsetedNodes, offsetedEdges } = offsetNodesEdgesPosition(
@@ -727,7 +741,6 @@ const useFlowStore = create(
             node.selected = false; // Clear selection state
             return true;
           });
-
           
           const validEdges = offsetedEdges.filter(edge => {
             if (!edge.id || !edge.source || !edge.target) {
@@ -737,9 +750,6 @@ const useFlowStore = create(
             edge.selected = false; // Clear selection state
             return true;
           });
-          
-          // Record state before paste for undo support
-          
           
           return {
             ...state,

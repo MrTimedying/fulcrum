@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import Modal from "react-modal";
 import DatePicker, { Calendar } from "react-multi-date-picker";
 import { Rnd } from "react-rnd";
-import { Close, CalendarMonth, Save } from "@mui/icons-material";
+import { Close, Save } from "@mui/icons-material";
 import "./calendar.css";
 import useFlowStore from "../state/flowState";
 import useTransientStore from "../state/transientState";
@@ -22,8 +22,8 @@ const DatepickerModal = ({ isOpen, onClose }) => {
   const defaultModalConfig = {
     width: 400,
     height: 420,
-    x: typeof window !== "undefined" ? window.innerWidth / 2 - 200 : 100,
-    y: typeof window !== "undefined" ? window.innerHeight / 2 - 210 : 100,
+    x: typeof window !== "undefined" ? window.innerWidth / 2 - 400 : 100,
+    y: typeof window !== "undefined" ? window.innerHeight / 2 - 410 : 100,
   };
 
   // Unavailable dates logic
@@ -113,8 +113,8 @@ const DatepickerModal = ({ isOpen, onClose }) => {
     >
       <Rnd
         default={defaultModalConfig}
-        minWidth={520}
-        minHeight={580}
+        minWidth={820}
+        minHeight={880}
         enableResizing={{
           top:true, right:true, bottom:true, left:true, topRight:true, bottomRight:true, bottomLeft:true, topLeft:true
         }}
@@ -126,8 +126,8 @@ const DatepickerModal = ({ isOpen, onClose }) => {
           {/* Modal Title */}
           <div className="flex justify-between items-center p-3 bg-zinc-900 date-modal-drag cursor-move rounded-t-lg">
             <div className="flex items-center gap-2">
-              <CalendarMonth fontSize="medium" />
-              <span className="font-semibold text-lg" id="node-datepicker-title">Assign Date to Node</span>
+              
+              <span className="font-light text-lg" id="node-datepicker-title">@ Assign Date to Node</span>
             </div>
             <button
               onClick={onClose}
@@ -182,7 +182,7 @@ const DatepickerModal = ({ isOpen, onClose }) => {
             <button
               onClick={handleSaveDate}
               className={
-                "w-32 flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-indigo-600 hover:bg-indigo-700 font-medium transition " +
+                "w-32 flex items-center justify-center gap-2 px-1 rounded-md bg-zinc-800 hover:bg-zinc-700 text-xs transition " +
                 (saving ? "opacity-70 cursor-wait" : "")
               }
               disabled={saving || !selectedDate || unavailableDates.includes(selectedDate) || !nodeSelected}

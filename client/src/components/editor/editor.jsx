@@ -419,7 +419,7 @@ function Editor({ isInspectorOpen, setIsInspectorOpen }) {
   useKeyboardShortcuts({
     cutNodesEdges,
     copyNodesEdges,
-    pasteNodesEdges,
+    pasteNodesEdges: (position) => pasteNodesEdges(position, reactFlowInstance),
     deleteSelectedNodesEdges,
     undoNodesEdges,
     redoNodesEdges,
