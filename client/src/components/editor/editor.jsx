@@ -27,6 +27,7 @@ import SelectionMenu from "../selectionMenu";
 import TestModal from "./TestModal";
 import useKeyboardShortcuts from "../util/KeyboardShortcuts";
 import ExerciseModal from "./exercise_modal/ExerciseModal";
+import FlowControls from "../controls/flowControls";
 
 const dataTemplates = {
   intervention: () => ({
@@ -480,7 +481,9 @@ function Editor({ isInspectorOpen, setIsInspectorOpen }) {
             </button>
           </div>
           <Background variant="dots" />
-          <Controls />
+          <div className="absolute bottom-4 left-4 z-10">
+            <FlowControls />
+          </div>
         </ReactFlow>
         {/* Node Context Menu */}
         <NodeMenu

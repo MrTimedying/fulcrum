@@ -52,7 +52,7 @@ function Sidebar() {
   return (
     <div
       className="h-full w-full bg-zinc-900 py-4 overflow-auto"
-      // style={{ borderRight: "solid 1px rgb(53 51 51)" }}
+      style={{ borderRight: "solid 1px rgb(53 51 51)" }}
     >
       <div className="flex flex-row flex-wrap items-center pb-2">
         <input

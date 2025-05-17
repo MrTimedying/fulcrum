@@ -185,20 +185,20 @@ function MainBody() {
         as="div" 
         className="flex flex-col h-full w-full"
         defaultIndex={initialIndex}>
-        <div className="grid grid-cols-11 h-14 w-full mb-2">
-          <div className="bg-zinc-900 rounded-full h-8 flex flex-row items-center place-self-center ml-36 col-span-4">
-            <Tab.List className="flex mx-auto h-auto text-xs">
+        <div className="flex flex-row w-full bg-zinc-900">
+          <div className="h-8 flex flex-row items-center place-self-center">
+            <Tab.List className="flex mx-auto h-auto text-xl font-extralight">
               <Tab as={Fragment}>
                 {({ selected }) => (
                   <button
                     onClick={() => handleActiveTab("Profile")}
-                    className={`my-2 ${
+                    className={`my-2  ${
                       selected
-                        ? "mx-2 rounded-none text-gray-300 hover:text-white p-1 cursor-pointer focus:outline-none focus:text-white font-medium transition duration-300 border-b-2 border-indigo-500"
-                        : "mx-2 text-gray-300 hover:text-white p-1 cursor-pointer focus:outline-none focus:text-white font-medium transition duration-300 border-b-2 border-transparent"
+                        ? " rounded-none bg-zinc-800 text-gray-300 hover:text-white p-1 cursor-pointer focus:outline-none focus:text-white"
+                        : " text-gray-300 text-opacity-30 hover:text-white p-1 cursor-pointer focus:outline-none focus:text-white transition duration-300 "
                     }`}
                   >
-                    <AccountBox /> Profile
+                    # Profile
                   </button>
                 )}
               </Tab>
@@ -206,19 +206,19 @@ function MainBody() {
                 {({ selected }) => (
                   <button
                     onClick={() => handleActiveTab("Editor")}
-                    className={`my-2 ${
+                    className={`my-2  ${
                       selected
-                        ? "mx-2 rounded-none text-gray-300 hover:text-white p-1 cursor-pointer focus:outline-none focus:text-white font-medium transition duration-300 border-b-2 border-indigo-500"
-                        : "mx-2 text-gray-300 hover:text-white px-1 cursor-pointer focus:outline-none focus:text-white font-medium transition duration-300 border-b-2 border-transparent"
+                        ? " rounded-none bg-zinc-800 text-gray-300 hover:text-white p-1 cursor-pointer focus:outline-none focus:text-white "
+                        : " text-gray-300 text-opacity-30 hover:text-white px-1 cursor-pointer focus:outline-none focus:text-white transition duration-300 "
                     }`}
                   >
-                    <DonutLarge /> Editor
+                    # Editor
                   </button>
                 )}
               </Tab>
             </Tab.List>
           </div>
-          <UtilityMenu />
+          {/* <UtilityMenu /> */}
         </div>
 
         <Tab.Panels className="h-full overflow-y-auto">
