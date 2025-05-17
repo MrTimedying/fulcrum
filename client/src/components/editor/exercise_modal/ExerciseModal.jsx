@@ -30,7 +30,7 @@ function ExerciseModal({ isOpen, onClose }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
 
-  const { nodes, updateNodeExerciseData, exercises, saveExercise } = useFlowStore();
+  const { nodes, updateNodeExerciseData, exercises, saveExercise, deleteExercise } = useFlowStore();
   const {setToaster} = useTransientStore();
   const nodeSelected = useMemo(
     () => nodes.find((node) => node.selected),
@@ -544,6 +544,7 @@ function ExerciseModal({ isOpen, onClose }) {
             label="Select exercise"
             options={exercises}
             onSelect={handleSelection}
+            onDelete={deleteExercise}
           />
 
 

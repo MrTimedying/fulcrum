@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { v4 as uuidv4 } from "uuid";
 
-const CustomAutocompleteSelect = ({ options, onSelect }) => {
+const CustomAutocompleteSelect = ({ options, onSelect, onDelete }) => {
   const [inputValue, setInputValue] = useState('');
   const [filteredOptions, setFilteredOptions] = useState(options);
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
@@ -68,6 +68,12 @@ const CustomAutocompleteSelect = ({ options, onSelect }) => {
     setIsDropdownVisible(true);
   };
 
+  const handleDeleteOption = (option) => {
+    if (onDelete) {
+      onDelete(option.name);
+    }
+  }
+
   // Basic styling using Tailwind CSS classes
   return (
     <div className={`flex items-start w-1/3 flex-1 justify-start bg-\${colors.background}`}>
@@ -110,7 +116,9 @@ const CustomAutocompleteSelect = ({ options, onSelect }) => {
                 ))}
                 </ul>
               </li>
-              <button className='flex w-8 text-xs h-4 mt-3 mr-2 px-2 items-center border-solid border border-neutral-400 rounded-md'>del</button></div>
+              <button className='flex w-8 text-xs h-4 mt-3 mr-2 px-2 items-center border-solid border border-neutral-400 rounded-md'
+              onClick={() => handleDeleteOption(option)}
+              >del</button></div>
             ))}
           </ul>
         )}
