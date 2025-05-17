@@ -650,7 +650,7 @@ const useFlowStore = create(
 
       cutNodesEdges: () =>
         set((state) => {
-          const nodesToCut = state.nodes.filter((n) => n.selected);
+          const nodesToCut = state.nodes.filter((n) => (n.selected && n.type !== "intervention"));
           const edgesToCut = state.edges.filter((e) => e.selected);
           const remainingNodes = state.nodes.filter((n) => !n.selected);
           const remainingEdges = state.edges.filter((e) => !e.selected);
@@ -668,7 +668,7 @@ const useFlowStore = create(
 
       copyNodesEdges: () =>
         set((state) => {
-          const nodesToCopy = state.nodes.filter((n) => n.selected);
+          const nodesToCopy = state.nodes.filter((n) => (n.selected && n.type !== "intervention"));
           const edgesToCopy = state.edges.filter((e) => e.selected);
           return {
             ...state,
@@ -679,7 +679,10 @@ const useFlowStore = create(
           };
         }),
 
-      pasteNodesEdges: (position) =>
+      pasteNodesEdges: (position) => {
+
+        get().recordState();
+
         set((state) => {
           const { clipboard } = state;
           
@@ -716,14 +719,15 @@ const useFlowStore = create(
           );
           
           // Final validation pass to ensure no null IDs
-          const validNodes = offsetedNodes.filter(node => {
+          let validNodes = offsetedNodes.filter(node => {
             if (!node.id) {
-              console.error("Found node with null id after offset", node);
+              console.error("Found node with null id after offset, or intervention node selected", node);
               return false;
             }
             node.selected = false; // Clear selection state
             return true;
           });
+
           
           const validEdges = offsetedEdges.filter(edge => {
             if (!edge.id || !edge.source || !edge.target) {
@@ -735,14 +739,16 @@ const useFlowStore = create(
           });
           
           // Record state before paste for undo support
-          get().recordState();
+          
           
           return {
             ...state,
             nodes: [...state.nodes, ...validNodes],
             edges: [...state.edges, ...validEdges],
           };
-        }),
+        });
+      },
+        
 
       deleteSelectedNodesEdges: () => {
         let nodesDeleted = false;
@@ -848,16 +854,21 @@ const useFlowStore = create(
           nodes: _.cloneDeep(safeNodes),
           edges: _.cloneDeep(safeEdges),
         };
+        console.log("Past state:", pastState);
 
+        console.log("Contextual memory:", contextualMemory);
         // Start with the current history array
-        let updatedContextualMemory = [...(contextualMemory || [])];
+        let updatedContextualMemory = _.cloneDeep(contextualMemory);
+        
 
         // Append the current state as a past state to contextualMemory
         updatedContextualMemory.push(pastState);
+        console.log("Updated contextual memory:", updatedContextualMemory);
 
         // Limit contextualMemory size by removing oldest state if necessary
         while (updatedContextualMemory.length > MAX_HISTORY_SIZE) {
           updatedContextualMemory.shift();
+          console.log("I should not fire!")
         }
 
         // Log for debugging (remove in production)
@@ -870,10 +881,13 @@ const useFlowStore = create(
         );
 
         // Update state: add past state to contextualMemory and clear mirroredContextualMemory
-        set({
+        set((state) => ({
+          ...state,
           contextualMemory: updatedContextualMemory,
           mirroredContextualMemory: [], // Clear redo history on new action
-        });
+        }));
+
+        console.log("Contextual memory:", get().contextualMemory);
       },
 
       // Undo Logic: Reverts to the last past state in contextualMemory, or to initial state if none remain
@@ -1270,6 +1284,7 @@ const useFlowStore = create(
         editorStates: state.editorStates,
         profileStates: state.profileStates,
         templates: state.templates,
+
       }),
     }
   )

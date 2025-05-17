@@ -29,7 +29,7 @@ const splitPaneContainerStyle = {
 function Home() {
   const location = useLocation();
   const isComposer = location.pathname === '/composer';
-  const [sizes, setSizes] = useState([250, 'auto']);
+  const [sizes, setSizes] = useState(['20%', 'auto']);
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef(null);
 

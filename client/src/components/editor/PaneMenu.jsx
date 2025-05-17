@@ -23,24 +23,24 @@ const PaneMenu = ({ isOpen, position, onClose, actions, clipboard }) => {
         Pane Menu
       </p>
       <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
-        <li className="mb-0 text-sm text-slate-300 hover:bg-zinc-900 rounded-lg p-1">
+        <li className="mb-0 text-sm text-slate-300 hover:bg-zinc-700 rounded-lg p-1">
           <button onClick={handleNodeCreation("intervention")}>
             New intervention
           </button>
         </li>
-        <li className="mb-0 text-sm text-slate-300 hover:bg-zinc-900 rounded-lg p-1">
+        <li className="mb-0 text-sm text-slate-300 hover:bg-zinc-700 rounded-lg p-1">
           <button onClick={handleNodeCreation("phase")}>New phase</button>
         </li>
-        <li className="mb-0 text-sm text-slate-300 hover:bg-zinc-900 rounded-lg p-1">
+        <li className="mb-0 text-sm text-slate-300 hover:bg-zinc-700 rounded-lg p-1">
           <button onClick={handleNodeCreation("micro")}>New microcycle</button>
         </li>
-        <li className="mb-0 text-sm text-slate-300 hover:bg-zinc-900 rounded-lg p-1">
+        <li className="mb-0 text-sm text-slate-300 hover:bg-zinc-700 rounded-lg p-1">
           <button onClick={handleNodeCreation("session")}>New session</button>
         </li>
         {(clipboard.nodes.length > 0 || clipboard.edges.length > 0) && (
           <>
           <hr className="my-1 border-solid border-zinc-700"></hr>
-          <li className="mb-0 text-sm text-slate-300 hover:bg-zinc-900 rounded-sm p-1">
+          <li className="mb-0 text-sm text-slate-300 hover:bg-zinc-700 rounded-sm p-1">
             <button
               onClick={() => {
                 actions.pasteNodesEdges(position);

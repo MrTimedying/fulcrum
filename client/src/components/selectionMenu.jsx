@@ -21,7 +21,7 @@ const SelectionMenu = ({ isOpen, position, onClose, actions }) => {
       {/* Actions */}
       <ul style={{ marginTop: "10px" }}>
         {/* Cut */}
-        <li className="flex flex-row items-center gap-2 mb-0 text-sm text-slate-300 hover:bg-zinc-900 rounded-sm p-1">
+        <li className="flex flex-row items-center gap-2 mb-0 text-sm text-slate-300 hover:bg-zinc-700 rounded-sm p-1">
           <IoMdCut /><button
             onClick={() => {
               actions.cutNodesEdges();
@@ -33,7 +33,7 @@ const SelectionMenu = ({ isOpen, position, onClose, actions }) => {
         </li>
 
         {/* Copy */}
-        <li className="flex flex-row items-center gap-2 mb-0 text-sm text-slate-300 hover:bg-zinc-900 rounded-sm p-1">
+        <li className="flex flex-row items-center gap-2 mb-0 text-sm text-slate-300 hover:bg-zinc-700 rounded-sm p-1">
           <FaRegCopy/><button
             onClick={() => {
               actions.copyNodesEdges();
@@ -45,7 +45,7 @@ const SelectionMenu = ({ isOpen, position, onClose, actions }) => {
         </li>
 
         {/* Delete */}
-        <li className="flex flex-row items-center gap-2 mb-0 text-sm text-slate-300 hover:bg-zinc-900 rounded-sm p-1">
+        <li className="flex flex-row items-center gap-2 mb-0 text-sm text-slate-300 hover:bg-zinc-700 rounded-sm p-1">
           <MdDeleteForever/><button
             onClick={() => {
               actions.deleteSelectedNodesEdges();

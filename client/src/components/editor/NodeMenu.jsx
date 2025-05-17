@@ -28,7 +28,7 @@ const NodeMenu = ({
       <ul style={{ marginTop: "5px" }}>
         { !inspectorConditional && (<li
           style={{ marginBottom: "8px" }}
-          className="mb-0 text-sm  text-slate-300 hover:bg-zinc-900 rounded-sm p-1"
+          className="mb-0 text-sm  text-slate-300 hover:bg-zinc-700 rounded-sm p-1"
           onClick={() => {
             setIsInspectorOpen(true);
             onClose();
@@ -41,7 +41,7 @@ const NodeMenu = ({
         {targetNode.type === "session" && (
           <li
             style={{ marginBottom: "8px" }}
-            className="mb-0 text-sm text-slate-300 hover:bg-zinc-900 rounded-sm p-1"
+            className="mb-0 text-sm text-slate-300 hover:bg-zinc-700 rounded-sm p-1"
             onClick={() => {
               actions?.setIsExerciseModalOpen(true);
               onClose();
@@ -55,7 +55,7 @@ const NodeMenu = ({
         {targetNode.type === "session" && (
           <li
             style={{ marginBottom: "8px" }}
-            className="mb-0 text-sm text-slate-300 hover:bg-zinc-900 rounded-sm p-1"
+            className="mb-0 text-sm text-slate-300 hover:bg-zinc-700 rounded-sm p-1"
             onClick={() => {
               actions?.setIsTestModalOpen(true);
               onClose();
@@ -67,9 +67,9 @@ const NodeMenu = ({
           </li>
         )}
         {actionsConditional && (<hr className="border-zinc-500 w-full py-2"></hr>)}
-        <li
+        {targetNode.type !== "intervention" && (<li
           style={{ marginBottom: "8px" }}
-          className="flex justify-between mb-0 text-sm text-slate-300 hover:bg-zinc-900 rounded-sm p-1"
+          className="flex justify-between mb-0 text-sm text-slate-300 hover:bg-zinc-700 rounded-sm p-1"
           onClick={() => {
             actions?.cutNodesEdges(targetNode);
             onClose();
@@ -81,10 +81,10 @@ const NodeMenu = ({
           <span className="px-2 text-gray-500">
             CTRL + X
           </span>
-        </li>
-        <li
+        </li>)}
+        {targetNode.type !== "intervention" && (<li
           style={{ marginBottom: "8px" }}
-          className="flex justify-between mb-0 text-sm text-slate-300 hover:bg-zinc-900 rounded-sm p-1"
+          className="flex justify-between mb-0 text-sm text-slate-300 hover:bg-zinc-700 rounded-sm p-1"
           onClick={() => {
             actions?.copyNodesEdges(targetNode);
             onClose();
@@ -96,10 +96,10 @@ const NodeMenu = ({
           <span className="px-2 text-gray-500">
             CTRL + C
           </span>
-        </li>
+        </li>)}
         <li
           style={{ marginBottom: "8px" }}
-          className="flex justify-between mb-0 text-sm text-slate-300 hover:bg-zinc-900 rounded-sm p-1"
+          className="flex justify-between mb-0 text-sm text-slate-300 hover:bg-zinc-700 rounded-sm p-1"
           onClick={() => {
             actions?.deleteSelectedNodesEdges(targetNode);
             onClose();
