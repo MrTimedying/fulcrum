@@ -32,6 +32,7 @@ import { getProfileComposerTemplates } from "../variables";
 import Inspector from "../Inspector";
 import SelectionMenu from "../selectionMenu";
 import useKeyboardShortcuts from "../util/KeyboardShortcuts";
+import FlowControls from "../controls/flowControls";
 
 
 
@@ -512,7 +513,9 @@ function Profile({ isInspectorOpen, setIsInspectorOpen }) {
           minZoom={0.3}
         >
           <Background variant="dots" />
-          <Controls />
+          <div className="absolute bottom-4 left-4 z-10">
+            <FlowControls />
+          </div>
         </ReactFlow>
 
         {/* Node Context Menu */}
