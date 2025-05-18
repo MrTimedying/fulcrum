@@ -6,9 +6,8 @@ import Editor from "./editor/editor";
 import Profile from "./icf-dashboard/profile";
 import { ReactFlowProvider } from "@xyflow/react";
 import useFlowStore from "../state/flowState";
-import { AccountBox, DonutLarge, Close } from "@mui/icons-material";
-import { SlNote } from "react-icons/sl";
-import { IoMenu } from "react-icons/io5";
+import { AiOutlineSave } from "react-icons/ai";
+import { GiNotebook } from "react-icons/gi";
 import { GoProjectTemplate } from "react-icons/go";
 import { IoCalendarOutline } from "react-icons/io5";
 import { Composer } from "./editor/composer";
@@ -16,6 +15,8 @@ import useTransientStore from "../state/transientState";
 import InterventionModal from "./interventionModal";
 import TemplateModal from "./templateModal";
 import DatepickerModal from "./dateModal";
+import FlowControls from "./controls/flowControls";
+import PopPrimitive from "./controls/popPrimitive";
 
 // Bind modal to your appElement (http://reactcommunity.org/react-modal/accessibility/)
 Modal.setAppElement("#root");
@@ -29,6 +30,7 @@ function MainBody() {
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
   const [isDatepickerModalOpen, setIsDatepickerModalOpen] = useState(false);
   const [isInspectorOpen, setIsInspectorOpen] = useState(false);
+  const [isFeaturesMenuOpen, setIsFeaturesMenuOpen] = useState(false);
 
 
   function handleModalOpening(id) {
@@ -140,34 +142,36 @@ function MainBody() {
 
   function UtilityMenu() {
     return (
-      <div className="bg-zinc-900 rounded-full h-8 flex flex-row items-center place-self-center ml-36 col-span-6">
+      <div className="bg-neutral-900 rounded-full flex flex-col ">
+        {/* <p className="font-light text-xl text-zinc-300 p-1">@ Utility Menu</p> */}
+        
         <button
           id="composer"
-          className="bg-zinc-900 hover:bg-black/30 text-slate-300 flex justify-center items-center font-sans text-xs font-medium m-2 px-1 rounded-md cursor-pointer  transition-colors duration-200"
+          className=" hover:bg-zinc-700 text-slate-300 flex justify-start gap-2 font-sans text-xs m-2 px-1 rounded-md cursor-pointer  transition-colors duration-200"
           onClick={(e) => handleModalOpening(e.currentTarget.id)}
         >
-          <SlNote size={20} /> Composer
+          <GiNotebook className="text-lg font-extralight" /> Data
         </button>
         <button
           id="interventionMenu"
-          className="bg-zinc-900 hover:bg-black/30 text-slate-300 flex justify-center items-center font-sans text-xs font-medium m-2 px-1 rounded-md cursor-pointer  transition-colors duration-200"
+          className=" hover:bg-zinc-700 text-slate-300 flex justify-start gap-2 font-sans text-xs m-2 px-1 rounded-md cursor-pointer  transition-colors duration-200"
           onClick={(e) => handleModalOpening(e.currentTarget.id)}
         >
-          <IoMenu size={20} /> Intervention Menu
+          <AiOutlineSave className="text-lg font-extralight"/> Save/Load
         </button>
         <button
           id="templateMenu"
-          className="bg-zinc-900 hover:bg-black/30 text-slate-300 flex justify-center items-center font-sans text-xs font-medium m-2 px-1 rounded-md cursor-pointer  transition-colors duration-200"
+          className=" hover:bg-zinc-700 text-slate-300 flex justify-start gap-2 font-sans text-xs m-2 px-1 rounded-md cursor-pointer  transition-colors duration-200"
           onClick={(e) => handleModalOpening(e.currentTarget.id)}
         >
-          <GoProjectTemplate size={20} /> Template
+          <GoProjectTemplate className="text-lg font-extralight" /> Template Nodes
         </button>
         <button
           id="calendarMenu"
-          className="bg-zinc-900 hover:bg-black/30 text-slate-300 flex justify-center items-center font-sans text-xs font-medium m-2 px-1 rounded-md cursor-pointer  transition-colors duration-200"
+          className=" hover:bg-zinc-700 text-slate-300 flex justify-start gap-2 font-sans text-xs m-2 px-1 rounded-md cursor-pointer  transition-colors duration-200"
           onClick={(e) => handleModalOpening(e.currentTarget.id)}
         >
-          <IoCalendarOutline size={20} /> Calendar
+          <IoCalendarOutline className="text-lg font-extralight" /> Schedule Session
         </button>
       </div>
     );
@@ -225,11 +229,20 @@ function MainBody() {
           <Tab.Panel key="icfProfile" className="h-full">
             <ReactFlowProvider>
               <Profile isInspectorOpen={isInspectorOpen} setIsInspectorOpen={setIsInspectorOpen} />
+              <div className="absolute bottom-4 left-4 z-10">
+            <PopPrimitive isOpen={isFeaturesMenuOpen} onClose={() => setIsFeaturesMenuOpen(false)}><div>Im children!</div></PopPrimitive>
+            <FlowControls setIsFeaturesMenuOpen={setIsFeaturesMenuOpen} />
+            
+          </div>
             </ReactFlowProvider>
           </Tab.Panel>
           <Tab.Panel key="interventionEditor" className="h-full">
             <ReactFlowProvider>
               <Editor isInspectorOpen={isInspectorOpen} setIsInspectorOpen={setIsInspectorOpen} />
+              <div className="absolute bottom-4 left-4 z-10">
+              <PopPrimitive isOpen={isFeaturesMenuOpen} onClose={() => setIsFeaturesMenuOpen(false)}><UtilityMenu /></PopPrimitive>
+              <FlowControls setIsFeaturesMenuOpen={setIsFeaturesMenuOpen} />
+            </div>
             </ReactFlowProvider>
           </Tab.Panel>
         </Tab.Panels>

@@ -513,9 +513,6 @@ function Profile({ isInspectorOpen, setIsInspectorOpen }) {
           minZoom={0.3}
         >
           <Background variant="dots" />
-          <div className="absolute bottom-4 left-4 z-10">
-            <FlowControls />
-          </div>
         </ReactFlow>
 
         {/* Node Context Menu */}

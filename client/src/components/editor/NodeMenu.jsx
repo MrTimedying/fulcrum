@@ -25,58 +25,58 @@ const NodeMenu = ({
     <ContextMenu isOpen={isOpen} position={position} onClose={onClose}>
 
 
-      <ul style={{ marginTop: "5px" }}>
+      <ul className="text-xs" style={{ marginTop: "5px" }}>
         { !inspectorConditional && (<li
           style={{ marginBottom: "8px" }}
-          className="mb-0 text-sm  text-slate-300 hover:bg-zinc-700 rounded-sm p-1"
+          className="mb-0 text-xs  text-slate-300 hover:bg-zinc-700 rounded-sm p-1"
           onClick={() => {
             setIsInspectorOpen(true);
             onClose();
           }}
         > 
           <button className="flex flex-row gap-2 px-2 cursor-default"> 
-           <PiListMagnifyingGlass size={20} /> Inspect Node
+           <PiListMagnifyingGlass className="text-lg"  /> Inspect Node
           </button>
         </li>)}
         {targetNode.type === "session" && (
           <li
             style={{ marginBottom: "8px" }}
-            className="mb-0 text-sm text-slate-300 hover:bg-zinc-700 rounded-sm p-1"
+            className="mb-0  text-slate-300 hover:bg-zinc-700 rounded-sm p-1"
             onClick={() => {
               actions?.setIsExerciseModalOpen(true);
               onClose();
             }}
           >
             <a className="flex flex-row gap-2 px-2 cursor-default"> 
-            <CiViewTable size={20} />Exercises/Activities
+            <CiViewTable className="text-lg"  />Exercises/Activities
             </a>
           </li>
         )}
         {targetNode.type === "session" && (
           <li
             style={{ marginBottom: "8px" }}
-            className="mb-0 text-sm text-slate-300 hover:bg-zinc-700 rounded-sm p-1"
+            className="mb-0  text-slate-300 hover:bg-zinc-700 rounded-sm p-1"
             onClick={() => {
               actions?.setIsTestModalOpen(true);
               onClose();
             }}
           >
             <a className="flex flex-row gap-2 px-2 cursor-default"> 
-            <IoCalendarNumberSharp size={20} />Schedule testing
+            <IoCalendarNumberSharp className="text-lg"  />Schedule testing
             </a>
           </li>
         )}
         {actionsConditional && (<hr className="border-zinc-500 w-full py-2"></hr>)}
         {targetNode.type !== "intervention" && (<li
           style={{ marginBottom: "8px" }}
-          className="flex justify-between mb-0 text-sm text-slate-300 hover:bg-zinc-700 rounded-sm p-1"
+          className="flex justify-between mb-0  text-slate-300 hover:bg-zinc-700 rounded-sm p-1"
           onClick={() => {
             actions?.cutNodesEdges(targetNode);
             onClose();
           }}
         >
           <a className="flex flex-row gap-2 px-2 cursor-default"> 
-            <IoIosCut size={20} />Cut
+            <IoIosCut className="text-lg"  />Cut
             </a>
           <span className="px-2 text-gray-500">
             CTRL + X
@@ -84,14 +84,14 @@ const NodeMenu = ({
         </li>)}
         {targetNode.type !== "intervention" && (<li
           style={{ marginBottom: "8px" }}
-          className="flex justify-between mb-0 text-sm text-slate-300 hover:bg-zinc-700 rounded-sm p-1"
+          className="flex justify-between mb-0  text-slate-300 hover:bg-zinc-700 rounded-sm p-1"
           onClick={() => {
             actions?.copyNodesEdges(targetNode);
             onClose();
           }}
         >
           <a className="flex flex-row gap-2 px-2 cursor-default"> 
-            <MdOutlineContentCopy size={20} />Copy
+            <MdOutlineContentCopy className="text-lg"  />Copy
             </a>
           <span className="px-2 text-gray-500">
             CTRL + C
@@ -99,14 +99,14 @@ const NodeMenu = ({
         </li>)}
         <li
           style={{ marginBottom: "8px" }}
-          className="flex justify-between mb-0 text-sm text-slate-300 hover:bg-zinc-700 rounded-sm p-1"
+          className="flex justify-between mb-0  text-slate-300 hover:bg-zinc-700 rounded-sm p-1"
           onClick={() => {
             actions?.deleteSelectedNodesEdges(targetNode);
             onClose();
           }}
         >
           <a className="flex flex-row gap-2 px-2 cursor-default"> 
-            <MdDeleteOutline size={20} />Delete
+            <MdDeleteOutline className="text-lg" />Delete
             </a>
           <span className="px-2 text-gray-500">
             Canc
