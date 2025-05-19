@@ -1,4 +1,4 @@
-import React, { Fragment, useState } from "react";
+import React, { Fragment, useState, useEffect } from "react";
 import Modal from "react-modal";
 import { Rnd } from "react-rnd";
 import { Tab } from "@headlessui/react";
@@ -17,12 +17,13 @@ import TemplateModal from "./templateModal";
 import DatepickerModal from "./dateModal";
 import FlowControls from "./controls/flowControls";
 import PopPrimitive from "./controls/popPrimitive";
+import StyleMenu from "./controls/styleMenu";
 
 // Bind modal to your appElement (http://reactcommunity.org/react-modal/accessibility/)
 Modal.setAppElement("#root");
 
 function MainBody() {
-  const { patientId, activeTab, setActiveTab, nodes } =
+  const { patientId, activeTab, setActiveTab, nodes, setNodes } =
     useFlowStore();
   const { setToaster } = useTransientStore();
   const [isComposerOpen, setIsComposerOpen] = useState(false);
@@ -31,7 +32,19 @@ function MainBody() {
   const [isDatepickerModalOpen, setIsDatepickerModalOpen] = useState(false);
   const [isInspectorOpen, setIsInspectorOpen] = useState(false);
   const [isFeaturesMenuOpen, setIsFeaturesMenuOpen] = useState(false);
+  const [isStyleMenuOpen, setIsStyleMenuOpen] = useState(false);
+  const [activeMenu, setActiveMenu] = useState(null);
 
+  // Update activeMenu when either menu state changes
+  useEffect(() => {
+    if (isFeaturesMenuOpen) {
+      setActiveMenu('features');
+    } else if (isStyleMenuOpen) {
+      setActiveMenu('style');
+    } else {
+      setActiveMenu(null);
+    }
+  }, [isFeaturesMenuOpen, isStyleMenuOpen]);
 
   function handleModalOpening(id) {
     // Check if a node is selected
@@ -142,7 +155,7 @@ function MainBody() {
 
   function UtilityMenu() {
     return (
-      <div className="bg-neutral-900 rounded-full flex flex-col ">
+      <div className="flex flex-col ">
         {/* <p className="font-light text-xl text-zinc-300 p-1">@ Utility Menu</p> */}
         
         <button
@@ -230,19 +243,68 @@ function MainBody() {
             <ReactFlowProvider>
               <Profile isInspectorOpen={isInspectorOpen} setIsInspectorOpen={setIsInspectorOpen} />
               <div className="absolute bottom-4 left-4 z-10">
-            <PopPrimitive isOpen={isFeaturesMenuOpen} onClose={() => setIsFeaturesMenuOpen(false)}><div>Im children!</div></PopPrimitive>
-            <FlowControls setIsFeaturesMenuOpen={setIsFeaturesMenuOpen} />
-            
-          </div>
+                
+                <PopPrimitive 
+                  isOpen={isFeaturesMenuOpen || isStyleMenuOpen} 
+                  onClose={() => {
+                    setIsFeaturesMenuOpen(false);
+                    setIsStyleMenuOpen(false);
+                  }}
+                  menuType="features"
+                  activeMenu={activeMenu}
+                >
+                  <StyleMenu nodes={nodes} setNodes={setNodes} />
+                </PopPrimitive>
+                <PopPrimitive 
+                  isOpen={isFeaturesMenuOpen || isStyleMenuOpen} 
+                  onClose={() => {
+                    setIsFeaturesMenuOpen(false);
+                    setIsStyleMenuOpen(false);
+                  }}
+                  menuType="style"
+                  activeMenu={activeMenu}
+                >
+                  <UtilityMenu />
+                </PopPrimitive>
+                <FlowControls 
+                  setIsFeaturesMenuOpen={setIsFeaturesMenuOpen} 
+                  setIsStyleMenuOpen={setIsStyleMenuOpen} 
+                />
+              </div>
             </ReactFlowProvider>
           </Tab.Panel>
           <Tab.Panel key="interventionEditor" className="h-full">
             <ReactFlowProvider>
               <Editor isInspectorOpen={isInspectorOpen} setIsInspectorOpen={setIsInspectorOpen} />
               <div className="absolute bottom-4 left-4 z-10">
-              <PopPrimitive isOpen={isFeaturesMenuOpen} onClose={() => setIsFeaturesMenuOpen(false)}><UtilityMenu /></PopPrimitive>
-              <FlowControls setIsFeaturesMenuOpen={setIsFeaturesMenuOpen} />
-            </div>
+                
+                <PopPrimitive 
+                  isOpen={isFeaturesMenuOpen || isStyleMenuOpen} 
+                  onClose={() => {
+                    setIsFeaturesMenuOpen(false);
+                    setIsStyleMenuOpen(false);
+                  }}
+                  menuType="features"
+                  activeMenu={activeMenu}
+                >
+                  <StyleMenu nodes={nodes} setNodes={setNodes} />
+                </PopPrimitive>
+                <PopPrimitive 
+                  isOpen={isFeaturesMenuOpen || isStyleMenuOpen} 
+                  onClose={() => {
+                    setIsFeaturesMenuOpen(false);
+                    setIsStyleMenuOpen(false);
+                  }}
+                  menuType="style"
+                  activeMenu={activeMenu}
+                >
+                  <UtilityMenu />
+                </PopPrimitive>
+                <FlowControls 
+                  setIsFeaturesMenuOpen={setIsFeaturesMenuOpen} 
+                  setIsStyleMenuOpen={setIsStyleMenuOpen} 
+                />
+              </div>
             </ReactFlowProvider>
           </Tab.Panel>
         </Tab.Panels>

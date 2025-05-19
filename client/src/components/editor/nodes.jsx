@@ -16,9 +16,7 @@ export const InterventionNode = ({ data, selected, type }) => (
         fontWeight: "initial",
         borderRadius: 5,
         boxShadow: selected ? "0 0 10px #32a852" : "none",
-        backgroundColor: selected
-          ? "rgba(28, 28, 28, 1)"
-          : "rgba(28, 28, 28, 1)",
+        backgroundColor: data.color,
         transition: "all 0.2s ease",
         overflow: "hidden",
       }}
@@ -69,9 +67,7 @@ export const PhaseNode = ({ data, selected, type }) => (
         fontWeight: "initial",
         borderRadius: 5,
         boxShadow: selected ? "0 0 10px #32a852" : "none",
-        backgroundColor: selected
-          ? "rgba(28, 28, 28, 1)"
-          : "rgba(28, 28, 28, 1)",
+        backgroundColor: data.color,
         transition: "all 0.2s ease",
         overflow: "hidden",
       }}
@@ -115,9 +111,7 @@ export const MicroNode = ({ data, selected, type }) => (
         fontWeight: "initial",
         borderRadius: 5,
         boxShadow: selected ? "0 0 10px #32a852" : "none",
-        backgroundColor: selected
-          ? "rgba(28, 28, 28, 1)"
-          : "rgba(28, 28, 28, 1)",
+        backgroundColor: data.color,
         transition: "all 0.2s ease",
         overflow: "hidden",
       }}
@@ -201,7 +195,7 @@ export const SessionNode = ({ id, data, selected, type }) => {
           fontWeight: "initial",
           borderRadius: 5,
           boxShadow: selected ? "0 0 10px #32a852" : "none",
-          backgroundColor: "rgba(28, 28, 28, 1)",
+          backgroundColor: data.color,
           transition: "all 0.2s ease",
           overflow: "hidden",
         }}
