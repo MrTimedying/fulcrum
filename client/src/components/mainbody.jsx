@@ -244,24 +244,26 @@ function MainBody() {
               <Profile isInspectorOpen={isInspectorOpen} setIsInspectorOpen={setIsInspectorOpen} />
               <div className="absolute bottom-4 left-4 z-10">
                 
+                {/* PopPrimitive for StyleMenu */}
                 <PopPrimitive 
-                  isOpen={isFeaturesMenuOpen || isStyleMenuOpen} 
+                  isOpen={isStyleMenuOpen || isFeaturesMenuOpen} // Open if either menu state is true
                   onClose={() => {
-                    setIsFeaturesMenuOpen(false);
+                    setIsFeaturesMenuOpen(false); // Ensure both are closed on generic close
                     setIsStyleMenuOpen(false);
                   }}
-                  menuType="features"
+                  menuType="style"  // Corrected: This PopPrimitive is for the StyleMenu
                   activeMenu={activeMenu}
                 >
                   <StyleMenu nodes={nodes} setNodes={setNodes} />
                 </PopPrimitive>
+                {/* PopPrimitive for FeaturesMenu (UtilityMenu) */}
                 <PopPrimitive 
-                  isOpen={isFeaturesMenuOpen || isStyleMenuOpen} 
+                  isOpen={isFeaturesMenuOpen || isStyleMenuOpen} // Open if either menu state is true
                   onClose={() => {
-                    setIsFeaturesMenuOpen(false);
+                    setIsFeaturesMenuOpen(false); // Ensure both are closed on generic close
                     setIsStyleMenuOpen(false);
                   }}
-                  menuType="style"
+                  menuType="features" // Corrected: This PopPrimitive is for the Features/UtilityMenu
                   activeMenu={activeMenu}
                 >
                   <UtilityMenu />
@@ -278,24 +280,26 @@ function MainBody() {
               <Editor isInspectorOpen={isInspectorOpen} setIsInspectorOpen={setIsInspectorOpen} />
               <div className="absolute bottom-4 left-4 z-10">
                 
+                {/* PopPrimitive for StyleMenu */}
                 <PopPrimitive 
-                  isOpen={isFeaturesMenuOpen || isStyleMenuOpen} 
+                  isOpen={isStyleMenuOpen || isFeaturesMenuOpen} // Open if either menu state is true
                   onClose={() => {
-                    setIsFeaturesMenuOpen(false);
+                    setIsFeaturesMenuOpen(false); // Ensure both are closed on generic close
                     setIsStyleMenuOpen(false);
                   }}
-                  menuType="features"
+                  menuType="style"  // Corrected: This PopPrimitive is for the StyleMenu
                   activeMenu={activeMenu}
                 >
                   <StyleMenu nodes={nodes} setNodes={setNodes} />
                 </PopPrimitive>
+                {/* PopPrimitive for FeaturesMenu (UtilityMenu) */}
                 <PopPrimitive 
-                  isOpen={isFeaturesMenuOpen || isStyleMenuOpen} 
+                  isOpen={isFeaturesMenuOpen || isStyleMenuOpen} // Open if either menu state is true
                   onClose={() => {
-                    setIsFeaturesMenuOpen(false);
+                    setIsFeaturesMenuOpen(false); // Ensure both are closed on generic close
                     setIsStyleMenuOpen(false);
                   }}
-                  menuType="style"
+                  menuType="features" // Corrected: This PopPrimitive is for the Features/UtilityMenu
                   activeMenu={activeMenu}
                 >
                   <UtilityMenu />

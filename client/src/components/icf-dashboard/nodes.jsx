@@ -13,7 +13,7 @@ export const ProfileNode = ({ data, selected, type }) => (
         fontWeight: "initial",
         borderRadius: 5,
         boxShadow: selected ? "0 0 10px #32a852" : "none",
-        backgroundColor: selected ? "rgba(28, 28, 28, 1)" : "rgba(28, 28, 28, 1)",
+        backgroundColor: data.color,
         transition: "all 0.2s ease",
         overflow: "hidden",
       }}
@@ -52,7 +52,7 @@ export const BodyStructureNode = ({ data, selected }) => (
         fontWeight: "initial",
         borderRadius: 5,
         boxShadow: selected ? "0 0 10px #32a852" : "none",
-        backgroundColor: selected ? "rgba(28, 28, 28, 1)" : "rgba(28, 28, 28, 1)",
+        backgroundColor: data.color,
         transition: "all 0.2s ease",
         overflow: "hidden",
       }}
@@ -90,7 +90,7 @@ export const ActivitiesNode = ({ data, selected }) => (
         fontWeight: "initial",
         borderRadius: 5,
         boxShadow: selected ? "0 0 10px #32a852" : "none",
-        backgroundColor: selected ? "rgba(28, 28, 28, 1)" : "rgba(28, 28, 28, 1)",
+        backgroundColor: data.color,
         transition: "all 0.2s ease",
         overflow: "hidden",
       }}
@@ -128,7 +128,7 @@ export const ParticipationNode = ({ data, selected }) => (
         fontWeight: "initial",
         borderRadius: 5,
         boxShadow: selected ? "0 0 10px #32a852" : "none",
-        backgroundColor: selected ? "rgba(28, 28, 28, 1)" : "rgba(28, 28, 28, 1)",
+        backgroundColor: data.color,
         transition: "all 0.2s ease",
         overflow: "hidden",
       }}
@@ -166,7 +166,7 @@ export const RecordElement = ({ data, selected }) => (
         fontWeight: "initial",
         borderRadius: 5,
         boxShadow: selected ? "0 0 10px #32a852" : "none",
-        backgroundColor: selected ? "rgba(28, 28, 28, 1)" : "rgba(28, 28, 28, 1)",
+        backgroundColor: data.color,
         transition: "all 0.2s ease",
         overflow: "hidden",
       }}

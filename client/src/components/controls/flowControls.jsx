@@ -1,24 +1,21 @@
+// Filename: flowControls.jsx
 import React, { useState } from "react";
 import { useReactFlow } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { GoPlus } from "react-icons/go";
 import { FiMinus } from "react-icons/fi";
 import { SlSizeActual } from "react-icons/sl";
-import { CiUnlock, CiLock, CiMenuBurger } from "react-icons/ci";
-import { IoIosColorPalette } from "react-icons/io";
+import { CiUnlock, CiLock, CiMenuBurger } from "react-icons/ci"; // Features Menu Icon
+import { IoIosColorPalette } from "react-icons/io"; // Style Menu Icon
 
-
-export default function FlowControls({setIsFeaturesMenuOpen, setIsStyleMenuOpen}) {
+export default function FlowControls({ setIsFeaturesMenuOpen, setIsStyleMenuOpen }) {
   const reactFlowInstance = useReactFlow();
   const { zoomIn, zoomOut, fitView } = reactFlowInstance;
   const [isLocked, setIsLocked] = useState(false);
-  
 
   const handleToggleLock = () => {
     const newState = !isLocked;
     setIsLocked(newState);
-    
-    // Use the proper method to set node draggable and elements selectable
     reactFlowInstance.setNodes((nodes) =>
       nodes.map((node) => ({
         ...node,
@@ -28,41 +25,49 @@ export default function FlowControls({setIsFeaturesMenuOpen, setIsStyleMenuOpen}
     );
   };
 
-  const toggleStyleMenu = (e) => {
-    // Prevent event from bubbling up to document
+  // Corrected handler for the Style Menu button (IoIosColorPalette)
+  const handleToggleStyleMenu = (e) => {
     e.stopPropagation();
-    // Toggle the menu state
-    setIsFeaturesMenuOpen(prev => !prev);
+    setIsStyleMenuOpen(prevStyleOpen => {
+      const newStyleOpenState = !prevStyleOpen;
+      if (newStyleOpenState) {
+        setIsFeaturesMenuOpen(false); // Close Features Menu if Style Menu is being opened
+      }
+      return newStyleOpenState;
+    });
   };
 
-  const toggleFeaturesMenu = (e) => {
-    // Prevent event from bubbling up to document
+  // Corrected handler for the Features Menu button (CiMenuBurger)
+  const handleToggleFeaturesMenu = (e) => {
     e.stopPropagation();
-    // Toggle the menu state
-    setIsStyleMenuOpen(prev => !prev);
+    setIsFeaturesMenuOpen(prevFeaturesOpen => {
+      const newFeaturesOpenState = !prevFeaturesOpen;
+      if (newFeaturesOpenState) {
+        setIsStyleMenuOpen(false); // Close Style Menu if Features Menu is being opened
+      }
+      return newFeaturesOpenState;
+    });
   };
 
   return (
     <div className="flex flex-row space-x-2 p-2 bg-white dark:bg-neutral-900 shadow-lg rounded-lg dark:shadow-xl transition-all duration-300 ease-in-out">
-      {/* Features menu */}
+      {/* Style Menu Button */}
       <button
-        onClick={toggleStyleMenu}
+        onClick={handleToggleStyleMenu} // Correctly calls style menu handler
         className="p-1 rounded-md text-sm bg-zinc-800 hover:bg-zinc-700 text-white transition-all duration-200 ease-in-out shadow hover:shadow-md menu-trigger"
         aria-label="Style Menu"
       >
         <IoIosColorPalette />
-        
       </button>
 
+      {/* Features Menu Button */}
       <button
-        onClick={toggleFeaturesMenu}
+        onClick={handleToggleFeaturesMenu} // Correctly calls features menu handler
         className="p-1 rounded-md text-xs bg-zinc-800 hover:bg-zinc-700 text-white transition-all duration-200 ease-in-out shadow hover:shadow-md menu-trigger"
         aria-label="Features Menu"
       >
         <CiMenuBurger />
       </button>
-
-
       
       {/* Zoom In Button */}
       <button

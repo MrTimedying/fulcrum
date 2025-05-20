@@ -42,22 +42,27 @@ const dataTemplates = {
   profile: () => ({
     id: uuidv4(),
     name: "New Profile",
+    color: "rgba(28, 28, 28, 1)",
   }),
   bodyStructure: () => ({
     id: uuidv4(),
     name: "New Body Structure",
+    color: "rgba(28, 28, 28, 1)",
   }),
   activities: () => ({
     id: uuidv4(),
     name: "New Activity",
+    color: "rgba(28, 28, 28, 1)",
   }),
   participation: () => ({
     id: uuidv4(),
     name: "New Participation",
+    color: "rgba(28, 28, 28, 1)",
   }),
   record: () => ({
     id: uuidv4(),
     name: "New Record Element",
+    color: "rgba(28, 28, 28, 1)",
   }),
 };
 
