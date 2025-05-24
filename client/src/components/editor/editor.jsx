@@ -22,7 +22,7 @@ import useFlowStore from "../../state/flowState";
 import useTransientStore from "../../state/transientState";
 import { InterventionNode, PhaseNode, MicroNode, SessionNode } from "./nodes";
 import { getEditorComposerTemplates } from "../variables";
-import Inspector from "../Inspector";
+import Inspector from "../data_analysis/Inspector";
 import SelectionMenu from "../selectionMenu";
 import TestModal from "./TestModal";
 import useKeyboardShortcuts from "../util/KeyboardShortcuts";
