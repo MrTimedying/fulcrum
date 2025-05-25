@@ -506,7 +506,9 @@ function SessionNodeInspector({ node }) {
                     fill="#8884d8" 
                     shape={(props) => {
                       if (props.payload.category === 'divider') return null;
-                      return <rect {...props} fill={getBarFill('sets', props.payload)} />;
+                      // Destructure to remove Recharts-specific props
+                      const { dataKey, D1, D2, tooltipPayload, tooltipPosition, ...domProps } = props;
+                      return <rect {...domProps} fill={getBarFill('sets', props.payload)} />;
                     }}
                   />
                   <Bar 
@@ -515,7 +517,9 @@ function SessionNodeInspector({ node }) {
                     fill="#82ca9d" 
                     shape={(props) => {
                       if (props.payload.category === 'divider') return null;
-                      return <rect {...props} fill={getBarFill('reps', props.payload)} />;
+                      // Destructure to remove Recharts-specific props
+                      const { dataKey, D1, D2, tooltipPayload, tooltipPosition, ...domProps } = props;
+                      return <rect {...domProps} fill={getBarFill('reps', props.payload)} />;
                     }}
                   />
                   <Bar 
@@ -524,7 +528,9 @@ function SessionNodeInspector({ node }) {
                     fill="#ffc658" 
                     shape={(props) => {
                       if (props.payload.category === 'divider') return null;
-                      return <rect {...props} fill={getBarFill('intensity', props.payload)} />;
+                      // Destructure to remove Recharts-specific props
+                      const { dataKey, D1, D2, tooltipPayload, tooltipPosition, ...domProps } = props;
+                      return <rect {...domProps} fill={getBarFill('intensity', props.payload)} />;
                     }}
                   />
                   <Bar 
@@ -533,7 +539,9 @@ function SessionNodeInspector({ node }) {
                     fill="#ff7300" 
                     shape={(props) => {
                       if (props.payload.category === 'divider') return null;
-                      return <rect {...props} fill={getBarFill('volume', props.payload)} />;
+                      // Destructure to remove Recharts-specific props
+                      const { dataKey, D1, D2, tooltipPayload, tooltipPosition, ...domProps } = props;
+                      return <rect {...domProps} fill={getBarFill('volume', props.payload)} />;
                     }}
                   />
                   <Bar 
@@ -542,7 +550,9 @@ function SessionNodeInspector({ node }) {
                     fill="#ff5733" 
                     shape={(props) => {
                       if (props.payload.category === 'divider') return null;
-                      return <rect {...props} fill={getBarFill('duration', props.payload)} />;
+                      // Destructure to remove Recharts-specific props
+                      const { dataKey, D1, D2, tooltipPayload, tooltipPosition, ...domProps } = props;
+                      return <rect {...domProps} fill={getBarFill('duration', props.payload)} />;
                     }}
                   />
                 </BarChart>
@@ -757,4 +767,4 @@ function SessionNodeInspector({ node }) {
   );
 }
 
-export default SessionNodeInspector; 
+export default SessionNodeInspector;

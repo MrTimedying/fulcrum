@@ -510,7 +510,9 @@ function MicroNodeInspector({ node }) {
                     fill="#8884d8"
                     shape={(props) => {
                       if (props.payload.category === 'divider') return null;
-                      return <rect {...props} fill={getBarFill('total', props.payload)} />;
+                      // Destructure to remove dataKey, D1, D2, tooltipPayload, tooltipPosition, and any other non-DOM props
+                      const { dataKey, D1, D2, tooltipPayload, tooltipPosition, ...domProps } = props;
+                      return <rect {...domProps} fill={getBarFill('total', props.payload)} />;
                     }}
                   />
                   
@@ -524,7 +526,9 @@ function MicroNodeInspector({ node }) {
                       // Only show these bars for tag data points
                       shape={(props) => {
                         if (props.payload.category !== 'tag') return null;
-                        return <rect {...props} fill={getBarFill(session.name, props.payload)} />;
+                        // Destructure to remove dataKey, D1, D2, tooltipPayload, tooltipPosition, and any other non-DOM props
+                        const { dataKey, D1, D2, tooltipPayload, tooltipPosition, ...domProps } = props;
+                        return <rect {...domProps} fill={getBarFill(session.name, props.payload)} />;
                       }}
                     />
                   ))}
@@ -611,4 +615,4 @@ function MicroNodeInspector({ node }) {
   );
 }
 
-export default MicroNodeInspector; 
+export default MicroNodeInspector;
