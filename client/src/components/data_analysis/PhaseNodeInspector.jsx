@@ -1,12 +1,14 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-  BarChart, Bar, ComposedChart, Area, AreaChart
+  BarChart, Bar, ComposedChart, Area, AreaChart, PieChart, Pie, Cell
 } from 'recharts';
 import useFlowStore from '../../state/flowState';
 
 function PhaseNodeInspector({ node }) {
   const { nodes, edges } = useFlowStore();
+  const [selectedTags, setSelectedTags] = useState([]);
+  const [showAllTags, setShowAllTags] = useState(true);
   
   // Find all micro nodes connected to this phase node
   const microNodes = useMemo(() => {
@@ -22,13 +24,16 @@ function PhaseNodeInspector({ node }) {
       edge.source === node.id ? edge.target : edge.source
     );
     
-    // Get the micro nodes
+    // Get the micro nodes - don't require a date on micro nodes
     return nodes.filter(n => 
       connectedNodeIds.includes(n.id) && 
-      n.type === 'micro' && 
-      n.data?.date
+      n.type === 'micro'
     ).sort((a, b) => {
-      // Sort by date
+      // Sort by id if no date
+      if (!a.data?.date || !b.data?.date) {
+        return a.id.localeCompare(b.id);
+      }
+      // Sort by date if available
       const dateA = new Date(a.data.date);
       const dateB = new Date(b.data.date);
       return dateA - dateB;
@@ -56,19 +61,17 @@ function PhaseNodeInspector({ node }) {
       
       // Get session nodes and add micro info
       const microNode = microNodes.find(n => n.id === microNodeId);
-      const microWeek = microNode.label || `Week ${microNodeId.substr(0,4)}`;
-      const microDate = microNode.data?.date;
+      const microWeek = microNode.data?.label || microNode.label || `Week ${microNodeId.substr(0,4)}`;
       
       const connectedSessions = nodes.filter(n => 
         connectedSessionIds.includes(n.id) && 
         n.type === 'session' && 
         n.data?.exercises &&
-        n.data?.date
+        n.data?.date // Dates are still required for session nodes
       ).map(sessionNode => ({
         ...sessionNode,
         microId: microNodeId,
-        microWeek,
-        microDate
+        microWeek
       }));
       
       sessionsList.push(...connectedSessions);
@@ -82,10 +85,11 @@ function PhaseNodeInspector({ node }) {
     });
   }, [microNodes, nodes, edges]);
   
-  // Extract and normalize exercise data from all session nodes
-  const allExercisesData = useMemo(() => {
+  // Extract and normalize exercise data from all session nodes and gather all tags
+  const { allExercisesData, allTags } = useMemo(() => {
     // Store exercises from all sessions
     const allExercises = [];
+    const tagSet = new Set();
     
     allSessionNodes.forEach(sessionNode => {
       if (!sessionNode?.data?.exercises) return;
@@ -93,7 +97,7 @@ function PhaseNodeInspector({ node }) {
       const sessionDate = sessionNode.data.date;
       const formattedDate = new Date(sessionDate).toLocaleDateString();
       const sessionLabel = sessionNode.data?.label || sessionNode.id;
-      const { microId, microWeek, microDate } = sessionNode;
+      const { microId, microWeek } = sessionNode;
       
       // Extract exercises from each session node
       const exercises = sessionNode.data.exercises;
@@ -114,7 +118,6 @@ function PhaseNodeInspector({ node }) {
           formattedDate,
           microId,
           microWeek,
-          microDate,
           sets: 0,
           reps: 0,
           duration: 0,
@@ -125,9 +128,10 @@ function PhaseNodeInspector({ node }) {
         
         // Parse each field in the exercise
         container.fields.forEach(field => {
-          if (!field || !field.name) return;
+          if (!field || field.value === undefined) return;
           
-          switch(field.name) {
+          // Use field.subtype for reliable identification instead of field.name
+          switch(field.subtype) {
             case 'sets':
               exerciseInfo.sets = parseInt(field.value) || 0;
               break;
@@ -174,11 +178,18 @@ function PhaseNodeInspector({ node }) {
               }
               break;
             case 'tags':
-              // Parse tags 
+              // Parse tags from a semicolon-separated list with # prefix
               if (field.value) {
-                exerciseInfo.tags = field.value.split(',')
+                // Split by semicolon and handle both formats: "#tag" or "tag"
+                const tags = field.value.split(';')
                   .map(tag => tag.trim())
-                  .filter(tag => tag);
+                  .filter(tag => tag)
+                  .map(tag => tag.startsWith('#') ? tag.substring(1) : tag); // Remove # prefix if present
+                
+                exerciseInfo.tags = tags;
+                
+                // Add tags to the set of all tags
+                tags.forEach(tag => tagSet.add(tag));
               }
               break;
           }
@@ -191,14 +202,50 @@ function PhaseNodeInspector({ node }) {
       });
     });
     
-    return allExercises;
+    return {
+      allExercisesData: allExercises,
+      allTags: Array.from(tagSet).sort()
+    };
   }, [allSessionNodes]);
+  
+  // Handle tag selection
+  const handleTagSelection = (tag) => {
+    setSelectedTags(prev => {
+      if (prev.includes(tag)) {
+        return prev.filter(t => t !== tag);
+      } else {
+        return [...prev, tag];
+      }
+    });
+    if (showAllTags) setShowAllTags(false);
+  };
+  
+  // Toggle show all tags
+  const toggleShowAllTags = () => {
+    setShowAllTags(prev => !prev);
+    if (!showAllTags) {
+      setSelectedTags([]);
+    }
+  };
+  
+  // Filter exercises based on selected tags
+  const filteredExercises = useMemo(() => {
+    if (showAllTags) return allExercisesData;
+    
+    if (selectedTags.length === 0) {
+      return allExercisesData.filter(ex => ex.tags.length === 0);
+    }
+    
+    return allExercisesData.filter(exercise => 
+      exercise.tags.some(tag => selectedTags.includes(tag))
+    );
+  }, [allExercisesData, selectedTags, showAllTags]);
   
   // Group exercise data by micro cycle week
   const exercisesByMicroCycle = useMemo(() => {
     const groupedData = {};
     
-    allExercisesData.forEach(exercise => {
+    filteredExercises.forEach(exercise => {
       const { microWeek, microId } = exercise;
       const microKey = microId;
       
@@ -227,6 +274,14 @@ function PhaseNodeInspector({ node }) {
         }
         groupedData[microKey].tagVolumes[tag] += exercise.volume;
       });
+      
+      // If no tags, track as "Untagged"
+      if (exercise.tags.length === 0) {
+        if (!groupedData[microKey].tagVolumes["Untagged"]) {
+          groupedData[microKey].tagVolumes["Untagged"] = 0;
+        }
+        groupedData[microKey].tagVolumes["Untagged"] += exercise.volume;
+      }
     });
     
     // Calculate average intensity for each micro cycle
@@ -238,7 +293,7 @@ function PhaseNodeInspector({ node }) {
     });
     
     return groupedData;
-  }, [allExercisesData]);
+  }, [filteredExercises]);
   
   // Create data for micro cycle comparison chart
   const microComparisonData = useMemo(() => {
@@ -248,249 +303,332 @@ function PhaseNodeInspector({ node }) {
         totalVolume: micro.totalVolume,
         averageIntensity: micro.averageIntensity,
         exerciseCount: micro.exerciseCount,
-        distinctExerciseCount: micro.distinctExercises.size
+        distinctExercises: micro.distinctExercises.size
       }))
       .sort((a, b) => {
-        // Extract week number (assuming format "Week X")
-        const weekA = parseInt(a.name.replace(/\D/g, '')) || 0;
-        const weekB = parseInt(b.name.replace(/\D/g, '')) || 0;
-        return weekA - weekB;
+        // Try to extract week number for sorting
+        const weekA = parseInt(a.name.match(/\d+/)?.[0] || '0');
+        const weekB = parseInt(b.name.match(/\d+/)?.[0] || '0');
+        if (weekA !== weekB) return weekA - weekB;
+        return a.name.localeCompare(b.name);
       });
   }, [exercisesByMicroCycle]);
   
-  // Create data for cumulative volume area chart
-  const cumulativeVolumeData = useMemo(() => {
-    let cumulativeVolume = 0;
+  // Create volume by tag distribution data across all micro cycles
+  const volumeByTagData = useMemo(() => {
+    const tags = new Set();
     
-    return microComparisonData.map(micro => {
-      cumulativeVolume += micro.totalVolume;
-      return {
-        name: micro.name,
-        volume: micro.totalVolume,
-        cumulativeVolume
-      };
-    });
-  }, [microComparisonData]);
-  
-  // Create data for tag volume distribution by micro cycle
-  const tagVolumeByMicroData = useMemo(() => {
-    const allTags = new Set();
-    
-    // First collect all unique tags
+    // First collect all tags used across micro cycles
     Object.values(exercisesByMicroCycle).forEach(micro => {
-      Object.keys(micro.tagVolumes).forEach(tag => {
-        allTags.add(tag);
-      });
+      Object.keys(micro.tagVolumes).forEach(tag => tags.add(tag));
     });
     
-    // Then create data for each micro cycle with all tags
+    // Format data for stacked bar chart
     return Object.values(exercisesByMicroCycle)
       .map(micro => {
-        const dataPoint = { name: micro.microWeek };
+        const data = { name: micro.microWeek };
         
-        // Add each tag's volume
-        allTags.forEach(tag => {
-          dataPoint[tag] = micro.tagVolumes[tag] || 0;
+        // Add volume for each tag
+        Array.from(tags).forEach(tag => {
+          data[tag] = micro.tagVolumes[tag] || 0;
         });
         
-        return dataPoint;
+        return data;
       })
       .sort((a, b) => {
-        // Extract week number (assuming format "Week X")
-        const weekA = parseInt(a.name.replace(/\D/g, '')) || 0;
-        const weekB = parseInt(b.name.replace(/\D/g, '')) || 0;
-        return weekA - weekB;
+        // Try to sort by week number if available
+        const weekA = parseInt(a.name.match(/\d+/)?.[0] || '0');
+        const weekB = parseInt(b.name.match(/\d+/)?.[0] || '0');
+        if (weekA !== weekB) return weekA - weekB;
+        return a.name.localeCompare(b.name);
       });
   }, [exercisesByMicroCycle]);
+  
+  // Analyze exercise progression through the phase
+  const exerciseProgression = useMemo(() => {
+    const exercisesByName = {};
+    
+    filteredExercises.forEach(exercise => {
+      if (!exercisesByName[exercise.name]) {
+        exercisesByName[exercise.name] = [];
+      }
+      exercisesByName[exercise.name].push(exercise);
+    });
+    
+    // Sort each exercise group by date
+    Object.keys(exercisesByName).forEach(name => {
+      exercisesByName[name].sort((a, b) => {
+        return new Date(a.date) - new Date(b.date);
+      });
+    });
+    
+    // Find most frequent exercises (for reporting)
+    const exerciseFrequency = Object.entries(exercisesByName)
+      .map(([name, instances]) => ({ 
+        name, 
+        count: instances.length,
+        totalVolume: instances.reduce((sum, ex) => sum + ex.volume, 0)
+      }))
+      .sort((a, b) => b.count - a.count);
+    
+    return {
+      exercisesByName,
+      frequentExercises: exerciseFrequency.slice(0, 5) // Top 5 exercises
+    };
+  }, [filteredExercises]);
 
-  // If there are no micro nodes, show a message
-  if (!microNodes.length) {
+  // Create pie chart data for tag distribution across the phase
+  const tagDistributionData = useMemo(() => {
+    const tagVolumes = {};
+    
+    filteredExercises.forEach(exercise => {
+      if (exercise.tags.length === 0) {
+        tagVolumes["Untagged"] = (tagVolumes["Untagged"] || 0) + exercise.volume;
+        return;
+      }
+      
+      exercise.tags.forEach(tag => {
+        tagVolumes[tag] = (tagVolumes[tag] || 0) + exercise.volume;
+      });
+    });
+    
+    return Object.entries(tagVolumes)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value);
+  }, [filteredExercises]);
+  
+  // Colors for charts
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FF5733', '#C70039', '#900C3F', '#581845'];
+
+  // If there are no session nodes, show a message
+  if (!allSessionNodes.length) {
     return (
       <div className="flex items-center justify-center h-full text-gray-400">
-        <p>No micro cycle nodes connected to this phase.</p>
+        <p>No session data available for this phase.</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-medium mb-4">Phase Overview: {node.label || 'Unnamed Phase'}</h3>
+        <h3 className="text-lg font-medium mb-2">Phase Overview: {node.data?.label || node.label || 'Unnamed Phase'}</h3>
+        <p className="text-sm text-gray-400 mb-4">
+          Micro Cycles: {microNodes.length} | Sessions: {allSessionNodes.length} | Date Range: {
+            allSessionNodes.length > 0 
+              ? `${new Date(allSessionNodes[0].data.date).toLocaleDateString()} - ${new Date(allSessionNodes[allSessionNodes.length-1].data.date).toLocaleDateString()}`
+              : 'No date range'
+          }
+        </p>
         
-        {/* Phase Stats */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
-          <div className="bg-zinc-800 p-4 rounded-lg">
-            <h4 className="text-sm font-medium mb-1 text-gray-300">Micro Cycles</h4>
-            <p className="text-xl font-semibold">{microNodes.length}</p>
+        {/* Tag Filter Controls */}
+        {allTags.length > 0 && (
+          <div className="bg-zinc-800 p-4 rounded-lg mb-6">
+            <h4 className="text-sm font-medium mb-3 text-gray-300">Filter and Visualize by Tags</h4>
+            <div className="flex items-center mb-3">
+              <label className="flex items-center text-sm">
+                <input
+                  type="checkbox"
+                  checked={showAllTags}
+                  onChange={toggleShowAllTags}
+                  className="mr-2 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                Show all tags
+              </label>
+            </div>
+            <div className="flex flex-wrap gap-2 mb-2">
+              {allTags.map(tag => (
+                <div 
+                  key={tag} 
+                  className={`inline-flex items-center px-3 py-1 rounded-full text-xs cursor-pointer transition-colors ${
+                    selectedTags.includes(tag) 
+                      ? 'bg-indigo-600 text-white' 
+                      : 'bg-zinc-700 text-gray-300 hover:bg-zinc-600'
+                  } ${showAllTags ? 'opacity-50 pointer-events-none' : ''}`}
+                  onClick={() => !showAllTags && handleTagSelection(tag)}
+                >
+                  <span className="mr-1">#</span>
+                  {tag}
+                  {selectedTags.includes(tag) && !showAllTags && (
+                    <span className="ml-1 text-xs">✓</span>
+                  )}
+                </div>
+              ))}
+            </div>
+            <div className="text-xs text-gray-400 mt-2">
+              Click on tags to filter charts. Selected tags will also appear as separate data points in charts.
+            </div>
           </div>
-          <div className="bg-zinc-800 p-4 rounded-lg">
-            <h4 className="text-sm font-medium mb-1 text-gray-300">Sessions</h4>
-            <p className="text-xl font-semibold">{allSessionNodes.length}</p>
-          </div>
-          <div className="bg-zinc-800 p-4 rounded-lg">
-            <h4 className="text-sm font-medium mb-1 text-gray-300">Date Range</h4>
-            <p className="text-sm">
-              {microNodes.length > 0 && (
-                <>
-                  {new Date(microNodes[0].data.date).toLocaleDateString()} to{' '}
-                  {new Date(microNodes[microNodes.length - 1].data.date).toLocaleDateString()}
-                </>
-              )}
-            </p>
-          </div>
-        </div>
+        )}
         
         {/* Micro Cycle Comparison Chart */}
-        <div className="bg-zinc-800 p-4 rounded-lg mb-6">
-          <h4 className="text-sm font-medium mb-3 text-gray-300">Micro Cycle Comparison</h4>
-          <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart
-                data={microComparisonData}
-                margin={{ top: 20, right: 30, left: 20, bottom: 30 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-                <XAxis 
-                  dataKey="name" 
-                  tick={{ fill: '#aaa' }} 
-                />
-                <YAxis 
-                  yAxisId="left" 
-                  tick={{ fill: '#aaa' }} 
-                  label={{ value: 'Volume', angle: -90, position: 'insideLeft', fill: '#aaa' }}
-                />
-                <YAxis 
-                  yAxisId="right" 
-                  orientation="right" 
-                  tick={{ fill: '#aaa' }} 
-                  label={{ value: 'Intensity', angle: 90, position: 'insideRight', fill: '#aaa' }}
-                />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: '#333', 
-                    border: '1px solid #555',
-                    borderRadius: '4px',
-                    color: '#eee' 
-                  }} 
-                />
-                <Legend wrapperStyle={{ color: '#ccc' }} />
-                <Bar 
-                  dataKey="totalVolume" 
-                  name="Total Volume" 
-                  fill="#8884d8" 
-                  yAxisId="left" 
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="averageIntensity" 
-                  name="Avg. Intensity" 
-                  stroke="#ff7300" 
-                  yAxisId="right" 
-                  dot={{ r: 5 }}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="distinctExerciseCount" 
-                  name="Exercise Variety" 
-                  stroke="#82ca9d" 
-                  yAxisId="left" 
-                  dot={{ r: 5 }}
-                />
-              </ComposedChart>
-            </ResponsiveContainer>
+        {microComparisonData.length > 0 && (
+          <div className="bg-zinc-800 p-4 rounded-lg mb-6">
+            <h4 className="text-sm font-medium mb-3 text-gray-300">Micro Cycle Progression</h4>
+            <div className="h-96">
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart
+                  data={microComparisonData}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 50 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+                  <XAxis 
+                    dataKey="name" 
+                    tick={{ fill: '#aaa' }}
+                    angle={-45}
+                    textAnchor="end"
+                    height={70}
+                  />
+                  <YAxis yAxisId="left" tick={{ fill: '#aaa' }} />
+                  <YAxis yAxisId="right" orientation="right" tick={{ fill: '#aaa' }} />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: '#333', 
+                      border: '1px solid #555',
+                      borderRadius: '4px',
+                      color: '#eee' 
+                    }} 
+                  />
+                  <Legend wrapperStyle={{ color: '#ccc' }} />
+                  <Area 
+                    type="monotone" 
+                    yAxisId="left"
+                    dataKey="totalVolume" 
+                    name="Total Volume" 
+                    fill="#8884d880" 
+                    stroke="#8884d8" 
+                  />
+                  <Line 
+                    type="monotone" 
+                    yAxisId="right"
+                    dataKey="averageIntensity" 
+                    name="Avg. Intensity" 
+                    stroke="#ff7300"
+                    strokeWidth={2}
+                  />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
           </div>
-        </div>
+        )}
         
-        {/* Cumulative Volume Chart */}
-        <div className="bg-zinc-800 p-4 rounded-lg mb-6">
-          <h4 className="text-sm font-medium mb-3 text-gray-300">Cumulative Training Volume</h4>
-          <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart
-                data={cumulativeVolumeData}
-                margin={{ top: 20, right: 30, left: 20, bottom: 30 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-                <XAxis 
-                  dataKey="name" 
-                  tick={{ fill: '#aaa' }} 
-                />
-                <YAxis 
-                  tick={{ fill: '#aaa' }}
-                />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: '#333', 
-                    border: '1px solid #555',
-                    borderRadius: '4px',
-                    color: '#eee' 
-                  }} 
-                />
-                <Legend wrapperStyle={{ color: '#ccc' }} />
-                <Area 
-                  type="monotone" 
-                  dataKey="cumulativeVolume" 
-                  name="Cumulative Volume" 
-                  stroke="#8884d8" 
-                  fill="#8884d8" 
-                  fillOpacity={0.3}
-                />
-                <Bar 
-                  dataKey="volume" 
-                  name="Weekly Volume" 
-                  fill="#82ca9d" 
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-        
-        {/* Volume By Category Across Micro Cycles */}
-        <div className="bg-zinc-800 p-4 rounded-lg mb-6">
-          <h4 className="text-sm font-medium mb-3 text-gray-300">Volume Distribution by Category</h4>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={tagVolumeByMicroData}
-                margin={{ top: 20, right: 30, left: 20, bottom: 30 }}
-                barCategoryGap={15}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-                <XAxis 
-                  dataKey="name" 
-                  tick={{ fill: '#aaa' }} 
-                />
-                <YAxis 
-                  tick={{ fill: '#aaa' }} 
-                />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: '#333', 
-                    border: '1px solid #555',
-                    borderRadius: '4px',
-                    color: '#eee' 
-                  }} 
-                  formatter={(value, name) => [`${value} volume units`, name]}
-                />
-                <Legend wrapperStyle={{ color: '#ccc' }} />
-                {Object.keys(tagVolumeByMicroData[0] || {})
-                  .filter(key => key !== 'name')
-                  .map((key, index) => {
-                    const colors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#a4de6c', '#d0ed57'];
-                    return (
+        {/* Volume by Tag Chart */}
+        {volumeByTagData.length > 0 && Object.keys(volumeByTagData[0]).length > 1 && (
+          <div className="bg-zinc-800 p-4 rounded-lg mb-6">
+            <h4 className="text-sm font-medium mb-3 text-gray-300">Volume Distribution by Tags</h4>
+            <div className="h-96">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={volumeByTagData}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 50 }}
+                  stackOffset="expand"
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+                  <XAxis 
+                    dataKey="name" 
+                    tick={{ fill: '#aaa' }}
+                    angle={-45}
+                    textAnchor="end"
+                    height={70}
+                  />
+                  <YAxis 
+                    tickFormatter={(value) => `${(value * 100).toFixed(0)}%`} 
+                    tick={{ fill: '#aaa' }} 
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: '#333', 
+                      border: '1px solid #555',
+                      borderRadius: '4px',
+                      color: '#eee' 
+                    }}
+                    formatter={(value, name, props) => [
+                      `${value} (${(value/props.payload.total * 100).toFixed(0)}%)`, 
+                      name
+                    ]}
+                    labelFormatter={(label) => `Week: ${label}`}
+                  />
+                  <Legend wrapperStyle={{ color: '#ccc' }} />
+                  {Object.keys(volumeByTagData[0] || {})
+                    .filter(key => key !== 'name')
+                    .map((tag, index) => (
                       <Bar 
-                        key={key} 
-                        dataKey={key} 
+                        key={tag}
+                        dataKey={tag} 
                         stackId="a" 
-                        fill={colors[index % colors.length]} 
+                        fill={`hsl(${index * 30 % 360}, 70%, 50%)`} 
                       />
-                    );
-                  })
-                }
-              </BarChart>
-            </ResponsiveContainer>
+                    ))
+                  }
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
-        </div>
+        )}
+        
+        {/* Overall Tag Distribution Pie Chart */}
+        {tagDistributionData.length > 0 && (
+          <div className="bg-zinc-800 p-4 rounded-lg mb-6">
+            <h4 className="text-sm font-medium mb-3 text-gray-300">Overall Training Volume by Tags</h4>
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={tagDistributionData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  >
+                    {tagDistributionData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: '#333', 
+                      border: '1px solid #555',
+                      borderRadius: '4px',
+                      color: '#eee' 
+                    }} 
+                    formatter={(value, name) => [`Volume: ${value}`, name]}
+                  />
+                  <Legend wrapperStyle={{ color: '#ccc' }} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
+        
+        {/* Top Exercises Table */}
+        {exerciseProgression.frequentExercises.length > 0 && (
+          <div className="bg-zinc-800 p-4 rounded-lg">
+            <h4 className="text-sm font-medium mb-3 text-gray-300">Most Frequent Exercises</h4>
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm text-gray-300">
+                <thead className="bg-zinc-700">
+                  <tr>
+                    <th className="py-2 px-4 text-left">Exercise</th>
+                    <th className="py-2 px-4 text-right">Occurrences</th>
+                    <th className="py-2 px-4 text-right">Total Volume</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-700">
+                  {exerciseProgression.frequentExercises.map((exercise, index) => (
+                    <tr key={index} className="hover:bg-zinc-700">
+                      <td className="py-2 px-4">{exercise.name}</td>
+                      <td className="py-2 px-4 text-right">{exercise.count}</td>
+                      <td className="py-2 px-4 text-right">{exercise.totalVolume}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

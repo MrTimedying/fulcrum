@@ -88,7 +88,7 @@ const subtypesValidationRules = {
   intensity_number: { type: "number", positive: true },
   tags: {
     type: "string",
-    regex: /^(#\w;)+$/,
+    regex: /^(#\w+;)+$/,
     errorMessage: (label) => `${label} must be a sequence of hash symbol (#) followed by a lower case word (tag) and a semicolon (;), repeated for more entries.`,
   }
 };

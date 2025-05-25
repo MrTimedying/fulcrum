@@ -37,21 +37,22 @@ function Inspector({ isOpen, onClose, multiple }) {
       );
     }
 
-    // Check if the node has a date set
-    const hasDate = selectedNode?.data?.date;
-    if (!hasDate) {
-      return <NoDateWarning nodeType={selectedNode.type} />;
-    }
-
     // Return the appropriate inspector based on node type
     switch (selectedNode.type) {
       case 'session':
+        // For session nodes, we need to check if there's a date
+        if (!selectedNode?.data?.date) {
+          return <NoDateWarning nodeType={selectedNode.type} />;
+        }
         return <SessionNodeInspector node={selectedNode} />;
       case 'micro':
+        // No date required for micro nodes
         return <MicroNodeInspector node={selectedNode} />;
       case 'phase':
+        // No date required for phase nodes
         return <PhaseNodeInspector node={selectedNode} />;
       case 'intervention':
+        // No date required for intervention nodes
         return <InterventionNodeInspector node={selectedNode} />;
       default:
         return (

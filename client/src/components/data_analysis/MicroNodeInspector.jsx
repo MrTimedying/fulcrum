@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   BarChart, Bar, ComposedChart, Area
@@ -7,6 +7,8 @@ import useFlowStore from '../../state/flowState';
 
 function MicroNodeInspector({ node }) {
   const { nodes, edges } = useFlowStore();
+  const [selectedTags, setSelectedTags] = useState([]);
+  const [showAllTags, setShowAllTags] = useState(true);
   
   // Find all session nodes connected to this micro node
   const sessionNodes = useMemo(() => {
@@ -27,7 +29,7 @@ function MicroNodeInspector({ node }) {
       connectedNodeIds.includes(n.id) && 
       n.type === 'session' && 
       n.data?.exercises && 
-      n.data?.date
+      n.data?.date // Only sessions with date and exercises
     ).sort((a, b) => {
       // Sort by date
       const dateA = new Date(a.data.date);
@@ -36,10 +38,11 @@ function MicroNodeInspector({ node }) {
     });
   }, [node, nodes, edges]);
   
-  // Parse exercise data from all session nodes
-  const allExercisesData = useMemo(() => {
+  // Parse exercise data from all session nodes and extract all tags
+  const { allExercisesData, allTags } = useMemo(() => {
     // Store exercises from all sessions
     const allExercises = [];
+    const tagSet = new Set();
     
     sessionNodes.forEach(sessionNode => {
       if (!sessionNode?.data?.exercises) return;
@@ -75,9 +78,10 @@ function MicroNodeInspector({ node }) {
         
         // Parse each field in the exercise
         container.fields.forEach(field => {
-          if (!field || !field.name) return;
+          if (!field || field.value === undefined) return;
           
-          switch(field.name) {
+          // Use field.subtype instead of field.name for reliable identification
+          switch(field.subtype) {
             case 'sets':
               exerciseInfo.sets = parseInt(field.value) || 0;
               break;
@@ -124,11 +128,18 @@ function MicroNodeInspector({ node }) {
               }
               break;
             case 'tags':
-              // Parse tags 
+              // Parse tags from a semicolon-separated list with # prefix
               if (field.value) {
-                exerciseInfo.tags = field.value.split(',')
+                // Split by semicolon and handle both formats: "#tag" or "tag"
+                const tags = field.value.split(';')
                   .map(tag => tag.trim())
-                  .filter(tag => tag);
+                  .filter(tag => tag)
+                  .map(tag => tag.startsWith('#') ? tag.substring(1) : tag); // Remove # prefix if present
+                
+                exerciseInfo.tags = tags;
+                
+                // Add to our set of all tags
+                tags.forEach(tag => tagSet.add(tag));
               }
               break;
           }
@@ -141,14 +152,50 @@ function MicroNodeInspector({ node }) {
       });
     });
     
-    return allExercises;
+    return {
+      allExercisesData: allExercises,
+      allTags: Array.from(tagSet).sort()
+    };
   }, [sessionNodes]);
+  
+  // Handle tag selection/filtering
+  const handleTagSelection = (tag) => {
+    setSelectedTags(prev => {
+      if (prev.includes(tag)) {
+        return prev.filter(t => t !== tag);
+      } else {
+        return [...prev, tag];
+      }
+    });
+    if (showAllTags) setShowAllTags(false);
+  };
+  
+  // Toggle show all tags
+  const toggleShowAllTags = () => {
+    setShowAllTags(prev => !prev);
+    if (!showAllTags) {
+      setSelectedTags([]);
+    }
+  };
+  
+  // Filter exercises based on selected tags
+  const filteredExercises = useMemo(() => {
+    if (showAllTags) return allExercisesData;
+    
+    if (selectedTags.length === 0) {
+      return allExercisesData.filter(ex => ex.tags.length === 0);
+    }
+    
+    return allExercisesData.filter(exercise => 
+      exercise.tags.some(tag => selectedTags.includes(tag))
+    );
+  }, [allExercisesData, selectedTags, showAllTags]);
   
   // Group exercises by name to track progression
   const exercisesByName = useMemo(() => {
     const groupedExercises = {};
     
-    allExercisesData.forEach(exercise => {
+    filteredExercises.forEach(exercise => {
       if (!groupedExercises[exercise.name]) {
         groupedExercises[exercise.name] = [];
       }
@@ -165,13 +212,13 @@ function MicroNodeInspector({ node }) {
     });
     
     return groupedExercises;
-  }, [allExercisesData]);
+  }, [filteredExercises]);
   
   // Generate data for overall volume chart by session
   const volumeBySessionData = useMemo(() => {
     const sessionVolumes = {};
     
-    allExercisesData.forEach(exercise => {
+    filteredExercises.forEach(exercise => {
       const { sessionId, formattedDate, volume } = exercise;
       if (!sessionVolumes[sessionId]) {
         sessionVolumes[sessionId] = {
@@ -187,51 +234,101 @@ function MicroNodeInspector({ node }) {
     return Object.values(sessionVolumes).sort((a, b) => {
       return new Date(a.name) - new Date(b.name);
     });
-  }, [allExercisesData]);
+  }, [filteredExercises]);
   
   // Generate data for volume by exercise category
   const volumeByTagData = useMemo(() => {
-    const tagVolumes = {};
+    if (filteredExercises.length === 0) return [];
     
-    allExercisesData.forEach(exercise => {
-      const { formattedDate, volume, tags } = exercise;
-      
-      if (!tags.length) {
-        // Handle exercises with no tags
-        if (!tagVolumes['Untagged']) {
-          tagVolumes['Untagged'] = {};
-        }
-        if (!tagVolumes['Untagged'][formattedDate]) {
-          tagVolumes['Untagged'][formattedDate] = 0;
-        }
-        tagVolumes['Untagged'][formattedDate] += volume;
-        return;
+    // Organize data by session date for the left side
+    const sessionData = {};
+    const sessionsInOrder = [];
+    
+    // Get unique sessions and initialize structure
+    filteredExercises.forEach(exercise => {
+      const { formattedDate, sessionId } = exercise;
+      if (!sessionData[formattedDate]) {
+        sessionData[formattedDate] = {
+          name: formattedDate,
+          category: "session",
+          total: 0
+        };
+        sessionsInOrder.push(formattedDate);
       }
+      sessionData[formattedDate].total += exercise.volume;
+    });
+    
+    // Build data array with sessions on the left
+    const data = Object.values(sessionData);
+    
+    // If we have selected tags, add tag-based aggregates on the right
+    if (selectedTags.length > 0 && !showAllTags) {
+      // Add a divider
+      data.push({
+        name: "──────",
+        category: "divider",
+        total: null
+      });
       
-      tags.forEach(tag => {
-        if (!tagVolumes[tag]) {
-          tagVolumes[tag] = {};
-        }
-        if (!tagVolumes[tag][formattedDate]) {
-          tagVolumes[tag][formattedDate] = 0;
-        }
-        tagVolumes[tag][formattedDate] += volume;
+      // Add volume by tag
+      selectedTags.forEach(tag => {
+        const tagData = {
+          name: `#${tag}`,
+          category: "tag"
+        };
+        
+        // Calculate volume for each session date for this tag
+        sessionsInOrder.forEach(date => {
+          const exercisesWithTagOnDate = filteredExercises.filter(ex => 
+            ex.formattedDate === date && ex.tags.includes(tag)
+          );
+          
+          const tagVolumeOnDate = exercisesWithTagOnDate.reduce((sum, ex) => sum + ex.volume, 0);
+          tagData[date] = tagVolumeOnDate;
+          tagData.total = (tagData.total || 0) + tagVolumeOnDate;
+        });
+        
+        data.push(tagData);
       });
-    });
-    
-    // Convert to format suitable for stacked bar chart
-    const sessions = [...new Set(allExercisesData.map(ex => ex.formattedDate))].sort((a, b) => {
-      return new Date(a) - new Date(b);
-    });
-    
-    return sessions.map(session => {
-      const dataPoint = { name: session };
-      Object.keys(tagVolumes).forEach(tag => {
-        dataPoint[tag] = tagVolumes[tag][session] || 0;
+    } else {
+      // Otherwise, add tag distribution within each session (original behavior)
+      filteredExercises.forEach(exercise => {
+        const { formattedDate, volume, tags } = exercise;
+        
+        if (!tags.length) {
+          // Handle exercises with no tags
+          if (!sessionData[formattedDate].Untagged) {
+            sessionData[formattedDate].Untagged = 0;
+          }
+          sessionData[formattedDate].Untagged += volume;
+          return;
+        }
+        
+        tags.forEach(tag => {
+          if (!sessionData[formattedDate][tag]) {
+            sessionData[formattedDate][tag] = 0;
+          }
+          sessionData[formattedDate][tag] += volume;
+        });
       });
-      return dataPoint;
-    });
-  }, [allExercisesData]);
+    }
+    
+    return data;
+  }, [filteredExercises, selectedTags, showAllTags]);
+  
+  // Custom bar colors based on category (session vs tag)
+  const getBarFill = (dataKey, entry) => {
+    if (!entry || entry.category === 'divider') return 'transparent';
+    
+    // Use color from the COLORS array for each tag/category
+    if (entry.category === 'tag') {
+      // Find the index of this tag in selectedTags
+      const tagIndex = selectedTags.indexOf(entry.name.substring(1)); // Remove # prefix
+      return `hsl(${(tagIndex * 30 + 180) % 360}, 70%, 50%)`;
+    }
+    
+    return `hsl(${parseInt(dataKey.length * 7) % 360}, 70%, 50%)`;
+  };
   
   // List of available exercises for the selection dropdown
   const availableExercises = useMemo(() => {
@@ -248,171 +345,265 @@ function MicroNodeInspector({ node }) {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-medium mb-4">Micro Cycle Overview: {node.label || 'Unnamed Micro Cycle'}</h3>
+        <h3 className="text-lg font-medium mb-2">Micro Cycle Overview: {node.data?.label || node.label || 'Unnamed Micro Cycle'}</h3>
+        <p className="text-sm text-gray-400 mb-4">
+          Sessions: {sessionNodes.length} | Date Range: {
+            sessionNodes.length > 0 
+              ? `${new Date(sessionNodes[0].data.date).toLocaleDateString()} - ${new Date(sessionNodes[sessionNodes.length-1].data.date).toLocaleDateString()}`
+              : 'No date range'
+          }
+        </p>
         
-        {/* Session Count and Date Range */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <div className="bg-zinc-800 p-4 rounded-lg">
-            <h4 className="text-sm font-medium mb-1 text-gray-300">Sessions</h4>
-            <p className="text-xl font-semibold">{sessionNodes.length}</p>
-          </div>
-          <div className="bg-zinc-800 p-4 rounded-lg">
-            <h4 className="text-sm font-medium mb-1 text-gray-300">Date Range</h4>
-            <p className="text-sm">
-              {sessionNodes.length > 0 && (
-                <>
-                  {new Date(sessionNodes[0].data.date).toLocaleDateString()} to{' '}
-                  {new Date(sessionNodes[sessionNodes.length - 1].data.date).toLocaleDateString()}
-                </>
-              )}
-            </p>
-          </div>
-        </div>
-        
-        {/* Weekly Volume Chart */}
-        <div className="bg-zinc-800 p-4 rounded-lg mb-6">
-          <h4 className="text-sm font-medium mb-3 text-gray-300">Total Volume by Session</h4>
-          <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={volumeBySessionData}
-                margin={{ top: 20, right: 30, left: 20, bottom: 30 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-                <XAxis 
-                  dataKey="name" 
-                  tick={{ fill: '#aaa' }} 
-                />
-                <YAxis tick={{ fill: '#aaa' }} />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: '#333', 
-                    border: '1px solid #555',
-                    borderRadius: '4px',
-                    color: '#eee' 
-                  }} 
-                />
-                <Legend wrapperStyle={{ color: '#ccc' }} />
-                <Bar dataKey="totalVolume" name="Total Volume (Sets × Reps)" fill="#8884d8" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-        
-        {/* Volume By Exercise Category (Tags) */}
-        <div className="bg-zinc-800 p-4 rounded-lg mb-6">
-          <h4 className="text-sm font-medium mb-3 text-gray-300">Volume Distribution by Category</h4>
-          <div className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={volumeByTagData}
-                margin={{ top: 20, right: 30, left: 20, bottom: 30 }}
-                stackOffset="expand"
-                barCategoryGap={15}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-                <XAxis 
-                  dataKey="name" 
-                  tick={{ fill: '#aaa' }} 
-                />
-                <YAxis 
-                  tick={{ fill: '#aaa' }} 
-                  tickFormatter={(value) => `${(value * 100).toFixed(0)}%`}
-                />
-                <Tooltip 
-                  contentStyle={{ 
-                    backgroundColor: '#333', 
-                    border: '1px solid #555',
-                    borderRadius: '4px',
-                    color: '#eee' 
-                  }} 
-                  formatter={(value, name) => [`${value} volume units`, name]}
-                />
-                <Legend wrapperStyle={{ color: '#ccc' }} />
-                {Object.keys(volumeByTagData[0] || {})
-                  .filter(key => key !== 'name')
-                  .map((key, index) => {
-                    const colors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#a4de6c', '#d0ed57'];
-                    return (
-                      <Bar 
-                        key={key} 
-                        dataKey={key} 
-                        stackId="a" 
-                        fill={colors[index % colors.length]} 
-                      />
-                    );
-                  })
-                }
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-        
-        {/* Exercise Progression */}
-        {availableExercises.length > 0 && (
+        {/* Tag Filter Controls */}
+        {allTags.length > 0 && (
           <div className="bg-zinc-800 p-4 rounded-lg mb-6">
-            <h4 className="text-sm font-medium mb-3 text-gray-300">Exercise Progression</h4>
-            {availableExercises.map(exerciseName => {
-              const exerciseData = exercisesByName[exerciseName];
-              // Only show exercises that appear in at least 2 sessions
-              if (exerciseData.length < 2) return null;
-              
-              return (
-                <div key={exerciseName} className="mb-8 last:mb-0">
-                  <h5 className="text-sm font-medium mb-2">{exerciseName}</h5>
-                  <div className="h-60">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <ComposedChart
-                        data={exerciseData}
-                        margin={{ top: 10, right: 30, left: 20, bottom: 30 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" stroke="#444" />
-                        <XAxis 
-                          dataKey="formattedDate" 
-                          tick={{ fill: '#aaa' }} 
-                        />
-                        <YAxis 
-                          yAxisId="left" 
-                          tick={{ fill: '#aaa' }} 
-                          label={{ value: 'Intensity', angle: -90, position: 'insideLeft', fill: '#aaa' }}
-                        />
-                        <YAxis 
-                          yAxisId="right" 
-                          orientation="right" 
-                          tick={{ fill: '#aaa' }} 
-                          label={{ value: 'Volume', angle: 90, position: 'insideRight', fill: '#aaa' }}
-                        />
-                        <Tooltip 
-                          contentStyle={{ 
-                            backgroundColor: '#333', 
-                            border: '1px solid #555',
-                            borderRadius: '4px',
-                            color: '#eee' 
-                          }} 
-                        />
-                        <Legend wrapperStyle={{ color: '#ccc' }} />
-                        <Line 
-                          type="monotone" 
-                          dataKey="intensity" 
-                          name="Intensity" 
-                          yAxisId="left" 
-                          stroke="#ff7300" 
-                          dot={{ r: 5 }} 
-                        />
-                        <Bar 
-                          dataKey="volume" 
-                          name="Volume (Sets × Reps)" 
-                          yAxisId="right" 
-                          fill="#82ca9d" 
-                        />
-                      </ComposedChart>
-                    </ResponsiveContainer>
-                  </div>
+            <h4 className="text-sm font-medium mb-3 text-gray-300">Filter and Visualize by Tags</h4>
+            <div className="flex items-center mb-3">
+              <label className="flex items-center text-sm">
+                <input
+                  type="checkbox"
+                  checked={showAllTags}
+                  onChange={toggleShowAllTags}
+                  className="mr-2 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                />
+                Show all tags
+              </label>
+            </div>
+            <div className="flex flex-wrap gap-2 mb-2">
+              {allTags.map(tag => (
+                <div 
+                  key={tag} 
+                  className={`inline-flex items-center px-3 py-1 rounded-full text-xs cursor-pointer transition-colors ${
+                    selectedTags.includes(tag) 
+                      ? 'bg-indigo-600 text-white' 
+                      : 'bg-zinc-700 text-gray-300 hover:bg-zinc-600'
+                  } ${showAllTags ? 'opacity-50 pointer-events-none' : ''}`}
+                  onClick={() => !showAllTags && handleTagSelection(tag)}
+                >
+                  <span className="mr-1">#</span>
+                  {tag}
+                  {selectedTags.includes(tag) && !showAllTags && (
+                    <span className="ml-1 text-xs">✓</span>
+                  )}
                 </div>
-              );
-            })}
+              ))}
+            </div>
+            <div className="text-xs text-gray-400 mt-2">
+              Click on tags to filter charts. Selected tags will also appear as separate data points in charts.
+            </div>
+          </div>
+        )}
+        
+        {/* Volume Progress Chart */}
+        {volumeBySessionData.length > 1 && (
+          <div className="bg-zinc-800 p-4 rounded-lg mb-6">
+            <h4 className="text-sm font-medium mb-3 text-gray-300">Volume Progression</h4>
+            <div className="h-96">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={volumeBySessionData}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 50 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+                  <XAxis 
+                    dataKey="name" 
+                    tick={{ fill: '#aaa' }} 
+                    angle={-45}
+                    textAnchor="end"
+                    height={70}
+                  />
+                  <YAxis tick={{ fill: '#aaa' }} />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: '#333', 
+                      border: '1px solid #555',
+                      borderRadius: '4px',
+                      color: '#eee' 
+                    }} 
+                  />
+                  <Legend wrapperStyle={{ color: '#ccc' }} />
+                  <Line 
+                    type="monotone" 
+                    dataKey="totalVolume" 
+                    name="Total Volume" 
+                    stroke="#8884d8" 
+                    activeDot={{ r: 8 }} 
+                    strokeWidth={2}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
+        
+        {/* Volume by Tag Chart */}
+        {volumeByTagData.length > 0 && (
+          <div className="bg-zinc-800 p-4 rounded-lg mb-6">
+            <h4 className="text-sm font-medium mb-3 text-gray-300">Volume Distribution by Tags</h4>
+            <div className="h-96">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={volumeByTagData}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 50 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+                  <XAxis 
+                    dataKey="name" 
+                    tick={props => {
+                      const { x, y, payload } = props;
+                      if (payload.value === "──────") {
+                        return (
+                          <g transform={`translate(${x},${y})`}>
+                            <text x={0} y={0} dy={16} textAnchor="middle" fill="#666"></text>
+                          </g>
+                        );
+                      }
+                      
+                      // Use different styling for session dates vs tag names
+                      const isTag = payload.value.startsWith('#');
+                      return (
+                        <g transform={`translate(${x},${y})`}>
+                          <text 
+                            x={0} 
+                            y={0} 
+                            dy={16} 
+                            textAnchor="end" 
+                            fill={isTag ? "#afd5ff" : "#aaa"} 
+                            fontWeight={isTag ? "500" : "normal"}
+                            transform="rotate(-45)"
+                          >
+                            {payload.value}
+                          </text>
+                        </g>
+                      );
+                    }}
+                    height={70}
+                  />
+                  <YAxis 
+                    label={{ value: 'Volume', angle: -90, position: 'insideLeft', fill: '#aaa' }}
+                    tick={{ fill: '#aaa' }} 
+                  />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: '#333', 
+                      border: '1px solid #555',
+                      borderRadius: '4px',
+                      color: '#eee' 
+                    }}
+                    formatter={(value, name, props) => {
+                      if (props.payload.category === 'divider' || value === 0 || !value) return ['-', ''];
+                      return [value, name];
+                    }}
+                    labelFormatter={(label) => {
+                      if (label === "──────") return "──────";
+                      return label;
+                    }}
+                  />
+                  <Legend wrapperStyle={{ color: '#ccc' }} />
+                  
+                  {/* For sessions, show total volume */}
+                  <Bar 
+                    dataKey="total" 
+                    name="Total Volume" 
+                    fill="#8884d8"
+                    shape={(props) => {
+                      if (props.payload.category === 'divider') return null;
+                      return <rect {...props} fill={getBarFill('total', props.payload)} />;
+                    }}
+                  />
+                  
+                  {/* When showing specific tags, render session-by-session breakdown for tag data */}
+                  {selectedTags.length > 0 && !showAllTags && volumeByTagData.filter(d => d.category === 'session').map(session => (
+                    <Bar 
+                      key={session.name}
+                      dataKey={session.name} 
+                      name={session.name} 
+                      fill={`hsl(${session.name.length * 10 % 360}, 70%, 50%)`}
+                      // Only show these bars for tag data points
+                      shape={(props) => {
+                        if (props.payload.category !== 'tag') return null;
+                        return <rect {...props} fill={getBarFill(session.name, props.payload)} />;
+                      }}
+                    />
+                  ))}
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            {selectedTags.length > 0 && !showAllTags && (
+              <div className="mt-3 text-xs text-gray-400">
+                <div className="flex items-center">
+                  <span className="flex-1">Session volume (left)</span>
+                  <span className="border-t border-gray-500 flex-grow mx-2"></span>
+                  <span className="flex-1 text-right">Volume by tag (right)</span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+        
+        {/* Exercise Progression Charts */}
+        {availableExercises.length > 0 && (
+          <div className="bg-zinc-800 p-4 rounded-lg">
+            <h4 className="text-sm font-medium mb-3 text-gray-300">Exercise Progression</h4>
+            <div className="space-y-8">
+              {availableExercises.map(exerciseName => {
+                const exerciseInstances = exercisesByName[exerciseName];
+                if (exerciseInstances.length < 2) return null; // Only show progression if exercise appears multiple times
+                
+                return (
+                  <div key={exerciseName} className="border-t border-zinc-700 pt-4">
+                    <h5 className="text-sm font-medium mb-3">{exerciseName}</h5>
+                    <div className="h-64">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <ComposedChart
+                          data={exerciseInstances}
+                          margin={{ top: 20, right: 30, left: 20, bottom: 50 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+                          <XAxis 
+                            dataKey="formattedDate" 
+                            tick={{ fill: '#aaa' }}
+                            angle={-45}
+                            textAnchor="end"
+                            height={70}
+                          />
+                          <YAxis yAxisId="left" tick={{ fill: '#aaa' }} />
+                          <YAxis yAxisId="right" orientation="right" tick={{ fill: '#aaa' }} />
+                          <Tooltip 
+                            contentStyle={{ 
+                              backgroundColor: '#333', 
+                              border: '1px solid #555',
+                              borderRadius: '4px',
+                              color: '#eee' 
+                            }}
+                            labelFormatter={(label) => `Session: ${label}`}
+                          />
+                          <Legend wrapperStyle={{ color: '#ccc' }} />
+                          <Area 
+                            type="monotone" 
+                            dataKey="volume" 
+                            name="Volume" 
+                            fill="#8884d880" 
+                            stroke="#8884d8" 
+                            yAxisId="left" 
+                          />
+                          <Line 
+                            type="monotone" 
+                            dataKey="intensity" 
+                            name="Intensity" 
+                            stroke="#ff7300" 
+                            yAxisId="right" 
+                            strokeWidth={2}
+                          />
+                        </ComposedChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
       </div>
