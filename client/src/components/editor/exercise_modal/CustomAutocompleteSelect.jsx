@@ -1,6 +1,6 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { v4 as uuidv4 } from "uuid";
+import { getExerciseContainerDisplayName } from '../../../utils/exerciseUtils';
 
 const CustomAutocompleteSelect = ({ options, onSelect, onDelete }) => {
   const [inputValue, setInputValue] = useState('');
@@ -29,7 +29,7 @@ const CustomAutocompleteSelect = ({ options, onSelect, onDelete }) => {
         )
       );
     } else {
-      setFilteredOptions(options);
+      setFilteredOptions([]);
     }
   }, [inputValue, options]);
 
@@ -54,6 +54,8 @@ const CustomAutocompleteSelect = ({ options, onSelect, onDelete }) => {
   const handleOptionClick = (option) => {
     
     const optionNewId = {...option, id: uuidv4()};
+    // Use the helper function to get the clean display name before sending it
+    optionNewId.name = getExerciseContainerDisplayName(option.name);
 
     if (onSelect) {
       onSelect(optionNewId);
@@ -108,7 +110,7 @@ const CustomAutocompleteSelect = ({ options, onSelect, onDelete }) => {
                 onClick={() => handleOptionClick(option)}
                 className={`flex flex-auto flex-col px-4 py-3 cursor-pointer text-sm text-\${colors.textPrimary}   `}
               >
-                <p className='text-zinc-400 font-thin text-lg'>@{option.name}</p>
+                <p className='text-zinc-400 font-thin text-lg'>@{getExerciseContainerDisplayName(option.name)}</p>
                 <p className='text-zinc-400 text-xs'>Fields:</p>
                 <ul>
                 {option.fields.map((field) => (

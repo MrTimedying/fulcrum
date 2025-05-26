@@ -3,6 +3,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   PieChart, Pie, Cell, LineChart, Line
 } from 'recharts';
+import { getExerciseContainerDisplayName } from '../../utils/exerciseUtils';
 
 function SessionNodeInspector({ node }) {
   // State for selected tags for filtering charts
@@ -29,7 +30,8 @@ function SessionNodeInspector({ node }) {
       
       // Create an object to store parsed exercise data
       const exerciseInfo = {
-        name: containerName,
+        name: getExerciseContainerDisplayName(containerName),
+        originalMangledKey: containerName,
         sets: 0,
         reps: 0,
         duration: 0,
@@ -201,7 +203,7 @@ function SessionNodeInspector({ node }) {
   const selectedExerciseData = useMemo(() => {
     if (!selectedExercise) return null;
     
-    return filteredExerciseData.find(ex => ex.name === selectedExercise);
+    return filteredExerciseData.find(ex => ex.originalMangledKey === selectedExercise);
   }, [filteredExerciseData, selectedExercise]);
 
   // Create data for set-by-set analysis charts
@@ -521,7 +523,9 @@ function SessionNodeInspector({ node }) {
             >
               <option value="">Select an exercise to view set-by-set data</option>
               {filteredExerciseData.map(exercise => (
-                <option key={exercise.name} value={exercise.name}>{exercise.name}</option>
+                <option key={exercise.originalMangledKey} value={exercise.originalMangledKey}>
+                  {exercise.name}
+                </option>
               ))}
             </select>
           </div>
@@ -911,7 +915,7 @@ function SessionNodeInspector({ node }) {
             </thead>
             <tbody className="divide-y divide-zinc-700">
               {filteredExerciseData.map((exercise, index) => (
-                <tr key={index} className="hover:bg-zinc-700">
+                <tr key={exercise.originalMangledKey} className="hover:bg-zinc-700">
                   <td className="py-2 px-4">{exercise.name}</td>
                   <td className="py-2 px-4 text-right">{exercise.sets}</td>
                   <td className="py-2 px-4 text-right">{exercise.reps.toFixed(1)}</td>

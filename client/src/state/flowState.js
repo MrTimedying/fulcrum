@@ -1191,7 +1191,8 @@ const useFlowStore = create(
       },
 
       saveExercise: (exercise) => {
-
+        // The exercise already has a mangled key as its name property
+        // Just add a unique ID for the exercise in the store
         const exerciseNewId = {...exercise, id: uuidv4()};
 
         set((state) => ({
@@ -1200,10 +1201,10 @@ const useFlowStore = create(
         }));
       },
 
-      deleteExercise: (name) => {
+      deleteExercise: (mangledKey) => {
         set((state) => ({
           ...state,
-          exercises: state.exercises.filter((exercise) => exercise.name !== name),
+          exercises: state.exercises.filter((exercise) => exercise.name !== mangledKey),
         }));
       },
 
@@ -1294,6 +1295,7 @@ const useFlowStore = create(
         editorStates: state.editorStates,
         profileStates: state.profileStates,
         templates: state.templates,
+        exercises: state.exercises,
 
       }),
     }

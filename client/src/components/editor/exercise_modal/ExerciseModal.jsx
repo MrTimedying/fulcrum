@@ -16,6 +16,8 @@ import { FieldTypeButtons } from "./FieldsButtons";
 import useTransientStore from "../../../state/transientState";
 import CustomAutocompleteSelect from "./CustomAutocompleteSelect";
 import { MdOutlineDataSaverOn } from "react-icons/md";
+import { v4 as uuidv4 } from 'uuid';
+import { getExerciseContainerDisplayName, createMangledContainerKey } from "../../../utils/exerciseUtils";
 
 // --- Accessibility Setup ---
 if (typeof window !== "undefined") {
@@ -71,8 +73,11 @@ function ExerciseModal({ isOpen, onClose }) {
                 "Saved data found. Reconstructing structure and values from it (using full data)."
             );
 
-            Object.keys(existingExerciseData).forEach(containerName => {
-                const savedContainerWrapper = existingExerciseData[containerName]; // Expected format: { fields: [...] }
+            Object.keys(existingExerciseData).forEach(mangledKey => {
+                // Extract the display name from the mangled key
+                const containerName = getExerciseContainerDisplayName(mangledKey);
+                
+                const savedContainerWrapper = existingExerciseData[mangledKey]; // Expected format: { fields: [...] }
                 // Validate the saved container structure
                 if (
                     !savedContainerWrapper ||
@@ -380,16 +385,26 @@ function ExerciseModal({ isOpen, onClose }) {
   };
 
   const handleSave = (c) => {
-
     if (c.name && c.name !== null && c.name !== "") {
-      saveExercise(c);
+      // Create a mangled key for saving the exercise template
+      const containerId = uuidv4();
+      const mangledKey = createMangledContainerKey(c.name, containerId);
+      
+      // Create a copy of the container with the mangled key
+      const containerToSave = {
+        ...c,
+        originalName: c.name, // Store the original name for display
+        name: mangledKey // Use the mangled key as the name for storage
+      };
+      
+      saveExercise(containerToSave);
       setToaster({
         show: true,
         message: "Exercise saved successfully",
         type: "success",
       }) //The container name is saved, not the exercise name. The container name is a broad descriptor of the specific template or variant of the exercise such as a decorator. The actual name of the exercise is contained in the form values
-  }
-};
+    }
+  };
 
   const handleSelection = (selectedOption) => {
     setContainers((currentContainers) => [...currentContainers, selectedOption]); // Remember to make sure that the id of the container has to be changed
@@ -426,7 +441,11 @@ function ExerciseModal({ isOpen, onClose }) {
         const outputData = {};
 
         containers.forEach(container => {
-            const containerName = container.name;
+            // Generate a unique ID for this container
+            const containerId = uuidv4();
+            // Create a mangled key that combines the container name with the UUID
+            const mangledKey = createMangledContainerKey(container.name, containerId);
+            
             // Get the values for this specific container from the formValues state
             const containerValues = formValues[container.id] || {};
             const fieldsToSave = [];
@@ -447,9 +466,9 @@ function ExerciseModal({ isOpen, onClose }) {
                 });
             });
 
-            // Store the array of fields under the container's name in the output data
+            // Store the array of fields under the mangled key in the output data
             if (fieldsToSave.length > 0) {
-                outputData[containerName] = { fields: fieldsToSave };
+                outputData[mangledKey] = { fields: fieldsToSave };
             }
         });
 

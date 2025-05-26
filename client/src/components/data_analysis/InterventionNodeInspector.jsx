@@ -4,6 +4,7 @@ import {
   BarChart, Bar, ComposedChart, Area, AreaChart, PieChart, Pie, Cell
 } from 'recharts';
 import useFlowStore from '../../state/flowState';
+import { getExerciseContainerDisplayName } from '../../utils/exerciseUtils';
 
 function InterventionNodeInspector({ node }) {
   const { nodes, edges } = useFlowStore();
@@ -136,143 +137,148 @@ function InterventionNodeInspector({ node }) {
       const exercises = sessionNode.data.exercises;
       
       // Process each exercise container
-      Object.keys(exercises).forEach(containerName => {
-        const container = exercises[containerName];
-        
-        // Skip if fields aren't present
-        if (!container?.fields || !Array.isArray(container.fields)) return;
-        
-        // Create an object to store parsed exercise data
-        const exerciseInfo = {
-          name: containerName,
-          sessionId: sessionNode.id,
-          sessionLabel,
-          date: sessionDate,
-          formattedDate,
-          phaseId,
-          phaseName,
-          microId,
-          microWeek,
-          sets: 0,
-          reps: 0,
-          duration: 0,
-          intensity: 0,
-          volume: 0,
-          tags: [],
-          // Add new properties to store arrays of values
-          setRepsArray: [],
-          setDurationsArray: [],
-          setIntensitiesArray: []
-        };
-        
-        // Parse each field in the exercise
-        container.fields.forEach(field => {
-          if (!field || field.value === undefined) return;
+      if (exercises) {
+        Object.keys(exercises).forEach(mangledKey => {
+          const container = exercises[mangledKey];
           
-          // Use field.subtype for reliable identification instead of field.name
-          switch(field.subtype) {
-            case 'sets':
-              exerciseInfo.sets = parseInt(field.value) || 0;
-              break;
-            case 'reps_constant':
-              exerciseInfo.reps = parseInt(field.value) || 0;
-              break;
-            case 'reps_variant':
-              // Parse variant reps to get an array of values
-              if (field.value) {
-                // Split by semicolon based on validation schema
-                const repVariants = field.value.split(';')
-                  .filter(rep => rep.trim() !== '')
-                  .map(rep => parseInt(rep.trim()))
-                  .filter(rep => !isNaN(rep));
-                
-                // Store the array of reps
-                exerciseInfo.setRepsArray = repVariants;
-                
-                // Calculate average for backward compatibility
-                if (repVariants.length > 0) {
-                  exerciseInfo.reps = repVariants.reduce((sum, rep) => sum + rep, 0) / repVariants.length;
-                }
-              }
-              break;
-            case 'duration_constant':
-              exerciseInfo.duration = parseInt(field.value) || 0;
-              break;
-            case 'duration_variant':
-              // Parse variant durations to get an array of values
-              if (field.value) {
-                // Split by semicolon based on validation schema
-                const durationStrings = field.value.split(';')
-                  .filter(dur => dur.trim() !== '');
-                
-                // Store the array of duration strings
-                exerciseInfo.setDurationsArray = durationStrings;
-                
-                // Calculate average duration in seconds for backward compatibility
-                const durationValues = durationStrings.map(durStr => {
-                  const parts = durStr.split(':');
-                  if (parts.length === 3) {
-                    const hours = parseInt(parts[0]) || 0;
-                    const minutes = parseInt(parts[1]) || 0;
-                    const seconds = parseInt(parts[2]) || 0;
-                    return hours * 3600 + minutes * 60 + seconds;
-                  }
-                  return 0;
-                }).filter(dur => dur > 0);
-                
-                if (durationValues.length > 0) {
-                  exerciseInfo.duration = durationValues.reduce((sum, dur) => sum + dur, 0) / durationValues.length;
-                }
-              }
-              break;
-            case 'intensity_number':
-              exerciseInfo.intensity = parseFloat(field.value) || 0;
-              break;
-            case 'intensity_string':
-              // Parse intensity string to get an array of values
-              if (field.value) {
-                // Extract numbers from the string (e.g., "RPE 8; RPE 9" -> [8, 9])
-                const intensityStrings = field.value.split(';')
-                  .filter(int => int.trim() !== '');
-                
-                // Extract numeric values using regex
-                const intensityValues = intensityStrings.map(intStr => {
-                  const match = intStr.match(/\d+(\.\d+)?/);
-                  return match ? parseFloat(match[0]) : 0;
-                }).filter(int => int > 0);
-                
-                // Store the array of intensity values
-                exerciseInfo.setIntensitiesArray = intensityValues;
-                
-                // Calculate average for backward compatibility
-                if (intensityValues.length > 0) {
-                  exerciseInfo.intensity = intensityValues.reduce((sum, int) => sum + int, 0) / intensityValues.length;
-                }
-              }
-              break;
-            case 'tags':
-              // Parse tags from a semicolon-separated list with # prefix
-              if (field.value) {
-                // Split by semicolon and handle both formats: "#tag" or "tag"
-                const tags = field.value.split(';')
-                  .map(tag => tag.trim())
-                  .filter(tag => tag)
-                  .map(tag => tag.startsWith('#') ? tag.substring(1) : tag); // Remove # prefix if present
+          // Skip if fields aren't present
+          if (!container?.fields || !Array.isArray(container.fields)) return;
+          
+          // Extract the display name from the mangled key
+          const containerName = getExerciseContainerDisplayName(mangledKey);
+          
+          // Create an object to store parsed exercise data
+          const exerciseInfo = {
+            name: containerName,
+            sessionId: sessionNode.id,
+            sessionLabel,
+            date: sessionDate,
+            formattedDate,
+            phaseId,
+            phaseName,
+            microId,
+            microWeek,
+            sets: 0,
+            reps: 0,
+            duration: 0,
+            intensity: 0,
+            volume: 0,
+            tags: [],
+            // Add new properties to store arrays of values
+            setRepsArray: [],
+            setDurationsArray: [],
+            setIntensitiesArray: []
+          };
+          
+          // Parse each field in the exercise
+          container.fields.forEach(field => {
+            if (!field || field.value === undefined) return;
+            
+            // Use field.subtype for reliable identification instead of field.name
+            switch(field.subtype) {
+              case 'sets':
+                exerciseInfo.sets = parseInt(field.value) || 0;
+                break;
+              case 'reps_constant':
+                exerciseInfo.reps = parseInt(field.value) || 0;
+                break;
+              case 'reps_variant':
+                // Parse variant reps to get an array of values
+                if (field.value) {
+                  // Split by semicolon based on validation schema
+                  const repVariants = field.value.split(';')
+                    .filter(rep => rep.trim() !== '')
+                    .map(rep => parseInt(rep.trim()))
+                    .filter(rep => !isNaN(rep));
                   
-                exerciseInfo.tags = tags;
-                
-                // Add to our set of all tags
-                tags.forEach(tag => tagSet.add(tag));
-              }
-              break;
-          }
+                  // Store the array of reps
+                  exerciseInfo.setRepsArray = repVariants;
+                  
+                  // Calculate average for backward compatibility
+                  if (repVariants.length > 0) {
+                    exerciseInfo.reps = repVariants.reduce((sum, rep) => sum + rep, 0) / repVariants.length;
+                  }
+                }
+                break;
+              case 'duration_constant':
+                exerciseInfo.duration = parseInt(field.value) || 0;
+                break;
+              case 'duration_variant':
+                // Parse variant durations to get an array of values
+                if (field.value) {
+                  // Split by semicolon based on validation schema
+                  const durationStrings = field.value.split(';')
+                    .filter(dur => dur.trim() !== '');
+                  
+                  // Store the array of duration strings
+                  exerciseInfo.setDurationsArray = durationStrings;
+                  
+                  // Calculate average duration in seconds for backward compatibility
+                  const durationValues = durationStrings.map(durStr => {
+                    const parts = durStr.split(':');
+                    if (parts.length === 3) {
+                      const hours = parseInt(parts[0]) || 0;
+                      const minutes = parseInt(parts[1]) || 0;
+                      const seconds = parseInt(parts[2]) || 0;
+                      return hours * 3600 + minutes * 60 + seconds;
+                    }
+                    return 0;
+                  }).filter(dur => dur > 0);
+                  
+                  if (durationValues.length > 0) {
+                    exerciseInfo.duration = durationValues.reduce((sum, dur) => sum + dur, 0) / durationValues.length;
+                  }
+                }
+                break;
+              case 'intensity_number':
+                exerciseInfo.intensity = parseFloat(field.value) || 0;
+                break;
+              case 'intensity_string':
+                // Parse intensity string to get an array of values
+                if (field.value) {
+                  // Extract numbers from the string (e.g., "RPE 8; RPE 9" -> [8, 9])
+                  const intensityStrings = field.value.split(';')
+                    .filter(int => int.trim() !== '');
+                  
+                  // Extract numeric values using regex
+                  const intensityValues = intensityStrings.map(intStr => {
+                    const match = intStr.match(/\d+(\.\d+)?/);
+                    return match ? parseFloat(match[0]) : 0;
+                  }).filter(int => int > 0);
+                  
+                  // Store the array of intensity values
+                  exerciseInfo.setIntensitiesArray = intensityValues;
+                  
+                  // Calculate average for backward compatibility
+                  if (intensityValues.length > 0) {
+                    exerciseInfo.intensity = intensityValues.reduce((sum, int) => sum + int, 0) / intensityValues.length;
+                  }
+                }
+                break;
+              case 'tags':
+                // Parse tags from a semicolon-separated list with # prefix
+                if (field.value) {
+                  // Split by semicolon and handle both formats: "#tag" or "tag"
+                  const tags = field.value.split(';')
+                    .map(tag => tag.trim())
+                    .filter(tag => tag)
+                    .map(tag => tag.startsWith('#') ? tag.substring(1) : tag); // Remove # prefix if present
+                    
+                  exerciseInfo.tags = tags;
+                  
+                  // Add to our set of all tags
+                  tags.forEach(tag => tagSet.add(tag));
+                }
+                break;
+            }
+          });
+          
+          // Calculate volume (sets * reps)
+          exerciseInfo.volume = exerciseInfo.sets * exerciseInfo.reps;
+          
+          allExercises.push(exerciseInfo);
         });
-        
-        // Calculate volume (sets * reps)
-        exerciseInfo.volume = exerciseInfo.sets * exerciseInfo.reps;
-        
-        allExercises.push(exerciseInfo);
-      });
+      }
     });
     
     return {
