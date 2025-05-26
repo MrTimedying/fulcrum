@@ -1,13 +1,15 @@
 import React, { useMemo, useState, useCallback } from 'react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
-  PieChart, Pie, Cell
+  PieChart, Pie, Cell, LineChart, Line
 } from 'recharts';
 
 function SessionNodeInspector({ node }) {
   // State for selected tags for filtering charts
   const [selectedTags, setSelectedTags] = useState([]);
   const [showAllTags, setShowAllTags] = useState(true); // Default to showing all tags
+  // New state for tracking the selected exercise for set-by-set analysis
+  const [selectedExercise, setSelectedExercise] = useState(null);
   
   // Parse and normalize exercise data from the node
   const { exerciseData, allTags } = useMemo(() => {
@@ -32,7 +34,11 @@ function SessionNodeInspector({ node }) {
         reps: 0,
         duration: 0,
         intensity: 0,
-        tags: []
+        tags: [],
+        // Add new properties to store arrays of values
+        setRepsArray: [],
+        setDurationsArray: [],
+        setIntensitiesArray: []
       };
       
       // Parse each field in the exercise
@@ -48,12 +54,18 @@ function SessionNodeInspector({ node }) {
             exerciseInfo.reps = parseInt(field.value) || 0;
             break;
           case 'reps_variant':
-            // Parse variant reps (e.g. "10, 8, 6") and take the average
+            // Parse variant reps to get an array of values
             if (field.value) {
-              const repVariants = field.value.split(',')
+              // Split by semicolon (not comma) based on validation schema
+              const repVariants = field.value.split(';')
+                .filter(rep => rep.trim() !== '')
                 .map(rep => parseInt(rep.trim()))
                 .filter(rep => !isNaN(rep));
               
+              // Store the array of reps
+              exerciseInfo.setRepsArray = repVariants;
+              
+              // Calculate average for backward compatibility
               if (repVariants.length > 0) {
                 exerciseInfo.reps = repVariants.reduce((sum, rep) => sum + rep, 0) / repVariants.length;
               }
@@ -63,14 +75,29 @@ function SessionNodeInspector({ node }) {
             exerciseInfo.duration = parseInt(field.value) || 0;
             break;
           case 'duration_variant':
-            // Parse variant durations and take the average
+            // Parse variant durations to get an array of values
             if (field.value) {
-              const durationVariants = field.value.split(',')
-                .map(duration => parseInt(duration.trim()))
-                .filter(duration => !isNaN(duration));
+              // Split by semicolon based on validation schema
+              const durationStrings = field.value.split(';')
+                .filter(dur => dur.trim() !== '');
               
-              if (durationVariants.length > 0) {
-                exerciseInfo.duration = durationVariants.reduce((sum, duration) => sum + duration, 0) / durationVariants.length;
+              // Store the array of duration strings
+              exerciseInfo.setDurationsArray = durationStrings;
+              
+              // Calculate average duration in seconds for backward compatibility
+              const durationValues = durationStrings.map(durStr => {
+                const parts = durStr.split(':');
+                if (parts.length === 3) {
+                  const hours = parseInt(parts[0]) || 0;
+                  const minutes = parseInt(parts[1]) || 0;
+                  const seconds = parseInt(parts[2]) || 0;
+                  return hours * 3600 + minutes * 60 + seconds;
+                }
+                return 0;
+              }).filter(dur => dur > 0);
+              
+              if (durationValues.length > 0) {
+                exerciseInfo.duration = durationValues.reduce((sum, dur) => sum + dur, 0) / durationValues.length;
               }
             }
             break;
@@ -78,11 +105,24 @@ function SessionNodeInspector({ node }) {
             exerciseInfo.intensity = parseFloat(field.value) || 0;
             break;
           case 'intensity_string':
-            // Extract number from strings like "RPE 8" or "80% 1RM"
+            // Parse intensity string to get an array of values
             if (field.value) {
-              const match = field.value.match(/\d+(\.\d+)?/);
-              if (match) {
-                exerciseInfo.intensity = parseFloat(match[0]) || 0;
+              // Extract numbers from the string (e.g., "RPE 8; RPE 9" -> [8, 9])
+              const intensityStrings = field.value.split(';')
+                .filter(int => int.trim() !== '');
+              
+              // Extract numeric values using regex
+              const intensityValues = intensityStrings.map(intStr => {
+                const match = intStr.match(/\d+(\.\d+)?/);
+                return match ? parseFloat(match[0]) : 0;
+              }).filter(int => int > 0);
+              
+              // Store the array of intensity values
+              exerciseInfo.setIntensitiesArray = intensityValues;
+              
+              // Calculate average for backward compatibility
+              if (intensityValues.length > 0) {
+                exerciseInfo.intensity = intensityValues.reduce((sum, int) => sum + int, 0) / intensityValues.length;
               }
             }
             break;
@@ -138,6 +178,11 @@ function SessionNodeInspector({ node }) {
     }
   }, [showAllTags]);
 
+  // Handle exercise selection for set-by-set analysis
+  const handleExerciseSelection = useCallback((exerciseName) => {
+    setSelectedExercise(exerciseName === selectedExercise ? null : exerciseName);
+  }, [selectedExercise]);
+
   // Filter exercises based on selected tags
   const filteredExerciseData = useMemo(() => {
     if (showAllTags) return exerciseData;
@@ -151,6 +196,34 @@ function SessionNodeInspector({ node }) {
       exercise.tags.some(tag => selectedTags.includes(tag))
     );
   }, [exerciseData, selectedTags, showAllTags]);
+
+  // Get the selected exercise data for set-by-set analysis
+  const selectedExerciseData = useMemo(() => {
+    if (!selectedExercise) return null;
+    
+    return filteredExerciseData.find(ex => ex.name === selectedExercise);
+  }, [filteredExerciseData, selectedExercise]);
+
+  // Create data for set-by-set analysis charts
+  const setBySetChartData = useMemo(() => {
+    if (!selectedExerciseData) return { repsData: [], intensityData: [] };
+    
+    const exercise = selectedExerciseData;
+    
+    // Prepare data for reps chart
+    const repsData = exercise.setRepsArray.map((reps, index) => ({
+      set: `Set ${index + 1}`,
+      reps
+    }));
+    
+    // Prepare data for intensity chart
+    const intensityData = exercise.setIntensitiesArray.map((intensity, index) => ({
+      set: `Set ${index + 1}`,
+      intensity
+    }));
+    
+    return { repsData, intensityData };
+  }, [selectedExerciseData]);
 
   // Create data for bar chart showing key metrics for each exercise
   const barChartData = useMemo(() => {
@@ -436,6 +509,114 @@ function SessionNodeInspector({ node }) {
             </div>
           </div>
         )}
+        
+        {/* Exercise Selection for Set-by-Set Analysis */}
+        <div className="bg-zinc-800 p-4 rounded-lg mb-6">
+          <h4 className="text-sm font-medium mb-3 text-gray-300">Exercise Set-by-Set Analysis</h4>
+          <div className="mb-4">
+            <select
+              className="w-full p-2 rounded bg-zinc-700 text-white border border-zinc-600"
+              value={selectedExercise || ''}
+              onChange={(e) => handleExerciseSelection(e.target.value)}
+            >
+              <option value="">Select an exercise to view set-by-set data</option>
+              {filteredExerciseData.map(exercise => (
+                <option key={exercise.name} value={exercise.name}>{exercise.name}</option>
+              ))}
+            </select>
+          </div>
+          
+          {selectedExerciseData && (
+            <div className="space-y-4">
+              <div className="text-sm text-gray-300">
+                <p>Exercise: <span className="font-medium">{selectedExerciseData.name}</span></p>
+                <p>Sets: {selectedExerciseData.sets} | 
+                   Average Reps: {selectedExerciseData.reps.toFixed(1)} | 
+                   Average Intensity: {selectedExerciseData.intensity.toFixed(1)}</p>
+              </div>
+              
+              {/* Reps per Set Chart */}
+              {setBySetChartData.repsData.length > 0 && (
+                <div className="mt-4">
+                  <h5 className="text-sm font-medium mb-2 text-gray-400">Repetitions by Set</h5>
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart
+                        data={setBySetChartData.repsData}
+                        margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+                        <XAxis dataKey="set" tick={{ fill: '#aaa' }} />
+                        <YAxis tick={{ fill: '#aaa' }} />
+                        <Tooltip 
+                          contentStyle={{ 
+                            backgroundColor: '#333', 
+                            border: '1px solid #555',
+                            borderRadius: '4px',
+                            color: '#eee' 
+                          }}
+                        />
+                        <Legend />
+                        <Line 
+                          type="monotone" 
+                          dataKey="reps" 
+                          name="Repetitions" 
+                          stroke="#82ca9d"
+                          strokeWidth={2}
+                          dot={{ r: 6 }}
+                          activeDot={{ r: 8 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              )}
+              
+              {/* Intensity per Set Chart */}
+              {setBySetChartData.intensityData.length > 0 && (
+                <div className="mt-4">
+                  <h5 className="text-sm font-medium mb-2 text-gray-400">Intensity by Set</h5>
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart
+                        data={setBySetChartData.intensityData}
+                        margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" stroke="#444" />
+                        <XAxis dataKey="set" tick={{ fill: '#aaa' }} />
+                        <YAxis tick={{ fill: '#aaa' }} />
+                        <Tooltip 
+                          contentStyle={{ 
+                            backgroundColor: '#333', 
+                            border: '1px solid #555',
+                            borderRadius: '4px',
+                            color: '#eee' 
+                          }}
+                        />
+                        <Legend />
+                        <Line 
+                          type="monotone" 
+                          dataKey="intensity" 
+                          name="Intensity" 
+                          stroke="#ff7300"
+                          strokeWidth={2}
+                          dot={{ r: 6 }}
+                          activeDot={{ r: 8 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          
+          {!selectedExercise && (
+            <div className="text-sm text-gray-400 text-center py-4">
+              Select an exercise from the dropdown to view set-by-set analysis.
+            </div>
+          )}
+        </div>
         
         {/* Bar Chart for Exercise Metrics Comparison */}
         {barChartData.length > 0 && (

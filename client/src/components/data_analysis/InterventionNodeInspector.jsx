@@ -158,7 +158,11 @@ function InterventionNodeInspector({ node }) {
           duration: 0,
           intensity: 0,
           volume: 0,
-          tags: []
+          tags: [],
+          // Add new properties to store arrays of values
+          setRepsArray: [],
+          setDurationsArray: [],
+          setIntensitiesArray: []
         };
         
         // Parse each field in the exercise
@@ -174,12 +178,18 @@ function InterventionNodeInspector({ node }) {
               exerciseInfo.reps = parseInt(field.value) || 0;
               break;
             case 'reps_variant':
-              // Parse variant reps and take the average
+              // Parse variant reps to get an array of values
               if (field.value) {
-                const repVariants = field.value.split(',')
+                // Split by semicolon based on validation schema
+                const repVariants = field.value.split(';')
+                  .filter(rep => rep.trim() !== '')
                   .map(rep => parseInt(rep.trim()))
                   .filter(rep => !isNaN(rep));
                 
+                // Store the array of reps
+                exerciseInfo.setRepsArray = repVariants;
+                
+                // Calculate average for backward compatibility
                 if (repVariants.length > 0) {
                   exerciseInfo.reps = repVariants.reduce((sum, rep) => sum + rep, 0) / repVariants.length;
                 }
@@ -189,14 +199,29 @@ function InterventionNodeInspector({ node }) {
               exerciseInfo.duration = parseInt(field.value) || 0;
               break;
             case 'duration_variant':
-              // Parse variant durations and take the average
+              // Parse variant durations to get an array of values
               if (field.value) {
-                const durationVariants = field.value.split(',')
-                  .map(duration => parseInt(duration.trim()))
-                  .filter(duration => !isNaN(duration));
+                // Split by semicolon based on validation schema
+                const durationStrings = field.value.split(';')
+                  .filter(dur => dur.trim() !== '');
                 
-                if (durationVariants.length > 0) {
-                  exerciseInfo.duration = durationVariants.reduce((sum, duration) => sum + duration, 0) / durationVariants.length;
+                // Store the array of duration strings
+                exerciseInfo.setDurationsArray = durationStrings;
+                
+                // Calculate average duration in seconds for backward compatibility
+                const durationValues = durationStrings.map(durStr => {
+                  const parts = durStr.split(':');
+                  if (parts.length === 3) {
+                    const hours = parseInt(parts[0]) || 0;
+                    const minutes = parseInt(parts[1]) || 0;
+                    const seconds = parseInt(parts[2]) || 0;
+                    return hours * 3600 + minutes * 60 + seconds;
+                  }
+                  return 0;
+                }).filter(dur => dur > 0);
+                
+                if (durationValues.length > 0) {
+                  exerciseInfo.duration = durationValues.reduce((sum, dur) => sum + dur, 0) / durationValues.length;
                 }
               }
               break;
@@ -204,11 +229,24 @@ function InterventionNodeInspector({ node }) {
               exerciseInfo.intensity = parseFloat(field.value) || 0;
               break;
             case 'intensity_string':
-              // Extract number from strings like "RPE 8"
+              // Parse intensity string to get an array of values
               if (field.value) {
-                const match = field.value.match(/\d+(\.\d+)?/);
-                if (match) {
-                  exerciseInfo.intensity = parseFloat(match[0]) || 0;
+                // Extract numbers from the string (e.g., "RPE 8; RPE 9" -> [8, 9])
+                const intensityStrings = field.value.split(';')
+                  .filter(int => int.trim() !== '');
+                
+                // Extract numeric values using regex
+                const intensityValues = intensityStrings.map(intStr => {
+                  const match = intStr.match(/\d+(\.\d+)?/);
+                  return match ? parseFloat(match[0]) : 0;
+                }).filter(int => int > 0);
+                
+                // Store the array of intensity values
+                exerciseInfo.setIntensitiesArray = intensityValues;
+                
+                // Calculate average for backward compatibility
+                if (intensityValues.length > 0) {
+                  exerciseInfo.intensity = intensityValues.reduce((sum, int) => sum + int, 0) / intensityValues.length;
                 }
               }
               break;

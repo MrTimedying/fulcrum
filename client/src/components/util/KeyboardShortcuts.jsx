@@ -10,6 +10,16 @@ const useKeyboardShortcuts = ({
 }) => {
   useEffect(() => {
     const handleKeyDown = (event) => {
+      // Check if the event target is an input field, textarea, or contenteditable element
+      const targetTagName = event.target.tagName;
+      if (
+        targetTagName === 'INPUT' ||
+        targetTagName === 'TEXTAREA' ||
+        event.target.isContentEditable
+      ) {
+        return; // Let the browser handle shortcuts for these elements
+      }
+
       const isModifierKeyPressed = event.metaKey || event.ctrlKey;
       if (isModifierKeyPressed) {
         switch (event.key.toLowerCase()) {

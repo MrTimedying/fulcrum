@@ -10,7 +10,26 @@ const subtypesValidationRules = {
     type: "string",
     regex: /^(\d{1,2};)+$/, // Regex for 1 or 2 digits followed by semicolon, repeated
     errorMessage: (label) => `${label} must be a sequence of 1 or 2 digits followed by a semicolon (e.g., "1;22;3;")`,
-    // No custom .test() needed here as the regex handles the 1-2 digit count
+    // Add custom test to validate number of entries matches sets
+    test: {
+      name: 'reps-variant-sets-match',
+      errorMessage: (label) => `Number of entries in ${label} must match the number of Sets.`,
+      validator: function(value) {
+        if (value === null || value === undefined || value === '') return true; // Handle optional field
+        
+        // Get the sets value from the parent object (same container)
+        const sets = this.parent.sets;
+        
+        // If sets is not a valid positive integer, validation passes (can't enforce matching)
+        if (!sets || isNaN(sets) || parseInt(sets) <= 0) return true;
+        
+        // Parse the reps_variant value into an array of entries
+        const repsArray = value.split(';').filter(entry => entry.trim() !== '');
+        
+        // Compare the length of the parsed array to the sets integer
+        return repsArray.length === parseInt(sets);
+      }
+    }
   },
   duration_constant: {
     type: "string",
@@ -47,10 +66,10 @@ const subtypesValidationRules = {
       regex: /^(\d{0,2}:\d{0,2}:\d{2};)+$/,
       errorMessage: (label) => `${label} must be a sequence of durations in HH:MM:SS; format (e.g., "0:05:30;1:00:00;").`,
       // Custom test needed to validate numeric ranges within each duration part
-       test: {
+      test: {
         name: 'sets-duration-values',
         errorMessage: (label) => `${label} contains durations with invalid values (minutes and seconds must be 00-59).`,
-        validator: (value) => {
+        validator: function(value) {
              if (value === null || value === undefined || value === '') return true; // Handle optional field
 
              // Remove the last semicolon before splitting into individual durations
@@ -75,7 +94,29 @@ const subtypesValidationRules = {
 
              return true; // All duration parts were valid
         }
-    }
+      },
+      // Add a second test to validate number of entries matches sets
+      additionalTests: [
+        {
+          name: 'duration-variant-sets-match',
+          errorMessage: (label) => `Number of entries in ${label} must match the number of Sets.`,
+          validator: function(value) {
+            if (value === null || value === undefined || value === '') return true; // Handle optional field
+            
+            // Get the sets value from the parent object (same container)
+            const sets = this.parent.sets;
+            
+            // If sets is not a valid positive integer, validation passes (can't enforce matching)
+            if (!sets || isNaN(sets) || parseInt(sets) <= 0) return true;
+            
+            // Parse the duration_variant value into an array of entries
+            const durationsArray = value.split(';').filter(entry => entry.trim() !== '');
+            
+            // Compare the length of the parsed array to the sets integer
+            return durationsArray.length === parseInt(sets);
+          }
+        }
+      ]
   },
   intensity_type: { type: "string" }, // Assuming just a generic text input
   intensity_string: {
@@ -83,7 +124,26 @@ const subtypesValidationRules = {
      // Regex for one or more occurrences of (2 digits;)
     regex: /^(\d{2};)+$/,
     errorMessage: (label) => `${label} must be a sequence of 2 digits followed by a semicolon (e.g., "75;80;85;").`,
-     // No custom .test() needed
+    // Add custom test to validate number of entries matches sets
+    test: {
+      name: 'intensity-string-sets-match',
+      errorMessage: (label) => `Number of entries in ${label} must match the number of Sets.`,
+      validator: function(value) {
+        if (value === null || value === undefined || value === '') return true; // Handle optional field
+        
+        // Get the sets value from the parent object (same container)
+        const sets = this.parent.sets;
+        
+        // If sets is not a valid positive integer, validation passes (can't enforce matching)
+        if (!sets || isNaN(sets) || parseInt(sets) <= 0) return true;
+        
+        // Parse the intensity_string value into an array of entries
+        const intensitiesArray = value.split(';').filter(entry => entry.trim() !== '');
+        
+        // Compare the length of the parsed array to the sets integer
+        return intensitiesArray.length === parseInt(sets);
+      }
+    }
   },
   intensity_number: { type: "number", positive: true },
   tags: {
@@ -169,8 +229,24 @@ export const createValidationSchema = (containers) => {
            }
       }
 
+      // 4. Apply additional tests if specified in the rule
+      if (validationRule.additionalTests && Array.isArray(validationRule.additionalTests)) {
+        validationRule.additionalTests.forEach(additionalTest => {
+          const testName = additionalTest.name || `${field.name}-additional-test`;
+          const errorMessage = typeof additionalTest.errorMessage === 'function'
+                              ? additionalTest.errorMessage(field.label || field.name)
+                              : additionalTest.errorMessage || `${field.label || field.name} has an invalid value.`;
+          const validator = additionalTest.validator;
 
-      // 4. Assign the final schema for this field
+          if (typeof validator === 'function') {
+            fieldSchema = fieldSchema.test(testName, errorMessage, validator);
+          } else {
+            console.warn(`Subtype '${field.subtype}' additional test for field '${field.name}' is missing a validator function.`);
+          }
+        });
+      }
+
+      // 5. Assign the final schema for this field
       containerShape[field.name] = fieldSchema;
     });
 
