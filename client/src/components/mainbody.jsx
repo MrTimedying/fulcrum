@@ -1,4 +1,4 @@
-import React, { Fragment, useState, useEffect } from "react";
+import React, { Fragment, useState, useEffect, useCallback } from "react";
 import Modal from "react-modal";
 import { Rnd } from "react-rnd";
 import { Tab } from "@headlessui/react";
@@ -18,12 +18,40 @@ import DatepickerModal from "./dateModal";
 import FlowControls from "./controls/flowControls";
 import PopPrimitive from "./controls/popPrimitive";
 import StyleMenu from "./controls/styleMenu";
+import BulkExerciseEditModal from "./BulkExerciseEditModal";
 
 // Bind modal to your appElement (http://reactcommunity.org/react-modal/accessibility/)
 Modal.setAppElement("#root");
 
+// Helper: Gather descendants and their edges given a parent nodeId (Copied from templateModal.jsx)
+function getAllDescendants(parentNodeId, nodes, edges) {
+  if (!parentNodeId) return { nodes: [], edges: [] };
+  const descendants = new Set();
+  const connectingEdges = new Set();
+  const queue = [parentNodeId];
+  while (queue.length > 0) {
+    const current = queue.shift();
+    for (const edge of edges) {
+      if (edge.source === current && !descendants.has(edge.target)) {
+        descendants.add(edge.target);
+        connectingEdges.add(edge.id);
+        queue.push(edge.target);
+      }
+    }
+  }
+  // Include parent node in results
+  const nodeSet = new Set([parentNodeId, ...descendants]);
+  return {
+    nodes: nodes.filter(n => nodeSet.has(n.id)),
+    edges: edges.filter(e =>
+      nodeSet.has(e.source) &&
+      nodeSet.has(e.target)
+    ),
+  };
+}
+
 function MainBody() {
-  const { patientId, activeTab, setActiveTab, nodes, setNodes } =
+  const { patientId, activeTab, setActiveTab, nodes, setNodes, edges } =
     useFlowStore();
   const { setToaster } = useTransientStore();
   const [isComposerOpen, setIsComposerOpen] = useState(false);
@@ -34,6 +62,61 @@ function MainBody() {
   const [isFeaturesMenuOpen, setIsFeaturesMenuOpen] = useState(false);
   const [isStyleMenuOpen, setIsStyleMenuOpen] = useState(false);
   const [activeMenu, setActiveMenu] = useState(null);
+
+  // State for Bulk Exercise Edit Modal
+  const [isBulkEditModalOpen, setIsBulkEditModalOpen] = useState(false);
+  const [targetSessionNodes, setTargetSessionNodes] = useState([]);
+  const [isEditorSingleNodeSelected, setIsEditorSingleNodeSelected] = useState(false); // To track selection in Editor
+
+  // Handler to receive single node selection status from Editor
+  const handleEditorSingleNodeSelectedChange = useCallback((isSelected) => {
+      setIsEditorSingleNodeSelected(isSelected);
+  }, []);
+
+  // Handler to open Bulk Edit Modal (called by FlowControls)
+  const handleOpenBulkEditModal = useCallback(() => {
+      // This logic was moved from editor.jsx
+      const selectedNode = nodes.find((node) => node.selected); // Find the actually selected node from global state
+
+      if (!isEditorSingleNodeSelected || !selectedNode) { // Use the status reported by Editor
+          setToaster({
+              type: "info",
+              message: "Please select a single node to bulk edit its subtree exercises.",
+              show: true,
+          });
+          return;
+      }
+
+      console.log("Opening bulk edit modal for subtree of node:", selectedNode.id);
+
+      // 1. Get all descendants using the helper
+      const { nodes: allDescendantNodes } = getAllDescendants(selectedNode.id, nodes, edges);
+
+      // 2. Filter for only Session nodes
+      const sessionNodes = allDescendantNodes.filter(node => node.type === 'session');
+
+      if (sessionNodes.length === 0) {
+           setToaster({
+              type: "info",
+              message: "No Session nodes found in the selected subtree to bulk edit.",
+              show: true,
+          });
+          return;
+      }
+
+      console.log("Target Session nodes for bulk edit:", sessionNodes.map(n => n.id));
+
+      // 3. Set state and open the modal
+      setTargetSessionNodes(sessionNodes);
+      setIsBulkEditModalOpen(true);
+
+  }, [nodes, edges, isEditorSingleNodeSelected, setToaster]); // Depend on nodes and edges from store
+
+  // Handler to close Bulk Edit Modal
+  const handleCloseBulkEditModal = useCallback(() => {
+      setIsBulkEditModalOpen(false);
+      setTargetSessionNodes([]); // Clear target nodes when closing
+  }, []);
 
   // Update activeMenu when either menu state changes
   useEffect(() => {
@@ -47,9 +130,10 @@ function MainBody() {
   }, [isFeaturesMenuOpen, isStyleMenuOpen]);
 
   function handleModalOpening(id) {
-    // Check if a node is selected
-    const nodeSelected = nodes.find((node) => node.selected);
-    const multipleNodesSelected = nodes.filter((node) => node.selected).length > 1;
+    // Check if a node is selected - Use the status from Editor
+    // Note: The actual selected node object is accessed directly in handleOpenBulkEditModal
+    const nodeSelectedInEditor = nodes.find(node => node.selected); // Still need to find the node for other modals
+    const multipleNodesSelectedInEditor = nodes.filter(node => node.selected).length > 1;
 
     if (id === "interventionMenu") {
       if (activeTab !== "Editor") {
@@ -60,7 +144,7 @@ function MainBody() {
         });
         return;
       }
-      // if (!nodeSelected) {
+      // if (!nodeSelectedInEditor) {
       //   setToaster({
       //     type: "error",
       //     message: "No node is selected. Please select a node first.",
@@ -86,7 +170,8 @@ function MainBody() {
       return;
     }
 
-    if (!nodeSelected) {
+    // Check selection status using the state updated by Editor
+    if (!nodeSelectedInEditor) { // Use the node object for checks relevant to specific modals
       setToaster({
         type: "error",
         message: "No node is selected. Please select a node first.",
@@ -95,7 +180,7 @@ function MainBody() {
       return;
     }
 
-    if (multipleNodesSelected) {
+     if (multipleNodesSelectedInEditor) { // Use the node object for checks relevant to specific modals
       setToaster({
         type: "error",
         message: "Tools are disabled when multiple nodes are selected.",
@@ -103,10 +188,10 @@ function MainBody() {
       });
       return;
     }
-  
+
     // Early return for common error states
     if (id === "composer") {
-      if (!nodeSelected) {
+      if (!nodeSelectedInEditor) {
         setToaster({
           type: "error",
           message: "No node is selected. Please select a node to edit.",
@@ -115,9 +200,9 @@ function MainBody() {
         return;
       }
       if (
-        nodeSelected.type === "bodyStructure" ||
-        nodeSelected.type === "activities" ||
-        nodeSelected.type === "participation"
+        nodeSelectedInEditor.type === "bodyStructure" ||
+        nodeSelectedInEditor.type === "activities" ||
+        nodeSelectedInEditor.type === "participation"
       ) {
         setToaster({
           message: "These are just placeholders. You can't edit them.",
@@ -131,7 +216,7 @@ function MainBody() {
     }  
 
     if (id === "calendarMenu") {
-      if (nodeSelected.type !== 'session' || activeTab !== "Editor") {
+      if (nodeSelectedInEditor.type !== 'session' || activeTab !== "Editor") { // Use node object for type check
         setToaster({
           type: "error",
           message: "Calendar only works on sessions, in the intervention editor tool only.",
@@ -142,7 +227,7 @@ function MainBody() {
       setIsDatepickerModalOpen(true);
       return;
     }
-  
+
     // Fallback/default: no action for unknown menu
     setToaster({
       type: "error",
@@ -150,14 +235,13 @@ function MainBody() {
       show: true,
     });
   }
-  
-  
+
 
   function UtilityMenu() {
     return (
       <div className="flex flex-col ">
         {/* <p className="font-light text-xl text-zinc-300 p-1">@ Utility Menu</p> */}
-        
+
         <button
           id="composer"
           className=" hover:bg-zinc-700 text-slate-300 flex justify-start gap-2 font-sans text-xs m-2 px-1 rounded-md cursor-pointer  transition-colors duration-200"
@@ -198,8 +282,8 @@ function MainBody() {
     const initialIndex = activeTab === "Profile" ? 0 : 1;
 
     return (
-      <Tab.Group 
-        as="div" 
+      <Tab.Group
+        as="div"
         className="flex flex-col h-full w-full"
         defaultIndex={initialIndex}>
         <div className="flex flex-row w-full bg-zinc-900">
@@ -243,9 +327,9 @@ function MainBody() {
             <ReactFlowProvider>
               <Profile isInspectorOpen={isInspectorOpen} setIsInspectorOpen={setIsInspectorOpen} />
               <div className="absolute bottom-4 left-4 z-10">
-                
+
                 {/* PopPrimitive for StyleMenu */}
-                <PopPrimitive 
+                <PopPrimitive
                   isOpen={isStyleMenuOpen || isFeaturesMenuOpen} // Open if either menu state is true
                   onClose={() => {
                     setIsFeaturesMenuOpen(false); // Ensure both are closed on generic close
@@ -257,7 +341,7 @@ function MainBody() {
                   <StyleMenu nodes={nodes} setNodes={setNodes} />
                 </PopPrimitive>
                 {/* PopPrimitive for FeaturesMenu (UtilityMenu) */}
-                <PopPrimitive 
+                <PopPrimitive
                   isOpen={isFeaturesMenuOpen || isStyleMenuOpen} // Open if either menu state is true
                   onClose={() => {
                     setIsFeaturesMenuOpen(false); // Ensure both are closed on generic close
@@ -268,20 +352,31 @@ function MainBody() {
                 >
                   <UtilityMenu />
                 </PopPrimitive>
-                <FlowControls 
-                  setIsFeaturesMenuOpen={setIsFeaturesMenuOpen} 
-                  setIsStyleMenuOpen={setIsStyleMenuOpen} 
-                />
+                {/* Pass bulk edit handlers and status to FlowControls */} {/* Render FlowControls here as it's part of the UI */}
+                 <FlowControls
+                   setIsFeaturesMenuOpen={setIsFeaturesMenuOpen}
+                   setIsStyleMenuOpen={setIsStyleMenuOpen}
+                   handleOpenBulkEditModal={handleOpenBulkEditModal}
+                   singleNodeSelected={isEditorSingleNodeSelected} // Use the state from Editor
+                 />
+
               </div>
             </ReactFlowProvider>
           </Tab.Panel>
           <Tab.Panel key="interventionEditor" className="h-full">
             <ReactFlowProvider>
-              <Editor isInspectorOpen={isInspectorOpen} setIsInspectorOpen={setIsInspectorOpen} />
+              {/* Pass handler to Editor */} {/* Report selection status back to MainBody */}
+              <Editor
+                  isInspectorOpen={isInspectorOpen}
+                  setIsInspectorOpen={setIsInspectorOpen}
+                  onOpenBulkEditRequest={handleOpenBulkEditModal}
+                  onSingleNodeSelectedChange={handleEditorSingleNodeSelectedChange}
+              />
+
               <div className="absolute bottom-4 left-4 z-10">
-                
+
                 {/* PopPrimitive for StyleMenu */}
-                <PopPrimitive 
+                <PopPrimitive
                   isOpen={isStyleMenuOpen || isFeaturesMenuOpen} // Open if either menu state is true
                   onClose={() => {
                     setIsFeaturesMenuOpen(false); // Ensure both are closed on generic close
@@ -293,7 +388,7 @@ function MainBody() {
                   <StyleMenu nodes={nodes} setNodes={setNodes} />
                 </PopPrimitive>
                 {/* PopPrimitive for FeaturesMenu (UtilityMenu) */}
-                <PopPrimitive 
+                <PopPrimitive
                   isOpen={isFeaturesMenuOpen || isStyleMenuOpen} // Open if either menu state is true
                   onClose={() => {
                     setIsFeaturesMenuOpen(false); // Ensure both are closed on generic close
@@ -304,10 +399,14 @@ function MainBody() {
                 >
                   <UtilityMenu />
                 </PopPrimitive>
-                <FlowControls 
-                  setIsFeaturesMenuOpen={setIsFeaturesMenuOpen} 
-                  setIsStyleMenuOpen={setIsStyleMenuOpen} 
-                />
+                {/* Pass bulk edit handlers and status to FlowControls */} {/* Render FlowControls here as it's part of the UI */}
+                 <FlowControls
+                   setIsFeaturesMenuOpen={setIsFeaturesMenuOpen}
+                   setIsStyleMenuOpen={setIsStyleMenuOpen}
+                   handleOpenBulkEditModal={handleOpenBulkEditModal}
+                   singleNodeSelected={isEditorSingleNodeSelected} // Use the state from Editor
+                 />
+
               </div>
             </ReactFlowProvider>
           </Tab.Panel>
@@ -320,21 +419,27 @@ function MainBody() {
     return (
       <div
         className=" bg-neutral-800 h-full"
-        
+
       >
         {TabStructure()}
         <Composer
           isComposerOpen={isComposerOpen}
           setIsComposerOpen={setIsComposerOpen} />
-        <InterventionModal 
+        <InterventionModal
           isOpen={isInterventionModalOpen}
           onClose={() => setIsInterventionModalOpen(false)}  />
-        <TemplateModal 
+        <TemplateModal
           isOpen={isTemplateModalOpen}
           onClose={() => setIsTemplateModalOpen(false)} />
         <DatepickerModal
           isOpen={isDatepickerModalOpen}
           onClose={() => setIsDatepickerModalOpen(false)} />
+        {/* Render the Bulk Edit Modal here */}
+        <BulkExerciseEditModal
+            isOpen={isBulkEditModalOpen}
+            onClose={handleCloseBulkEditModal}
+            targetSessionNodes={targetSessionNodes}
+        />
       </div>
     );
   } else {

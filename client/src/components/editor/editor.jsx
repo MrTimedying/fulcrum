@@ -38,16 +38,19 @@ const dataTemplates = {
     color: "rgba(28, 28, 28, 1)",
     global: "",
     service: "",
+    order: 1, // Always 1 for intervention node (there can be only one)
   }),
   phase: () => ({
     id: uuidv4(),
     scope: "Phase Scope",
     color: "rgba(28, 28, 28, 1)",
+    order: null, // Will be assigned when connected to a parent
   }),
   micro: () => ({
     id: uuidv4(),
     scope: "Micro Scope",
     color: "rgba(28, 28, 28, 1)",
+    order: null, // Will be assigned when connected to a parent
   }),
   session: () => ({
     id: uuidv4(),
@@ -55,6 +58,7 @@ const dataTemplates = {
     color: "rgba(28, 28, 28, 1)",
     exercises: [],
     tests: [],
+    order: null, // Will be assigned when connected to a parent
   }),
 };
 
@@ -86,9 +90,38 @@ const selector = (state) => ({
   updateNodeData: state.updateNodeData,
   applyLayout: state.applyLayout,
   stackSessionNodes: state.stackSessionNodes,
+  onConnect: state.onConnect,
+  onReconnect: state.onReconnect,
 });
 
-function Editor({ isInspectorOpen, setIsInspectorOpen }) {
+// Helper: Gather descendants and their edges given a parent nodeId (Copied from templateModal.jsx)
+function getAllDescendants(parentNodeId, nodes, edges) {
+  if (!parentNodeId) return { nodes: [], edges: [] };
+  const descendants = new Set();
+  const connectingEdges = new Set();
+  const queue = [parentNodeId];
+  while (queue.length > 0) {
+    const current = queue.shift();
+    for (const edge of edges) {
+      if (edge.source === current && !descendants.has(edge.target)) {
+        descendants.add(edge.target);
+        connectingEdges.add(edge.id);
+        queue.push(edge.target);
+      }
+    }
+  }
+  // Include parent node in results
+  const nodeSet = new Set([parentNodeId, ...descendants]);
+  return {
+    nodes: nodes.filter(n => nodeSet.has(n.id)),
+    edges: edges.filter(e =>
+      nodeSet.has(e.source) &&
+      nodeSet.has(e.target)
+    ),
+  };
+}
+
+function Editor({ isInspectorOpen, setIsInspectorOpen, onOpenBulkEditRequest, onSingleNodeSelectedChange }) {
   // STATE MANAGEMENT
   const { setToaster } = useTransientStore();
   const reactFlowWrapper = useRef(null);
@@ -106,6 +139,8 @@ function Editor({ isInspectorOpen, setIsInspectorOpen }) {
     updateNodeData,
     applyLayout,
     stackSessionNodes,
+    onConnect,
+    onReconnect,
   } = useFlowStore(useShallow(selector));
 
   const {
@@ -134,6 +169,12 @@ function Editor({ isInspectorOpen, setIsInspectorOpen }) {
   const selectedNode = nodes.find((node) => node.selected);
   const multipleNodesSelected =
     nodes.filter((node) => node.selected).length > 1;
+  const singleNodeSelected = selectedNode && !multipleNodesSelected; // Helper for enabling/disabling button
+
+  // Report single node selection status to parent (mainbody.jsx)
+  useEffect(() => {
+      onSingleNodeSelectedChange(singleNodeSelected);
+  }, [singleNodeSelected, onSingleNodeSelectedChange]);
 
   const handleNodeClick = useCallback(
     (event, node) => {
@@ -243,23 +284,15 @@ function Editor({ isInspectorOpen, setIsInspectorOpen }) {
 
   // EDGE MANAGEMENT
   const edgeReconnectSuccessful = useRef(false);
-  const onConnect = useCallback(
-    (params) => setEdges((eds) => addEdge(params, eds)),
-    []
-  );
   const onReconnectStart = useCallback(() => {
     edgeReconnectSuccessful.current = false;
   }, []);
-  const onReconnect = useCallback((oldEdge, newConnection) => {
-    edgeReconnectSuccessful.current = true; // Reconnection successful
-    setEdges((eds) => reconnectEdge(oldEdge, newConnection, eds));
-  }, []);
   const onReconnectEnd = useCallback((_, edge) => {
     if (!edgeReconnectSuccessful.current) {
-      setEdges((eds) => eds.filter((e) => e.id !== edge.id)); // Remove edge
+      onEdgesChange([{ id: edge.id, type: 'remove' }]);
     }
     edgeReconnectSuccessful.current = true; // Reset
-  }, []);
+  }, [onEdgesChange]);
 
   const isValidConnection = useCallback(
     (connection) => {
@@ -428,6 +461,7 @@ function Editor({ isInspectorOpen, setIsInspectorOpen }) {
     deleteSelectedNodesEdges,
     undoNodesEdges,
     redoNodesEdges,
+    // Add key shortcut for bulk edit? TBD.
   });
 
   return (
@@ -465,27 +499,11 @@ function Editor({ isInspectorOpen, setIsInspectorOpen }) {
           minZoom={0.3}
         >
           <div className="relative top-4 left-4 z-10 space-x-2">
-            <button
-              onClick={() => applyLayout("TB")}
-              className="bg-gray-700 hover:bg-gray-400 text-white font-medium py-1 px-1 rounded text-[9px]"
-            >
-              Layout TB
-            </button>
-            <button
-              onClick={() => applyLayout("LR")}
-              className="bg-gray-700 hover:bg-gray-400 text-white font-medium py-1 px-1 rounded text-[9px]"
-            >
-              Layout LR
-            </button>
-            <button
-              onClick={stackSessionNodes}
-              className="bg-gray-700 hover:bg-gray-400 text-white font-medium py-1 px-1 rounded text-[9px]"
-            >
-              Stack Sessions
-            </button>
+             {/* Pass handleOpenBulkEditModal and singleNodeSelected prop to FlowControls */}
+             {/* Assuming FlowControls will be rendered here or passed needed props */}
           </div>
           <Background variant="dots" />
-          
+          {/* FlowControls Component - Moved or ensure props are passed */}
         </ReactFlow>
         {/* Node Context Menu */}
         <NodeMenu
@@ -537,6 +555,7 @@ function Editor({ isInspectorOpen, setIsInspectorOpen }) {
           onClose={() => setIsExerciseModalOpen(false)}
           multiple={multipleNodesSelected}
           />
+
       </div>
     </div>
   );

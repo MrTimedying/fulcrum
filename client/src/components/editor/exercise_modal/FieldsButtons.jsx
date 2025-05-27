@@ -6,7 +6,7 @@ export function FieldTypeButtons({ containerId, onAddField }) {
     { type: "number", subtype: "sets", label: "Sets Number", classStyle: "bg-zinc-800 border-2 border-zinc-600 text-white" },
     { type: "number", subtype: "reps_constant", label: "Repetitions", classStyle: "bg-zinc-800 border-2 border-zinc-600 text-white" },
     { type: "textarea", subtype: "reps_variant", label: "Repetitions schema", classStyle: "bg-zinc-800 border-2 border-zinc-600 text-white" },
-    { type: "number", subtype: "duration_constant", label: "Duration", classStyle: "bg-zinc-800 border-2 border-zinc-600 text-white" },
+    { type: "text", subtype: "duration_constant", label: "Duration", classStyle: "bg-zinc-800 border-2 border-zinc-600 text-white" },
     { type: "textarea", subtype: "duration_variant", label: "Duration schema", classStyle: "bg-zinc-800 border-2 border-zinc-600 text-white" },
     { type: "text", subtype: "intensity_type", label: "Intensity Type", classStyle: "bg-zinc-800 border-2 border-zinc-600 text-white" },
     { type: "textarea", subtype: "intensity_string", label: "Intensity Schema", classStyle: "bg-zinc-800 border-2 border-zinc-600 text-white" },

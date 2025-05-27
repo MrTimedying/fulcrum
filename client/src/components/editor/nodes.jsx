@@ -23,6 +23,11 @@ export const InterventionNode = ({ data, selected, type }) => (
       className="w-full h-full"
     >
       <strong className="text-2xl font-bold font-serif">{type}</strong>
+      {data.order && (
+        <span className="ml-2 px-2 py-0.5 bg-blue-600 text-white rounded-full text-xs">
+          #{data.order}
+        </span>
+      )}
       <ul>
         <li className="text-stone-300">
           <a className="text-white font-bold">Name:</a>{" "}
@@ -79,6 +84,11 @@ export const PhaseNode = ({ data, selected, type }) => (
         style={{ background: selected ? "#6366F1" : "black" }}
       />
       <strong className="text-2xl font-bold font-serif ">{type}</strong>
+      {data.order !== null && (
+        <span className="ml-2 px-2 py-0.5 bg-blue-600 text-white rounded-full text-xs">
+          #{data.order}
+        </span>
+      )}
       <ul>
         <li className="text-stone-300">
           <a className="text-white font-bold">Scope:</a>{" "}
@@ -123,6 +133,11 @@ export const MicroNode = ({ data, selected, type }) => (
         style={{ background: selected ? "#6366F1" : "black" }}
       />
       <strong className="text-2xl font-bold font-serif ">{type}</strong>
+      {data.order !== null && (
+        <span className="ml-2 px-2 py-0.5 bg-blue-600 text-white rounded-full text-xs">
+          #{data.order}
+        </span>
+      )}
       <ul>
         <li>Micro Scope: {data.scope || "Not defined yet"}</li>
         <li>Micro Description: {data.description || "Not defined yet"}</li>
@@ -225,6 +240,11 @@ export const SessionNode = ({ id, data, selected, type }) => {
         />
 
         <strong className="text-2xl font-bold font-serif ">{type}</strong>
+        {data.order !== null && (
+          <span className="ml-2 px-2 py-0.5 bg-blue-600 text-white rounded-full text-xs">
+            #{data.order}
+          </span>
+        )}
         <ul>
           <li>Session Scope: {data.scope || "Not defined yet"}</li>
           <li>Date: {data.date || "Not defined yet"}</li>

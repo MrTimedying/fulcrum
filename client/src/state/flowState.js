@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { applyNodeChanges, applyEdgeChanges } from "@xyflow/react";
+import { applyNodeChanges, applyEdgeChanges, addEdge } from "@xyflow/react";
 import * as _ from "lodash";
 import {
   getProfileComposerTemplates,
@@ -145,6 +145,35 @@ const getLayoutedElements = (nodes, edges, options = {}) => {
       console.error("ELK layout error:", error);
       return { nodes, edges }; // Return original nodes and edges on error
     });
+};
+
+// Add ORDER feature helper function after the getLayoutedElements function
+
+const resequenceSiblingOrders = (parentId, allNodes, allEdges) => {
+  if (!parentId) return allNodes;
+  
+  // Get all edges where this parent is the source
+  const parentEdges = allEdges.filter(edge => edge.source === parentId);
+  
+  // If no children, nothing to resequence
+  if (parentEdges.length === 0) return allNodes;
+  
+  // Find all child nodes connected to this parent
+  const childNodeIds = parentEdges.map(edge => edge.target);
+  
+  // Clone nodes to avoid reference issues
+  const updatedNodes = _.cloneDeep(allNodes);
+  
+  // Update child nodes with new sequential order values
+  childNodeIds.forEach((childId, index) => {
+    const nodeIndex = updatedNodes.findIndex(node => node.id === childId);
+    if (nodeIndex !== -1) {
+      // Add 1 to make orders start from 1 instead of 0
+      updatedNodes[nodeIndex].data.order = index + 1;
+    }
+  });
+  
+  return updatedNodes;
 };
 
 const useFlowStore = create(
@@ -293,9 +322,63 @@ const useFlowStore = create(
       },
 
       onEdgesChange: (changes) => {
+        // Store current state for identifying changes
+        const currentEdges = get().edges;
+        const currentNodes = get().nodes;
+        
+        // Track parents that need resequencing
+        const parentIdsToResequence = new Set();
+        
+        // Process each change to identify edges being removed
+        changes.forEach(change => {
+          if (change.type === 'remove') {
+            // Find the edge being removed
+            const edgeToRemove = currentEdges.find(edge => edge.id === change.id);
+            if (edgeToRemove) {
+              // Get source (parent) of the edge
+              const sourceId = edgeToRemove.source;
+              
+              // Get target (child) of the edge
+              const targetId = edgeToRemove.target;
+              
+              // Find target node
+              const targetNode = currentNodes.find(node => node.id === targetId);
+              
+              if (targetNode) {
+                // Reset the order on the node being disconnected
+                targetNode.data.order = null;
+                
+                // Add parent to resequencing set
+                parentIdsToResequence.add(sourceId);
+              }
+            }
+          }
+        });
+        
+        // Apply the edge changes first
         set((state) => ({
           edges: applyEdgeChanges(changes, state.edges),
         }));
+        
+        // If we have parents needing resequencing, handle them
+        if (parentIdsToResequence.size > 0) {
+          // Get updated state after edge changes
+          const { nodes, edges } = get();
+          
+          // Clone nodes for updating
+          let updatedNodes = _.cloneDeep(nodes);
+          
+          // Process each parent that needs resequencing
+          parentIdsToResequence.forEach(parentId => {
+            // Resequence the children
+            updatedNodes = resequenceSiblingOrders(parentId, updatedNodes, edges);
+          });
+          
+          // Update the nodes with new orders
+          set({ nodes: updatedNodes });
+          
+          console.log(`Resequenced children for ${parentIdsToResequence.size} parent(s) after edge removal`);
+        }
       },
 
       setNodes: (payload) => {
@@ -308,6 +391,117 @@ const useFlowStore = create(
         set((state) => ({
           edges: typeof payload === "function" ? payload(state.edges) : payload,
         }));
+      },
+
+      // Custom onConnect function to handle order assignment
+      onConnect: (params) => {
+        const { nodes, edges } = get();
+        
+        // First check if this is a valid connection
+        const sourceNode = nodes.find(node => node.id === params.source);
+        const targetNode = nodes.find(node => node.id === params.target);
+        
+        // Skip processing if nodes don't exist
+        if (!sourceNode || !targetNode) {
+          console.error("Invalid connection: Source or target node not found", params);
+          return;
+        }
+        
+        // Verify if the connection type is valid according to rules
+        const validConnections = {
+          intervention: ["phase"],
+          phase: ["micro"],
+          micro: ["session"]
+        };
+        
+        const allowedTargetTypes = validConnections[sourceNode.type] || [];
+        if (!allowedTargetTypes.includes(targetNode.type)) {
+          console.error("Invalid connection type", sourceNode.type, "->", targetNode.type);
+          return;
+        }
+        
+        // Record state for undo
+        get().recordState();
+        
+        // Find existing children of the source node to determine target's order
+        const existingEdges = edges.filter(edge => edge.source === params.source);
+        
+        // Create a deep copy of nodes to modify
+        let updatedNodes = _.cloneDeep(nodes);
+        
+        // Find the target node in the copied array
+        const targetNodeIndex = updatedNodes.findIndex(node => node.id === params.target);
+        
+        if (targetNodeIndex !== -1) {
+          // Assign new order based on existing sibling count 
+          updatedNodes[targetNodeIndex].data.order = existingEdges.length + 1;
+        }
+        
+        // Create the new edge
+        const newEdge = addEdge(params, edges);
+        
+        // Update both nodes and edges in one operation
+        set({
+          nodes: updatedNodes,
+          edges: newEdge
+        });
+        
+        console.log(`Connection created: ${params.source} -> ${params.target}, assigned order ${existingEdges.length + 1}`);
+      },
+
+      // Handle edge reconnection with order adjustment
+      onReconnect: (oldEdge, newConnection) => {
+        const { nodes, edges } = get();
+        
+        // Record state for undo
+        get().recordState();
+        
+        // Get the old source (parent) and the target (child being reconnected)
+        const oldSourceId = oldEdge.source;
+        const targetId = oldEdge.target;
+        const newSourceId = newConnection.source;
+        
+        // Create a deep copy of nodes/edges to work with
+        let updatedNodes = _.cloneDeep(nodes);
+        let updatedEdges = _.cloneDeep(edges);
+        
+        // 1. Remove the old edge
+        updatedEdges = updatedEdges.filter(edge => 
+          !(edge.source === oldSourceId && edge.target === targetId)
+        );
+        
+        // 2. Resequence the old parent's remaining children
+        if (oldSourceId) {
+          updatedNodes = resequenceSiblingOrders(oldSourceId, updatedNodes, updatedEdges);
+        }
+        
+        // 3. Add the new edge
+        updatedEdges.push({
+          ...newConnection,
+          id: `e-${uuidv4()}` // Generate a new edge ID
+        });
+        
+        // 4. Find the node index in our updatedNodes array
+        const targetNodeIndex = updatedNodes.findIndex(node => node.id === targetId);
+        
+        // 5. Count existing children of the new parent to determine new order
+        const existingEdges = updatedEdges.filter(edge => edge.source === newSourceId);
+        
+        // 6. Assign new order for the node that was reconnected
+        if (targetNodeIndex !== -1) {
+          updatedNodes[targetNodeIndex].data.order = existingEdges.length;
+        }
+        
+        // 7. Resequence the new parent's children (including the newly added one)
+        updatedNodes = resequenceSiblingOrders(newSourceId, updatedNodes, updatedEdges);
+        
+        // 8. Update state with new nodes and edges
+        set({
+          nodes: updatedNodes,
+          edges: updatedEdges
+        });
+        
+        console.log(`Edge reconnected: ${oldSourceId} -> ${targetId} to ${newSourceId} -> ${targetId}`);
       },
 
       initializeFlowState: (patientId) => {
@@ -703,6 +897,19 @@ const useFlowStore = create(
             return state;
           }
           
+          // Clear ORDER values for pasted nodes since they have no parent connection yet
+          const nodesWithoutOrder = newNodes.map(node => {
+            // Create a deep copy to avoid mutation
+            const nodeClone = _.cloneDeep(node);
+            
+            // Set order to null for all pasted nodes since they're initially disconnected
+            if (nodeClone.data) {
+              nodeClone.data.order = null;
+            }
+            
+            return nodeClone;
+          });
+          
           // Determine paste position
           let pastePosition;
           
@@ -726,7 +933,7 @@ const useFlowStore = create(
           
           // Offset position
           const { offsetedNodes, offsetedEdges } = offsetNodesEdgesPosition(
-            newNodes,
+            nodesWithoutOrder,
             newEdges,
             pastePosition.x,
             pastePosition.y
@@ -761,16 +968,44 @@ const useFlowStore = create(
         
 
       deleteSelectedNodesEdges: () => {
+        // Track if actions were performed
         let nodesDeleted = false;
         let edgesDeleted = false;
 
+        // Record state for undo
         get().recordState();
 
+        // Identify all parent nodes that will need resequencing
+        // when one of their children is deleted
+        const parentIdsToResequence = new Set();
+        
+        // Get current state
+        const { nodes, edges } = get();
+
+        // Find all selected nodes
+        const selectedNodes = nodes.filter(n => n.selected);
+        
+        // Find parent nodes for each selected node by looking at incoming edges
+        selectedNodes.forEach(node => {
+          // Find edges where this node is the target (incoming edges)
+          edges.forEach(edge => {
+            if (edge.target === node.id && !selectedNodes.some(n => n.id === edge.source)) {
+              // If the parent isn't also selected for deletion, add to resequence list
+              parentIdsToResequence.add(edge.source);
+            }
+          });
+        });
+
+        // Remove selected nodes and edges
         set((state) => {
           const initialNodesCount = (state.nodes || []).length;
           const initialEdgesCount = (state.edges || []).length;
           const remainingNodes = (state.nodes || []).filter((n) => !n.selected);
-          const remainingEdges = (state.edges || []).filter((e) => !e.selected);
+          const remainingEdges = (state.edges || []).filter(
+            (edge) => !edge.selected && // Filter out explicitly selected edges
+                      !selectedNodes.some(node => node.id === edge.source) && // Filter out edges from deleted nodes
+                      !selectedNodes.some(node => node.target === node.id) // Filter out edges to deleted nodes
+          );
 
           nodesDeleted = initialNodesCount !== remainingNodes.length;
           edgesDeleted = initialEdgesCount !== remainingEdges.length;
@@ -782,6 +1017,35 @@ const useFlowStore = create(
             edges: remainingEdges,
           };
         });
+        
+        // Now resequence all affected parent nodes' children
+        if (parentIdsToResequence.size > 0) {
+          // Get fresh state after the deletion
+          const { nodes, edges } = get();
+          
+          // Resequence the children of each affected parent
+          let updatedNodes = _.cloneDeep(nodes);
+          
+          parentIdsToResequence.forEach(parentId => {
+            updatedNodes = resequenceSiblingOrders(parentId, updatedNodes, edges);
+          });
+          
+          // Update nodes with resequenced orders
+          set((state) => {
+             // Optional: Log orders of children for resequenced parents
+             parentIdsToResequence.forEach(parentId => {
+                 const children = updatedNodes.filter(node => edges.some(edge => edge.source === parentId && edge.target === node.id));
+                 console.log(`deleteSelectedNodesEdges: Orders for children of ${parentId}:`, children.map(c => ({id: c.id, order: c.data?.order})));
+             });
+
+            return {
+              ...state,
+              nodes: updatedNodes
+            };
+          });
+          
+        } else {
+        }
       },
 
       dumpClipboard: () =>
@@ -1254,10 +1518,15 @@ const useFlowStore = create(
             const startX = parentNode.position.x; // Same X as parent
             let startY = parentNode.position.y + 150; // Start below parent with some spacing
             
-            // Sort nodes by existing X position to maintain relative horizontal order
-            const sortedChildren = [...childNodes].sort((a, b) => 
-              (a.position?.x || 0) - (b.position?.x || 0)
-            );
+            // Sort nodes by order property if available, otherwise by position
+            const sortedChildren = [...childNodes].sort((a, b) => {
+              // If both nodes have an order, sort by order
+              if (a.data?.order !== null && b.data?.order !== null) {
+                return (a.data?.order || 0) - (b.data?.order || 0);
+              }
+              // Otherwise fall back to X position
+              return (a.position?.x || 0) - (b.position?.x || 0);
+            });
             
             // Position each child node in a vertical column beneath the parent
             sortedChildren.forEach((node, index) => {
@@ -1283,6 +1552,31 @@ const useFlowStore = create(
         } catch (error) {
           console.error("Error stacking session nodes:", error);
         }
+      },
+
+      batchUpdateNodesExerciseData: async (updatesMap) => {
+        set((state) => {
+            const newNodes = state.nodes.map(node => {
+                if (updatesMap[node.id]) {
+                    // Deep merge the existing exercises with the updates
+                    // This is a simplified merge; a more robust one might be needed depending on complexity
+                    const updatedExercises = { ...node.data?.exercises, ...updatesMap[node.id] };
+                    return {
+                        ...node,
+                        data: {
+                            ...node.data,
+                            exercises: updatedExercises,
+                        },
+                    };
+                } else {
+                    return node;
+                }
+            });
+            // Ensure onNodesChange is called to trigger React Flow updates if necessary
+            // This might require passing specific change objects if simply setting nodes isn't enough
+            console.log("Batch updating nodes:", Object.keys(updatesMap));
+            return { nodes: newNodes };
+        });
       },
 
     //This is the end of the store  

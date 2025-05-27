@@ -7,8 +7,9 @@ import { FiMinus } from "react-icons/fi";
 import { SlSizeActual } from "react-icons/sl";
 import { CiUnlock, CiLock, CiMenuBurger } from "react-icons/ci"; // Features Menu Icon
 import { IoIosColorPalette } from "react-icons/io"; // Style Menu Icon
+import { MdOutlineEdit } from "react-icons/md"; // Icon for Bulk Edit
 
-export default function FlowControls({ setIsFeaturesMenuOpen, setIsStyleMenuOpen }) {
+export default function FlowControls({ setIsFeaturesMenuOpen, setIsStyleMenuOpen, handleOpenBulkEditModal, singleNodeSelected }) {
   const reactFlowInstance = useReactFlow();
   const { zoomIn, zoomOut, fitView } = reactFlowInstance;
   const [isLocked, setIsLocked] = useState(false);
@@ -67,6 +68,17 @@ export default function FlowControls({ setIsFeaturesMenuOpen, setIsStyleMenuOpen
         aria-label="Features Menu"
       >
         <CiMenuBurger />
+      </button>
+
+      {/* Bulk Edit Button */}
+      <button
+        onClick={handleOpenBulkEditModal}
+        disabled={!singleNodeSelected}
+        className={`p-1 rounded-md text-xs ${singleNodeSelected ? 'bg-zinc-800 hover:bg-zinc-700' : 'bg-gray-600 cursor-not-allowed'} text-white transition-all duration-200 ease-in-out shadow hover:shadow-md`}
+        aria-label="Bulk Edit Exercises"
+        title="Bulk Edit Exercises (Select a single node)"
+      >
+        <MdOutlineEdit />
       </button>
       
       {/* Zoom In Button */}
