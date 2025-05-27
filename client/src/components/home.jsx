@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import MainBody from './mainbody';
 import Sidebar from './sidebar';
@@ -8,6 +8,8 @@ import { Toaster } from './toaster';
 import SplitPane, { Pane } from 'split-pane-react';
 import 'split-pane-react/esm/themes/default.css';
 import './splitpane.css';
+import useFlowStore from '../state/flowState';
+import NpForm from './npform';
 
 // Define custom styles for the SplitPane components
 const containerStyle = {
@@ -32,6 +34,65 @@ function Home() {
   const [sizes, setSizes] = useState(['20%', 'auto']);
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef(null);
+  const { patients, patientId } = useFlowStore();
+  
+  // State variables to manage patient edit modal (shared between MainBody and Sidebar)
+  const [isPatientEditModalOpen, setIsPatientEditModalOpen] = useState(false);
+  const [patientFormData, setPatientFormData] = useState({
+    name: "",
+    surname: "",
+    age: "",
+    gender: "",
+    bmi: "",
+    height: "",
+    weight: "",
+    status: "",
+  });
+  const [isEditing, setIsEditing] = useState(false);
+
+  // Handler for editing patient data (shared between MainBody and Sidebar)
+  const handleEditPatient = useCallback((node) => {
+    // If called from profile node in MainBody, the node object contains the patient data
+    if (node && node.type === 'profile') {
+      // Get the patient ID from the node data or from the store
+      const nodePatientId = node.data.PatientId || patientId;
+      if (nodePatientId && patients[nodePatientId]) {
+        setPatientFormData({
+          ...patients[nodePatientId],
+          PatientId: nodePatientId, // Ensure PatientId is included for the form to update correctly
+        });
+        setIsEditing(true);
+        setIsPatientEditModalOpen(true);
+        return;
+      }
+    }
+    
+    // If called without a node or if node doesn't have patient data (e.g. from sidebar)
+    if (patientId && patients[patientId]) {
+      setPatientFormData({
+        ...patients[patientId],
+        PatientId: patientId,
+      });
+      setIsEditing(true);
+      setIsPatientEditModalOpen(true);
+    }
+  }, [patientId, patients]);
+
+  // Close patient edit modal
+  const closePatientEditModal = useCallback(() => {
+    setIsPatientEditModalOpen(false);
+    setPatientFormData({
+      name: "",
+      surname: "",
+      age: "",
+      gender: "",
+      bmi: "",
+      height: "",
+      weight: "",
+      status: "",
+    });
+    setIsEditing(false);
+  }, []);
 
   const handleDragStart = () => {
     setIsDragging(true);
@@ -81,18 +142,29 @@ function Home() {
             onDragEnd={handleDragEnd}
           >
             <Pane minSize={150} maxSize="50%" className="sidebar-pane">
-              <Sidebar />
+              <Sidebar handleEditPatient={handleEditPatient} />
             </Pane>
             <Pane minSize={300} className="mainbody-pane">
               <div style={{ height: '100%', width: '100%', overflow: 'auto' }}>
                 <Routes>
-                  <Route path="/patients/:ID" element={<MainBody />} />
-                  <Route path="/" element={<MainBody />} />
+                  <Route path="/patients/:ID" element={<MainBody handleEditPatient={handleEditPatient} />} />
+                  <Route path="/" element={<MainBody handleEditPatient={handleEditPatient} />} />
                 </Routes>
               </div>
             </Pane>
           </SplitPane>
         </div>
+        
+        {/* Patient Edit Form Modal - now at Home level */}
+        <NpForm
+          isOpen={isPatientEditModalOpen}
+          closeModal={closePatientEditModal}
+          formData={patientFormData}
+          setFormData={setPatientFormData}
+          setFetchingSwitch={() => {}}
+          isEditing={isEditing}
+          setIsEditing={setIsEditing}
+        />
       </div>
     </CustomFrame>
   );

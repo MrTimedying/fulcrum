@@ -19,6 +19,7 @@ import FlowControls from "./controls/flowControls";
 import PopPrimitive from "./controls/popPrimitive";
 import StyleMenu from "./controls/styleMenu";
 import BulkExerciseEditModal from "./BulkExerciseEditModal";
+import NpForm from "./npform";
 
 // Bind modal to your appElement (http://reactcommunity.org/react-modal/accessibility/)
 Modal.setAppElement("#root");
@@ -50,9 +51,8 @@ function getAllDescendants(parentNodeId, nodes, edges) {
   };
 }
 
-function MainBody() {
-  const { patientId, activeTab, setActiveTab, nodes, setNodes, edges } =
-    useFlowStore();
+function MainBody({ handleEditPatient }) {
+  const { patientId, activeTab, setActiveTab, nodes, setNodes, edges, patients } = useFlowStore();
   const { setToaster } = useTransientStore();
   const [isComposerOpen, setIsComposerOpen] = useState(false);
   const [isInterventionModalOpen, setIsInterventionModalOpen] = useState(false);
@@ -129,6 +129,36 @@ function MainBody() {
     }
   }, [isFeaturesMenuOpen, isStyleMenuOpen]);
 
+  // Effect to synchronize profile node data with patient data when patient data changes
+  useEffect(() => {
+    if (activeTab === "Profile" && patientId && nodes.length > 0) {
+      // Find profile node
+      const profileNode = nodes.find(node => node.type === "profile");
+      if (profileNode && patients[patientId]) {
+        // Compare data to see if update is needed
+        const patientData = patients[patientId];
+        const nodeNeedsUpdate = 
+          profileNode.data.name !== patientData.name ||
+          profileNode.data.surname !== patientData.surname ||
+          profileNode.data.age !== patientData.age ||
+          profileNode.data.gender !== patientData.gender ||
+          profileNode.data.height !== patientData.height ||
+          profileNode.data.weight !== patientData.weight ||
+          profileNode.data.status !== patientData.status ||
+          profileNode.data.bmi !== patientData.bmi;
+        
+        if (nodeNeedsUpdate) {
+          // Update the node data with latest patient data
+          setNodes(nds => nds.map(n => 
+            n.id === profileNode.id 
+              ? { ...n, data: { ...n.data, ...patientData, PatientId: patientId } } 
+              : n
+          ));
+        }
+      }
+    }
+  }, [patients, patientId, activeTab, nodes, setNodes]);
+
   function handleModalOpening(id) {
     // Check if a node is selected - Use the status from Editor
     // Note: The actual selected node object is accessed directly in handleOpenBulkEditModal
@@ -156,8 +186,7 @@ function MainBody() {
       return;
     }
 
-        if (id === "templateMenu") {
-
+    if (id === "templateMenu") {
       if (activeTab !== "Editor") {
         setToaster({
           type: "error",
@@ -325,7 +354,11 @@ function MainBody() {
         <Tab.Panels className="h-full overflow-y-auto">
           <Tab.Panel key="icfProfile" className="h-full">
             <ReactFlowProvider>
-              <Profile isInspectorOpen={isInspectorOpen} setIsInspectorOpen={setIsInspectorOpen} />
+              <Profile 
+                isInspectorOpen={isInspectorOpen} 
+                setIsInspectorOpen={setIsInspectorOpen}
+                handleEditPatient={handleEditPatient}
+              />
               <div className="absolute bottom-4 left-4 z-10">
 
                 {/* PopPrimitive for StyleMenu */}

@@ -6,6 +6,7 @@ import { IoIosCut } from "react-icons/io";
 import { MdOutlineContentCopy } from "react-icons/md";
 import { MdDeleteOutline } from "react-icons/md";
 import { CiViewTable } from "react-icons/ci";
+import { MdOutlineEdit } from "react-icons/md";
 
 const NodeMenu = ({
   isOpen,
@@ -26,6 +27,20 @@ const NodeMenu = ({
 
 
       <ul className="text-xs" style={{ marginTop: "5px" }}>
+        {targetNode.type === "profile" && (
+          <li
+            style={{ marginBottom: "8px" }}
+            className="mb-0 text-xs text-slate-300 hover:bg-zinc-700 rounded-sm p-1"
+            onClick={() => {
+              actions?.handleEditPatient && actions.handleEditPatient(targetNode);
+              onClose();
+            }}
+          >
+            <button className="flex flex-row gap-2 px-2 cursor-default"> 
+              <MdOutlineEdit className="text-lg" /> Edit Patient
+            </button>
+          </li>
+        )}
         { !inspectorConditional && (<li
           style={{ marginBottom: "8px" }}
           className="mb-0 text-xs  text-slate-300 hover:bg-zinc-700 rounded-sm p-1"

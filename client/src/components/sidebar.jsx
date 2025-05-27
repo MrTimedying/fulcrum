@@ -3,7 +3,7 @@ import { Link } from "react-router-dom"; // Import the Link component
 import MyDropdown from "./menu";
 import useFlowStore from "../state/flowState.js";
 
-function Sidebar() {
+function Sidebar({ handleEditPatient }) {
   // const [clientList, setClientList] = useState([]);
   const [filteredClientList, setFilteredClientList] = useState([]);
   const [query, setQuery] = useState("");
@@ -67,6 +67,7 @@ function Sidebar() {
           formData={formData}
           setFormData={setFormData}
           setFetchingSwitch={setFetchingSwitch}
+          handleEditPatient={handleEditPatient}
         />
       </div>
       <div className="flex flex-col h-5/6">

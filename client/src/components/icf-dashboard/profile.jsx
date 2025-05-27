@@ -101,7 +101,7 @@ const selector = (state) => ({
   patients: state.patients,
 });
 
-function Profile({ isInspectorOpen, setIsInspectorOpen }) {
+function Profile({ isInspectorOpen, setIsInspectorOpen, handleEditPatient }) {
   // STATE MANAGEMENT
   const { setToaster } = useTransientStore();
 
@@ -414,7 +414,15 @@ function Profile({ isInspectorOpen, setIsInspectorOpen }) {
       data: dataTemplates["profile"]?.() || {},
     };
 
-    const mergedProfileNode = { ...profileNode, data: {...profileNode.data, ...currentPatientDetails} };
+    // Store the PatientId in the node data to link it to the patient in the store
+    const mergedProfileNode = { 
+      ...profileNode, 
+      data: {
+        ...profileNode.data, 
+        ...currentPatientDetails, 
+        PatientId: patientId
+      } 
+    };
 
     console.log(mergedProfileNode);
 
@@ -531,7 +539,9 @@ function Profile({ isInspectorOpen, setIsInspectorOpen }) {
             copyNodesEdges,
             deleteSelectedNodesEdges,
             editNode, 
-            deleteNode }}
+            deleteNode,
+            handleEditPatient
+          }}
           onClose={closeMenus}
         />
         <PaneMenu

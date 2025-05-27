@@ -5,11 +5,11 @@ import { useNavigate } from "react-router-dom";
 import NpForm from './npform';
 import useFlowStore from '../state/flowState';
 
-export default function MyDropdown({ formData, setFormData, setFetchingSwitch}) {
+export default function MyDropdown({ formData, setFormData, setFetchingSwitch, handleEditPatient }) {
   const [isNpFormModalOpen, setIsNpFormModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const navigate = useNavigate();
-  const { patientId, setPatientId, removePatient } = useFlowStore();
+  const { patientId, setPatientId, removePatient, patients } = useFlowStore();
 
   const closeNpFormModal = () => {
     setIsNpFormModalOpen(false);
@@ -26,43 +26,23 @@ export default function MyDropdown({ formData, setFormData, setFetchingSwitch}) 
   };
 
   const handlePatientCreation = () => {
-
-    setIsNpFormModalOpen(true);
-    setFormData({
-      name: "",
-      surname: "",
-      age: "",
-      gender: "",
-      bmi: "",
-      height: "",
-      weight: "",
-      status: "",
-    });
-    
+    handleEditPatient();
   }
-
-  const handlePatientEdit = (patientData) => {
-
-    setIsEditing(true);
-    setFormData(patientData);
-    setIsNpFormModalOpen(true);
-  };
 
   const handlePatientDelete = (patientId) => {
     removePatient(patientId);
     navigate(`/`);
     setPatientId("");
-};
-
+  };
 
   return (
-    <div className="px-2">
-      <Menu as="div" className="relative inline-block text-left">
+    <div className="px-2 z-10">
+      <Menu as="div" className="relative inline-block text-right">
         <div>
-          <Menu.Button className="inline-flex w-full justify-center border border-zinc-700 rounded-md bg-zinc-900 px-2 py-1 text-sm text-slate-300 font-sans hover:bg-black/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/75">
+          <Menu.Button className="inline-flex w-full justify-center border border-zinc-700 rounded-md bg-zinc-900 px-2 py-1 text-[10px] text-slate-300 font-sans hover:bg-black/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/75">
             Options
             <ChevronDownIcon
-              className="ml-2 -mr-1 h-5 w-5 text-white"
+              className="ml-2 -mr-1 h-4 w-4 text-white"
               aria-hidden="true"
             />
           </Menu.Button>
@@ -76,74 +56,32 @@ export default function MyDropdown({ formData, setFormData, setFetchingSwitch}) 
           leaveFrom="transform opacity-100 scale-100"
           leaveTo="transform opacity-0 scale-95"
         >
-          <Menu.Items className="absolute left-0 mt-2 w-56 origin-top-left divide-y divide-gray-100 rounded-md bg-zinc-900 shadow-lg ring-1 ring-black/5 focus:outline-none">
-            <div className="px-1 py-1 ">
+          <Menu.Items className="absolute min-w-24 right-0 text-[10px] mt-2 origin-top-right divide-y border border-zinc-700 divide-gray-100 rounded-md bg-neutral-900 shadow-lg ring-1 ring-black/5 focus:outline-none">
+            <div>
               <Menu.Item>
                 {({ active }) => (
                   <button
                     onClick={() => handlePatientCreation()}
                     className={`${
                       active ? "bg-gray-500 text-white" : "text-slate-300"
-                    } group flex w-full rounded-md px-2 py-2 text-sm`}
+                    }  w-full px-2 py-1 `}
                   >
-                    {active ? (
-                      <NewPatientActiveIcon
-                        className="mr-2 h-5 w-5"
-                        aria-hidden="true"
-                      />
-                    ) : (
-                      <NewPatientInactiveIcon
-                        className="mr-2 h-5 w-5"
-                        aria-hidden="true"
-                      />
-                    )}
-                    <div className="pl-4 w-full text-left">New Patient</div>
+                    
+                    <p>New Patient</p>
                   </button>
                 )}
               </Menu.Item>
-              <Menu.Item>
-                {({ active }) => (
-                  <button
-                    onClick={() => handlePatientEdit(patientData)}
-                    className={`${
-                      active ? "bg-gray-500 text-white" : "text-slate-300"
-                    } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
-                  >
-                    {active ? (
-                      <EditActiveIcon
-                        className="mr-2 h-5 w-5"
-                        aria-hidden="true"
-                      />
-                    ) : (
-                      <EditInactiveIcon
-                        className="mr-2 h-5 w-5"
-                        aria-hidden="true"
-                      />
-                    )}
-                    <div className="pl-4 w-full text-left">Edit Patient</div>
-                  </button>
-                )}
-              </Menu.Item>
+
               <Menu.Item>
                 {({ active }) => (
                   <button
                     onClick={() => handlePatientDelete(patientId)}
                     className={`${
                       active ? "bg-gray-500 text-white" : "text-slate-300"
-                    } group flex w-full items-center rounded-md px-2 py-2 text-sm`}
+                    }  w-full items-center px-2 py-1 `}
                   >
-                    {active ? (
-                      <DeleteActiveIcon
-                        className="mr-2 h-5 w-5"
-                        aria-hidden="true"
-                      />
-                    ) : (
-                      <DeleteInactiveIcon
-                        className="mr-2 h-5 w-5"
-                        aria-hidden="true"
-                      />
-                    )}
-                    <div className="pl-4 w-full text-left">Delete Patient</div>
+                    
+                    <p>Delete Patient</p>
                   </button>
                 )}
               </Menu.Item>
@@ -164,116 +102,7 @@ export default function MyDropdown({ formData, setFormData, setFetchingSwitch}) 
   );
 }
 
-// NewPatientActiveIcon
-function NewPatientActiveIcon(props) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-      strokeWidth="1.5"
-      stroke="currentColor"
-      className="w-6 h-6"
-    >
-      <path strokeLinecap="round" strokeLinejoin="round" d="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.374 21c-2.331 0-4.512-.645-6.374-1.766z" />
-    </svg>
-  );
-}
 
-// NewPatientInactiveIcon
-function NewPatientInactiveIcon(props) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-      strokeWidth="1.5"
-      stroke="currentColor"
-      className="w-6 h-6"
-    >
-      <path strokeLinecap="round" strokeLinejoin="round" d="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.374 21c-2.331 0-4.512-.645-6.374-1.766z" />
-    </svg>
-  );
-}
 
-// EditInactiveIcon
-function EditInactiveIcon(props) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-      strokeWidth="1.5"
-      stroke="currentColor"
-      className="w-6 h-6"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.331 0-5.216-.584-7.499-1.632z"
-      />
-    </svg>
-  );
-}
 
-// EditActiveIcon
-function EditActiveIcon(props) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-      strokeWidth="1.5"
-      stroke="currentColor"
-      className="w-6 h-6"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.331 0-5.216-.584-7.499-1.632z"
-      />
-    </svg>
-  );
-}
 
-// DeleteInactiveIcon
-function DeleteInactiveIcon(props) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-      strokeWidth="1.5"
-      stroke="currentColor"
-      className="w-6 h-6"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M22 10.5h-6m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.374 21c-2.331 0-4.512-.645-6.374-1.766z"
-      />
-    </svg>
-  );
-}
-
-// DeleteActiveIcon
-function DeleteActiveIcon(props) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-      strokeWidth="1.5"
-      stroke="currentColor"
-      className="w-6 h-6"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M22 10.5h-6m-2.25-4.125a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zM4 19.235v-.11a6.375 6.375 0 0112.75 0v.109A12.318 12.318 0 0110.374 21c-2.331 0-4.512-.645-6.374-1.766z"
-      />
-    </svg>
-  );
-}
