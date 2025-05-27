@@ -1,7 +1,7 @@
 {
   "name": "fulcrum-app",
-  "version": "0.11.0",
-  "description": "This versions has a new approach to invervention creation and patient management leveraging flow diagrams.",
+  "version": "0.12.0",
+  "description": "Management software for movement science experts, leveraging flow diagrams for intervention creation and patient management, including comprehensive data analysis.",
   "keywords": [
     "fitness",
     "exercise",
@@ -15,7 +15,9 @@
     "fitness app",
     "exercise app",
     "patient management",
-    "workout app"
+    "workout app",
+    "data analysis",
+    "ICF"
   ],
   "author": "Antonio Logarzo",
   "license": "CC BY-NC-ND 4.0 Deed",
@@ -44,6 +46,7 @@
     "lodash": "^4.17.21",
     "material-ui-popup-state": "^5.3.6",
     "moment": "^2.29.4",
+    "motion": "^12.14.0",
     "path-browserify": "^1.0.1",
     "postcss": "^8.5.3",
     "process": "^0.11.10",

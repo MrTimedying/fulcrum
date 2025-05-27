@@ -2,7 +2,7 @@
 
 [![License: CC BY-NC-ND 4.0](https://img.shields.io/badge/License-CC%20BY--NC--ND%204.0-lightgrey.svg)](https://creativecommons.org/licenses/by-nc-nd/4.0/)
 
-Fulcrum is a management software for experts in the field of movement sciences, such as physical education, adapted physical activity and physical rehabilitation. 
+Fulcrum is a management software designed for movement science experts. It enables the creation of detailed patient profiles with anamnestic, sociodemographical, and ICF-related data. Users can create various types of interventions (educational, rehabilitative, sportive) and visualize both profiles and interventions using interactive flow diagrams. A key feature is the comprehensive data analysis layer, providing visualizations and insights into exercise data across different periodization levels (Session, Micro, Phase, Intervention).
 
 ### What it does
 

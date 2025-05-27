@@ -18,6 +18,8 @@ import CustomAutocompleteSelect from "./CustomAutocompleteSelect";
 import { MdOutlineDataSaverOn } from "react-icons/md";
 import { v4 as uuidv4 } from 'uuid';
 import { getExerciseContainerDisplayName, createMangledContainerKey } from "../../../utils/exerciseUtils";
+import { motion, AnimatePresence } from "motion/react";
+import MultiListBox from "./MultiListBox";
 
 // --- Accessibility Setup ---
 if (typeof window !== "undefined") {
@@ -31,6 +33,11 @@ function ExerciseModal({ isOpen, onClose }) {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [selectedContainers, setSelectedContainers] = useState(new Set());
+  const [isBulkEditVisible, setIsBulkEditVisible] = useState(false);
+  const [bulkEditTargetFields, setBulkEditTargetFields] = useState(null);
+  const [bulkEditValue, setBulkEditValue] = useState("");
+  const [bulkEditOperation, setBulkEditOperation] = useState('replace'); // 'replace' or 'append'
 
   const { nodes, updateNodeExerciseData, exercises, saveExercise, deleteExercise } = useFlowStore();
   const {setToaster} = useTransientStore();
@@ -418,6 +425,86 @@ function ExerciseModal({ isOpen, onClose }) {
     }));
   };
 
+  const handleContainerSelect = (containerId, isChecked) => {
+    setSelectedContainers(prevSelected => {
+      const newSelected = new Set(prevSelected);
+      if (isChecked) {
+        newSelected.add(containerId);
+      } else {
+        newSelected.delete(containerId);
+      }
+      return newSelected;
+    });
+  };
+
+  // --- Bulk Edit Logic ---
+  const handleBulkApply = () => {
+    // Only proceed if a target field label is selected
+    if (!bulkEditTargetFields) {
+      // Optionally show an error or notification
+      console.warn("No target field label selected for bulk assignment.");
+      return;
+    }
+
+    const targetContainerIds = selectedContainers.size > 0
+      ? Array.from(selectedContainers)
+      : containers.map(c => c.id);
+
+    const updatedFormValues = { ...formValues };
+
+    targetContainerIds.forEach(containerId => {
+      const container = containers.find(c => c.id === containerId);
+      if (container) {
+        container.fields.forEach(field => {
+           // Check if the field's label matches the single selected target field
+          if (field.label === bulkEditTargetFields) {
+            // Ensure the nested object exists before setting the value
+            if (!updatedFormValues[containerId]) {
+              updatedFormValues[containerId] = {};
+            }
+
+            // Apply value based on the selected operation
+            if (bulkEditOperation === 'replace') {
+              updatedFormValues[containerId][field.name] = bulkEditValue; // Replace
+            } else if (bulkEditOperation === 'append') {
+              // Append: Convert current value to string and append with a space
+              const currentValue = updatedFormValues[containerId][field.name];
+              const currentValueString = currentValue !== undefined && currentValue !== null ? String(currentValue) : '';
+              const valueToAppend = bulkEditValue !== undefined && bulkEditValue !== null ? String(bulkEditValue) : '';
+              // Add a separator if both current value and value to append are non-empty
+              const separator = (currentValueString !== '' && valueToAppend !== '') ? ' ' : '';
+              updatedFormValues[containerId][field.name] = currentValueString + separator + valueToAppend;
+            }
+
+          }
+        });
+      }
+    });
+
+    setFormValues(updatedFormValues);
+    // Optionally reset and hide bulk edit after applying
+    setBulkEditTargetFields(null); // Reset to null
+    setBulkEditValue("");
+    setIsBulkEditVisible(false);
+  };
+
+  // Calculate unique field labels for the bulk edit dropdown options
+  const bulkEditFieldOptions = useMemo(() => {
+    const targetContainers = selectedContainers.size > 0
+      ? containers.filter(c => selectedContainers.has(c.id))
+      : containers;
+
+    const uniqueFieldLabels = new Set();
+    targetContainers.forEach(container => {
+      container.fields.forEach(field => {
+        if (field.label && field.label.trim() !== '') { // Only add non-empty labels
+           uniqueFieldLabels.add(field.label);
+        }
+      });
+    });
+    return Array.from(uniqueFieldLabels);
+  }, [containers, selectedContainers]);
+
   // --- Submit Handler ---
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -558,14 +645,21 @@ function ExerciseModal({ isOpen, onClose }) {
             </button>
           </div>
         {/*Subheader*/}
-        <div className="bg-zinc-900 flex flex-row">
+        <div className="bg-zinc-900 flex flex-row items-center gap-4 p-2">
           <CustomAutocompleteSelect
             label="Select exercise"
             options={exercises}
             onSelect={handleSelection}
             onDelete={deleteExercise}
           />
-
+           {/* Bulk Edit Toggle Button */}
+          <button
+            type="button"
+            onClick={() => setIsBulkEditVisible(!isBulkEditVisible)}
+            className="px-3 py-1 border border-dashed rounded-md border-neutral-900 text-neutral-400 bg-neutral-800 hover:bg-neutral-700 hover:text-neutral-200 text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2"
+          >
+            {isBulkEditVisible ? 'Hide Bulk Assign' : 'Bulk Assign'}
+          </button>
 
         </div>
           
@@ -574,20 +668,94 @@ function ExerciseModal({ isOpen, onClose }) {
             onSubmit={handleSubmit}
             className="p-4 flex-grow overflow-y-auto space-y-4 bg-zinc-900 flex flex-col"
           >
+            {/* Bulk Edit Form */}
+            <AnimatePresence>
+              {isBulkEditVisible && (
+                <motion.div
+                  key="bulk-edit-form"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="p-4 border border-zinc-600 rounded-lg bg-neutral-800 space-y-3 mb-4"
+                >
+                  <h3 className="text-lg font-semibold text-gray-100">Bulk Assign Values</h3>
+                  <p className="text-sm text-gray-400">
+                    Applying to: {selectedContainers.size === 0 ? 'All Containers' : `${selectedContainers.size} Selected Container(s)`}
+                  </p>
+                  {bulkEditFieldOptions.length > 0 ? (
+                   <div className="flex flex-col space-y-2">
+                     <label id="bulk-edit-fields-label" className="text-sm font-medium text-gray-300">Select Field Labels:</label>
+                     <MultiListBox
+                       options={bulkEditFieldOptions}
+                       value={bulkEditTargetFields}
+                       onChange={setBulkEditTargetFields}
+                       size={5} // Specify the number of visible options
+                     />
+
+                     <label htmlFor="bulk-edit-value" className="text-sm font-medium text-gray-300 mt-2">Value to Assign:</label>
+                     <input
+                       id="bulk-edit-value"
+                       type="text"
+                       className="block w-full p-2 text-sm text-gray-300 border border-zinc-600 rounded-lg bg-zinc-700 focus:outline-none"
+                       value={bulkEditValue}
+                       onChange={(e) => setBulkEditValue(e.target.value)}
+                       placeholder="Enter value"
+                     />
+
+                     {/* Operation Buttons */}
+                     <div className="flex gap-2 mt-2">
+                       <button
+                         type="button"
+                         onClick={() => setBulkEditOperation('replace')}
+                         className={`px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200
+                           ${bulkEditOperation === 'replace' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}
+                         `}
+                       >
+                         Replace
+                       </button>
+                       <button
+                         type="button"
+                         onClick={() => setBulkEditOperation('append')}
+                         className={`px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200
+                           ${bulkEditOperation === 'append' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}
+                         `}
+                       >
+                         Append
+                       </button>
+                     </div>
+
+                     <button
+                       type="button"
+                       onClick={handleBulkApply}
+                       disabled={bulkEditTargetFields === null || bulkEditValue === ''}
+                       className="mt-3 px-4 py-2 bg-neutral-700 text-white rounded-md hover:bg-neutral-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 text-sm font-medium"
+                     >
+                       Apply
+                     </button>
+                   </div>
+                  ) : (
+                    <p className="text-sm text-gray-400">No field labels available in the target containers for bulk editing.</p>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {successMessage && (
+              <div className="mb-4 p-3 bg-green-100 dark:bg-green-800/50 border border-green-200 dark:border-green-700 text-green-700 dark:text-green-200 rounded-md text-sm">
+                {successMessage}
+              </div>
+            )}
+            {errors.form && (
+              <div className="mb-4 p-3 bg-red-100 dark:bg-red-800/50 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-200 rounded-md text-sm">
+                {errors.form}
+              </div>
+            )}
+
             <div className="flex-grow space-y-4">
               {" "}
               {/* Scrollable Content Area */}
               
-              {successMessage && (
-                <div className="mb-4 p-3 bg-green-100 dark:bg-green-800/50 border border-green-200 dark:border-green-700 text-green-700 dark:text-green-200 rounded-md text-sm">
-                  {successMessage}
-                </div>
-              )}
-              {errors.form && (
-                <div className="mb-4 p-3 bg-red-100 dark:bg-red-800/50 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-200 rounded-md text-sm">
-                  {errors.form}
-                </div>
-              )}
               {/* Containers */}
               <div className="space-y-4">
                 {containers.map((container) => (
@@ -597,6 +765,12 @@ function ExerciseModal({ isOpen, onClose }) {
                   >
                     {/* Container Header */}
                     <div className="flex justify-between items-center border-b border-gray-200 dark:border-gray-600/50">
+                      <input
+                        type="checkbox"
+                        className="mr-2 leading-tight"
+                        checked={selectedContainers.has(container.id)}
+                        onChange={(e) => handleContainerSelect(container.id, e.target.checked)}
+                      />
                       <div className="flex-grow mr-2">
                         {/* Pass container.name for InlineEdit value */}
                         <InlineEdit
@@ -666,6 +840,7 @@ function ExerciseModal({ isOpen, onClose }) {
                   <span className="text-lg">+</span> Add New Exercise
                 </button>
               </div>
+
             </div>{" "}
             {/* End Scrollable Content Area */}
             {/* Form Actions (Fixed Footer Area) */}
