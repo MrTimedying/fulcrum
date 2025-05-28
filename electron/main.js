@@ -2,16 +2,20 @@ const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const url = require('url');
 const fs = require('fs');
-const crypto = require('crypto');
 const { encrypt, decrypt, ensureEncryptionKey} = require('./encryptionUtils');
+const { autoUpdater } = require('electron-updater');
 
 /* const sqlite3 = require('sqlite3').verbose(); */
 
 let mainWindow;
 
+// Configure auto updater
+autoUpdater.logger = require('electron-log');
+autoUpdater.logger.transports.file.level = 'info';
+autoUpdater.autoDownload = false;
+autoUpdater.autoInstallOnAppQuit = true;
 
 function createWindow() {
-
   mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
@@ -37,15 +41,21 @@ function createWindow() {
   
 
   mainWindow.loadURL(indexPath);
-  mainWindow.webContents.openDevTools();
-
-
+  if (isDevelopment) {
+    mainWindow.webContents.openDevTools();
+  }
 
   mainWindow.on('closed', function () {
     mainWindow = null;
   });
-}
 
+  // Check for updates after window is created (but only in production)
+  if (!isDevelopment) {
+    setTimeout(() => {
+      checkForUpdates();
+    }, 3000); // Delay to ensure app is fully loaded
+  }
+}
 
 app.whenReady().then(createWindow);
 
@@ -61,49 +71,82 @@ app.on('activate', () => {
   }
 });
 
-
-
-let secretKeyPromise = ensureEncryptionKey();
-
-async function saveState(state) {
-  const secretKey = await secretKeyPromise;
-  const encryptedState = encrypt(JSON.stringify(state), secretKey);
-  const userDataPath = app.getPath('userData');
-  const filePath = path.join(userDataPath, 'state', 'state.json');
-  fs.mkdirSync(path.dirname(filePath), { recursive: true });
-  fs.writeFileSync(filePath, JSON.stringify(encryptedState)); 
-  return true;
+// Update handlers
+function checkForUpdates() {
+  autoUpdater.checkForUpdates().catch(err => {
+    console.error('Error checking for updates:', err);
+  });
 }
 
-
-async function loadState() {
-  const secretKey = await secretKeyPromise;
-  const userDataPath = app.getPath('userData');
-  const filePath = path.join(userDataPath, 'state', 'state.json');
-  if (fs.existsSync(filePath)) {
-    const encryptedState = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-    const decryptedState = decrypt(encryptedState, secretKey);
-    return JSON.parse(decryptedState); 
+// Auto-updater event handlers
+autoUpdater.on('checking-for-update', () => {
+  if (mainWindow) {
+    mainWindow.webContents.send('update-checking');
   }
-  return {}; 
-}
-
-
-ipcMain.handle('save-state', async (event, state) => {
- return await saveState(state);
 });
 
-ipcMain.handle('request-state', async (event) => {
+autoUpdater.on('update-available', (info) => {
+  if (mainWindow) {
+    mainWindow.webContents.send('update-available', info);
+  }
+});
+
+autoUpdater.on('update-not-available', (info) => {
+  if (mainWindow) {
+    mainWindow.webContents.send('update-not-available', info);
+  }
+});
+
+autoUpdater.on('download-progress', (progressObj) => {
+  if (mainWindow) {
+    mainWindow.webContents.send('update-progress', progressObj);
+  }
+});
+
+autoUpdater.on('update-downloaded', (info) => {
+  if (mainWindow) {
+    mainWindow.webContents.send('update-downloaded', info);
+  }
+});
+
+autoUpdater.on('error', (err) => {
+  if (mainWindow) {
+    mainWindow.webContents.send('update-error', err.toString());
+  }
+});
+
+// IPC handlers for auto-updater
+ipcMain.handle('check-for-updates', async () => {
   try {
-    const loadedState = await loadState(); // Ensure this function is correctly imported or defined
-    return loadedState; // This will be sent back to the renderer process
+    const checkResult = await autoUpdater.checkForUpdates();
+    if (checkResult && checkResult.updateInfo) {
+      return { 
+        updateAvailable: true, 
+        version: checkResult.updateInfo.version,
+        info: checkResult.updateInfo
+      };
+    } else {
+      return { updateAvailable: false };
+    }
   } catch (error) {
-    console.error("Failed to load state:", error);
-    // Handle error appropriately, potentially sending back an empty object or error message
-    return {};
+    console.error('Error checking for updates:', error);
+    throw new Error(`Failed to check for updates: ${error.message}`);
   }
 });
 
+ipcMain.handle('download-update', async () => {
+  try {
+    await autoUpdater.downloadUpdate();
+    return { success: true };
+  } catch (error) {
+    console.error('Error downloading update:', error);
+    throw new Error(`Failed to download update: ${error.message}`);
+  }
+});
+
+ipcMain.handle('quit-and-install', () => {
+  autoUpdater.quitAndInstall(true, true);
+});
 
 // Log messages for IPC events
 ipcMain.on('minimizeApp', () => {
@@ -123,25 +166,4 @@ ipcMain.on('maximizeApp', () => {
 ipcMain.on('closeApp', () => {
   console.log('Received closeApp event');
   mainWindow.close();
-});
-
-// Here I close the component window
-
-ipcMain.on('minimizeComponent', () => {
-  console.log('Received minimizeComponent event');
-  componentWindow?.minimize();
-});
-
-ipcMain.on('maximizeComponent', () => {
-  console.log('Received maximizeComponent event');
-  if (componentWindow?.isMaximized()) {
-    componentWindow.unmaximize();
-  } else {
-    componentWindow.maximize();
-  }
-});
-
-ipcMain.on('closeComponent', () => {
-  console.log('Received closeComponent event');
-  componentWindow?.close();
 });

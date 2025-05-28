@@ -15,7 +15,16 @@ const validChannels = [
   'render-component',
   // State management
   'request-state',
-  'save-state'
+  'save-state',
+  // Auto-updater channels
+  'check-for-updates',
+  'download-update',
+  'quit-and-install',
+  'update-available',
+  'update-downloaded',
+  'update-error',
+  'update-not-available',
+  'update-progress'
 ];
 
 // Expose all APIs under a single electronAPI object
@@ -32,6 +41,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
   state: {
     request: () => ipcRenderer.invoke('request-state'),
     save: (state) => ipcRenderer.invoke('save-state', state),
+  },
+
+  // Auto-updater methods
+  updater: {
+    check: () => ipcRenderer.invoke('check-for-updates'),
+    download: () => ipcRenderer.invoke('download-update'),
+    install: () => ipcRenderer.invoke('quit-and-install'),
   },
 
   // Generic IPC communication

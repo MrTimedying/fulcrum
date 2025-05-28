@@ -1,15 +1,41 @@
 # Changelog - Fulcrum App
 
-## 1.0.0 - 19/05/2025
+## 1.0.0 - 2025-05-19
 
 ### Features
 
-#### Nodes styling:
-- Implemented feature to change color in Profile Nodes
+#### Nodes Styling:
+- Adjusted the menu opening logic.
+- Added feature to change color in Profile Nodes.
+
+#### ExerciseModal Enhancements:
+- Added checkboxes for single or multiple selection in containers.
+- Implemented quick assignment of values to multiple fields across selected containers.
+
+#### Value Assignment Across Trees:
+- Implemented quick selection and value assignment across exercises from a specific vertical.
+- Added handling for numerical values, including setting values, increment/decrement, array values, and total count display.
+
+#### ORDER Feature:
+- Implemented the ORDER feature for relative node positioning.
+- Nodes are assigned the last order number upon connection to a parent.
+- Disconnecting and reconnecting from a parent readjusts the order without affecting children.
 
 ### Fixes
-- Solved the container field issue, why doubling is not allowed?
-- Exercise templates in ExerciseModal is not persistent state;
+
+#### Np Form Styling:
+- Adjusted the styling, icons, and appearance of the options menu in the sidebar.
+- Ensured the new patient form resets after submission.
+- Updated Formik warnings to use the Toaster.
+- Fixed the close button error in the new patient form.
+
+#### Modal Graphics:
+- Updated the graphics for the Test modal.
+- Updated the graphics for the Template modal.
+
+- Fixed the duration validation schema and input in `ExerciseModal.jsx`.
+- Fixed exercise templates in `ExerciseModal` not being persistent state.
+- Fixed the NpForm modal taking the data of the currently selected patient when creating a new patient.
 
 ## 0.12.0 - 24/05/2025
 
@@ -77,8 +103,6 @@
 - Templating menu now can be opened even without a node being selected, the save feature is just disabled;
 - Fixed the bug of "undo" reverting eventually to an empty state;
 - Better handling of the position of the paste functionality in the React flow diagram;
-
-
 
 ## 0.9.0 - 11/05/2025
 

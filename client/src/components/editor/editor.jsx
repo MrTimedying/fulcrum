@@ -24,7 +24,6 @@ import { InterventionNode, PhaseNode, MicroNode, SessionNode } from "./nodes";
 import { getEditorComposerTemplates } from "../variables";
 import Inspector from "../data_analysis/Inspector";
 import SelectionMenu from "../selectionMenu";
-import TestModal from "./TestModal";
 import useKeyboardShortcuts from "../util/KeyboardShortcuts";
 import ExerciseModal from "./exercise_modal/ExerciseModal";
 
@@ -161,7 +160,6 @@ function Editor({ isInspectorOpen, setIsInspectorOpen, onOpenBulkEditRequest, on
     }))
   );
 
-  const [isTestModalOpen, setIsTestModalOpen] = useState(false);
   const [isExerciseModalOpen, setIsExerciseModalOpen] = useState(false);
 
   const columnTemplates = getEditorComposerTemplates(updateNodeData);
@@ -517,7 +515,6 @@ function Editor({ isInspectorOpen, setIsInspectorOpen, onOpenBulkEditRequest, on
             deleteSelectedNodesEdges,
             editNode,
             deleteNode,
-            setIsTestModalOpen,
             setIsExerciseModalOpen,
           }}
           onClose={closeMenus}
@@ -543,11 +540,6 @@ function Editor({ isInspectorOpen, setIsInspectorOpen, onOpenBulkEditRequest, on
           isOpen={isInspectorOpen}
           node={selectedNode}
           onClose={() => setIsInspectorOpen(false)}
-          multiple={multipleNodesSelected}
-        />
-        <TestModal
-          isOpen={isTestModalOpen}
-          onClose={() => setIsTestModalOpen(false)}
           multiple={multipleNodesSelected}
         />
         <ExerciseModal

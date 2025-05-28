@@ -1,6 +1,6 @@
 {
   "name": "fulcrum",
-  "version": "0.11.0",
+  "version": "1.0.0",
   "description": "This versions has a new approach to invervention creation and patient management leveraging flow diagrams.",
   "main": "electron/main.js",
   "scripts": {
@@ -15,6 +15,8 @@
   "license": "CC BY-NC-ND 4.0 Deed",
   "dependencies": {
     "cors": "^2.8.5",
+    "electron-log": "^4.4.8",
+    "electron-updater": "^6.6.2",
     "keytar": "^7.9.0"
   },
   "devDependencies": {
@@ -40,10 +42,17 @@
     "extraFiles": [],
     "win": {
       "target": [
-        "portable"
+        "portable",
+        "nsis"
       ],
       "icon": "build/icons/icon.ico"
     },
-    "asar": true
+    "asar": true,
+    "publish": {
+      "provider": "github",
+      "owner": "MrTimedying",
+      "repo": "fulcrumproject",
+      "releaseType": "release"
+    }
   }
 }

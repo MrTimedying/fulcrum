@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom"; // Import the Link component
 import MyDropdown from "./menu";
 import useFlowStore from "../state/flowState.js";
+import { FiSettings } from "react-icons/fi";
+import OptionsModal from "./OptionsModal";
 
 function Sidebar({ handleEditPatient }) {
   // const [clientList, setClientList] = useState([]);
@@ -18,6 +20,7 @@ function Sidebar({ handleEditPatient }) {
     weight: "",
     status: "",
   });
+  const [isOptionsModalOpen, setIsOptionsModalOpen] = useState(false);
 
   const clientList = useFlowStore((state) => state.patients);
   const { patientId, setPatientId, setTrailingPatientId } = useFlowStore();
@@ -49,34 +52,42 @@ function Sidebar({ handleEditPatient }) {
     }
   };
 
+  const toggleOptionsModal = () => {
+    setIsOptionsModalOpen(!isOptionsModalOpen);
+  };
+
   return (
     <div
       className="h-full w-full bg-zinc-900 py-4 overflow-auto"
       style={{ borderRight: "solid 1px rgb(53 51 51)" }}
     >
-      <div className="flex flex-row flex-wrap items-center pb-2">
-        <input
-          type="text"
-          placeholder="Search..."
-          value={query}
-          onChange={handleListParsing}
-          className="rounded-full bg-zinc-900 text-gray-200 focus:outline focus:outline-1 focus:outline-zinc-700"
-          style={{ minWidth: "150px", paddingLeft: "15px", margin: "5px" }}
-        />
-        <MyDropdown
-          formData={formData}
-          setFormData={setFormData}
-          setFetchingSwitch={setFetchingSwitch}
-          handleEditPatient={handleEditPatient}
-        />
+      <div className="flex flex-row place-items-center gap-2">
+        
+          
+          <MyDropdown
+            formData={formData}
+            setFormData={setFormData}
+            setFetchingSwitch={setFetchingSwitch}
+            handleEditPatient={handleEditPatient}
+          />
+        
+        <button 
+          onClick={toggleOptionsModal}
+          className="p-2 rounded-full hover:bg-zinc-800 text-gray-400 hover:text-gray-200 transition-colors"
+          title="Settings"
+        >
+          <FiSettings size={16} />
+        </button>
       </div>
       <div className="flex flex-col h-5/6">
-        <h2
-          className="text-neutral-600 bg-zinc-900 pl-2 font-sans text-base font-thin py-2"
+      <input
+            type="text"
+            placeholder="@ Search a patient"
+            value={query}
+            onChange={handleListParsing}
+            className="text-neutral-600 bg-zinc-900 pl-2 font-sans text-base font-thin py-2 focus:outline-none"
           style={{ borderBottom: "solid 1px #1c1c1c" }}
-        >
-          @ Patients List
-        </h2>
+          />
         <ul
           className="bg-zinc-900 py-3 rounded-lg mt-2 h-full overflow-y-auto"
         >
@@ -102,6 +113,12 @@ function Sidebar({ handleEditPatient }) {
           )}
         </ul>
       </div>
+      
+      {/* Options Modal */}
+      <OptionsModal 
+        isOpen={isOptionsModalOpen} 
+        onClose={() => setIsOptionsModalOpen(false)} 
+      />
     </div>
   );
 }

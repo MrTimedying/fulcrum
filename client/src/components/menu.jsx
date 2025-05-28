@@ -56,7 +56,7 @@ export default function MyDropdown({ formData, setFormData, setFetchingSwitch, h
           leaveFrom="transform opacity-100 scale-100"
           leaveTo="transform opacity-0 scale-95"
         >
-          <Menu.Items className="absolute min-w-24 right-0 text-[10px] mt-2 origin-top-right divide-y border border-zinc-700 divide-gray-100 rounded-md bg-neutral-900 shadow-lg ring-1 ring-black/5 focus:outline-none">
+          <Menu.Items className="absolute min-w-24 text-left left-0 text-[10px] mt-2 origin-top-right divide-y border border-zinc-700 divide-gray-100 rounded-md bg-neutral-900 shadow-lg ring-1 ring-black/5 focus:outline-none">
             <div>
               <Menu.Item>
                 {({ active }) => (

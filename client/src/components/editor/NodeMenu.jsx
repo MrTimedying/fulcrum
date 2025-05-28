@@ -67,20 +67,6 @@ const NodeMenu = ({
             </a>
           </li>
         )}
-        {targetNode.type === "session" && (
-          <li
-            style={{ marginBottom: "8px" }}
-            className="mb-0  text-slate-300 hover:bg-zinc-700 rounded-sm p-1"
-            onClick={() => {
-              actions?.setIsTestModalOpen(true);
-              onClose();
-            }}
-          >
-            <a className="flex flex-row gap-2 px-2 cursor-default"> 
-            <IoCalendarNumberSharp className="text-lg"  />Schedule testing
-            </a>
-          </li>
-        )}
         {actionsConditional && (<hr className="border-zinc-500 w-full py-2"></hr>)}
         {targetNode.type !== "intervention" && (<li
           style={{ marginBottom: "8px" }}

@@ -5,6 +5,7 @@ import Sidebar from './sidebar';
 import Composer from './editor/composer';
 import CustomFrame from './frame/customFrame';
 import { Toaster } from './toaster';
+import UpdateManager from './UpdateManager';
 import SplitPane, { Pane } from 'split-pane-react';
 import 'split-pane-react/esm/themes/default.css';
 import './splitpane.css';
@@ -122,6 +123,7 @@ function Home() {
     return (
       <CustomFrame>
         <div className="App" style={containerStyle}>
+          <UpdateManager />
           <Composer />
         </div>
       </CustomFrame>
@@ -131,6 +133,7 @@ function Home() {
   return (
     <CustomFrame>
       <div className="App" style={containerStyle}>
+        <UpdateManager />
         <Toaster />
         <div ref={containerRef} style={splitPaneContainerStyle}>
           <SplitPane 
@@ -141,7 +144,7 @@ function Home() {
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
           >
-            <Pane minSize={150} maxSize="50%" className="sidebar-pane">
+            <Pane minSize={300} maxSize="50%" className="sidebar-pane">
               <Sidebar handleEditPatient={handleEditPatient} />
             </Pane>
             <Pane minSize={300} className="mainbody-pane">

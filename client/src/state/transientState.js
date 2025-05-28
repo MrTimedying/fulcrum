@@ -13,6 +13,18 @@ const useTransientStore = create((set) => ({
   data: [],
   columns: [],
   
+  // App update state
+  updateAvailable: false,
+  updateInfo: null,
+  updateDownloaded: false,
+  
+  // Update state setters
+  setUpdateAvailable: (isAvailable, info = null) => 
+    set({ updateAvailable: isAvailable, updateInfo: info }),
+  
+  setUpdateDownloaded: (isDownloaded) => 
+    set({ updateDownloaded: isDownloaded }),
+  
   // Toaster setter
   setToaster: ({ type, message, show, duration }) => set((state) => {
     const id = uuidv4();
