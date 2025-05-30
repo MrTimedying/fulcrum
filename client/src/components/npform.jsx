@@ -4,9 +4,11 @@ import { v4 as uuidv4 } from 'uuid';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import useFlowStore from "../state/flowState";
+import useTransientStore from "../state/transientState";
 
 function NpForm({ isOpen, closeModal, formData, setFormData, setFetchingSwitch, isEditing, setIsEditing }) {
   const { setNewEditor, setNewProfile } = useFlowStore();
+  const setToaster = useTransientStore((state) => state.setToaster);
 
   // Validation schema using Yup
   const validationSchema = Yup.object({
@@ -32,18 +34,63 @@ function NpForm({ isOpen, closeModal, formData, setFormData, setFetchingSwitch, 
     },
     validationSchema: validationSchema,
     enableReinitialize: true,
-    onSubmit: (values) => {
-      const patientId = formData.PatientId || uuidv4();
-      const heightInMeters = values.height / 100;
-      const bmi = (values.weight / (heightInMeters * heightInMeters)).toFixed(2);
-      const formDataWithBMI = { ...values, bmi: bmi };
-      useFlowStore.getState().addPatient(patientId, formDataWithBMI);
-      setNewEditor(patientId);
-      setNewProfile(patientId);
-      closeModal();
-      console.log(useFlowStore.getState().patients);
+    onSubmit: async (values, { setSubmitting }) => {
+      try {
+        // Check if there are any validation errors
+        if (!formik.isValid) {
+          // Collect all validation errors
+          const errorMessages = Object.values(formik.errors).join(', ');
+          setToaster({
+            type: 'error',
+            message: `Please fix the following errors: ${errorMessages}`,
+            show: true,
+            duration: 5000
+          });
+          setSubmitting(false);
+          return;
+        }
+
+        const patientId = formData.PatientId || uuidv4();
+        const heightInMeters = values.height / 100;
+        const bmi = (values.weight / (heightInMeters * heightInMeters)).toFixed(2);
+        const formDataWithBMI = { ...values, bmi: bmi };
+        
+        // Add patient to store
+        useFlowStore.getState().addPatient(patientId, formDataWithBMI);
+        setNewEditor(patientId);
+        setNewProfile(patientId);
+        
+        // Show success toast
+        setToaster({
+          type: 'success',
+          message: 'Patient created successfully!',
+          show: true,
+          duration: 3000
+        });
+        
+        // Reset form and close modal
+        formik.resetForm();
+        closeModal();
+        
+      } catch (error) {
+        console.error('Error creating patient:', error);
+        setToaster({
+          type: 'error',
+          message: 'Failed to create patient. Please try again.',
+          show: true,
+          duration: 5000
+        });
+      } finally {
+        setSubmitting(false);
+      }
     },
   });
+
+  const closeNpFormModal = () => {
+    closeModal();
+    // Reset form values when closing
+    formik.resetForm();
+  };
 
   return (
     <>
@@ -53,7 +100,15 @@ function NpForm({ isOpen, closeModal, formData, setFormData, setFetchingSwitch, 
           className="fixed inset-0 z-[1000] overflow-y-auto"
           onClose={closeModal}
         >
-          <div className="min-h-screen px-4 text-center">
+          <div className="min-h-screen px-4 text-center flex items-center justify-center">
+            {/* This element is to trick the browser into centering the modal contents. */}
+            <span
+              className="inline-block h-screen align-middle"
+              aria-hidden="true"
+            >
+              &#8203;
+            </span>
+            
             <Transition.Child
               as={Fragment}
               enter="ease-out duration-300"
@@ -66,20 +121,20 @@ function NpForm({ isOpen, closeModal, formData, setFormData, setFetchingSwitch, 
               <Dialog.Overlay className="fixed inset-0 bg-black opacity-30" />
             </Transition.Child>
 
-            <div className="inline-block w-full max-w-md p-6 my-8 overflow-hidden text-left font-mono text-slate-300 align-middle transition-all transform bg-zinc-900 shadow-xl rounded-2xl">
+            <div className="inline-block w-56 max-w-md p-2 overflow-hidden text-left border border-zinc-600 font-sans text-slate-300 align-middle transition-all transform bg-zinc-900 shadow-xl rounded-2xl z-[1001] relative">
               <Dialog.Title
                 as="h3"
-                className="text-lg font-medium leading-6 text-slate-300"
+                className="text-lg font-thin leading-6 text-slate-300"
               >
-                Creating a New Patient Entry
+               @ Creating a New Patient Entry
               </Dialog.Title>
               <div className="mt-2">
                 <form onSubmit={formik.handleSubmit}>
                   <Fragment>
-                    <div className="mb-4">
+                    <div className="mb-1">
                       <label
                         htmlFor="name"
-                        className="block text-slate-300 text-sm font-bold mb-2"
+                        className="block text-slate-300 text-[12px] font-thin"
                       >
                         Name
                       </label>
@@ -90,18 +145,16 @@ function NpForm({ isOpen, closeModal, formData, setFormData, setFetchingSwitch, 
                         value={formik.values.name}
                         onChange={formik.handleChange}
                         onBlur={formik.handleBlur}
-                        className="shadow appearance-none rounded w-full py-2 px-3 bg-zinc-800 text-slate-300 leading-tight focus:outline-none focus:shadow-outline transition-all duration-200 dark:bg-zinc-800 dark:text-slate-300"
+                        className="shadow appearance-none rounded w-full text-[12px] font-thin py-1 px-3 bg-zinc-800 text-slate-300 leading-tight focus:outline-none focus:shadow-outline transition-all duration-200 dark:bg-zinc-800 dark:text-slate-300"
                         placeholder="Enter name"
                       />
-                      {formik.touched.name && formik.errors.name ? (
-                        <div className="text-red-500 text-xs mt-1">{formik.errors.name}</div>
-                      ) : null}
+
                     </div>
 
-                    <div className="mb-4">
+                    <div className="mb-1">
                       <label
                         htmlFor="surname"
-                        className="block text-slate-300 text-sm font-bold mb-2"
+                        className="block text-slate-300 text-[12px] font-thin"
                       >
                         Surname
                       </label>
@@ -112,18 +165,16 @@ function NpForm({ isOpen, closeModal, formData, setFormData, setFetchingSwitch, 
                         value={formik.values.surname}
                         onChange={formik.handleChange}
                         onBlur={formik.handleBlur}
-                        className="shadow appearance-none rounded w-full py-2 px-3 bg-zinc-800 text-slate-300 leading-tight focus:outline-none focus:shadow-outline transition-all duration-200 dark:bg-zinc-800 dark:text-slate-300"
+                        className="shadow appearance-none rounded w-full text-[12px] font-thin py-1 px-3 bg-zinc-800 text-slate-300 leading-tight focus:outline-none focus:shadow-outline transition-all duration-200 dark:bg-zinc-800 dark:text-slate-300"
                         placeholder="Enter surname"
                       />
-                      {formik.touched.surname && formik.errors.surname ? (
-                        <div className="text-red-500 text-xs mt-1">{formik.errors.surname}</div>
-                      ) : null}
+
                     </div>
 
-                    <div className="mb-4">
+                    <div className="mb-1">
                       <label
                         htmlFor="age"
-                        className="block text-slate-300 text-sm font-bold mb-2"
+                        className="block text-slate-300 text-[12px] font-thin"
                       >
                         Age
                       </label>
@@ -133,7 +184,7 @@ function NpForm({ isOpen, closeModal, formData, setFormData, setFetchingSwitch, 
                         value={formik.values.age}
                         onChange={formik.handleChange}
                         onBlur={formik.handleBlur}
-                        className="shadow appearance-none rounded w-full py-2 px-3 bg-zinc-800 text-slate-300 leading-tight focus:outline-none focus:shadow-outline transition-all duration-200 dark:bg-zinc-800 dark:text-slate-300"
+                        className="shadow appearance-none rounded w-full text-[12px] font-thin py-1 px-3 bg-zinc-800 text-slate-300 leading-tight focus:outline-none focus:shadow-outline transition-all duration-200 dark:bg-zinc-800 dark:text-slate-300"
                       >
                         <option value="">Select Age</option>
                         {Array.from({ length: 90 }, (_, i) => (
@@ -142,15 +193,13 @@ function NpForm({ isOpen, closeModal, formData, setFormData, setFetchingSwitch, 
                           </option>
                         ))}
                       </select>
-                      {formik.touched.age && formik.errors.age ? (
-                        <div className="text-red-500 text-xs mt-1">{formik.errors.age}</div>
-                      ) : null}
+
                     </div>
 
-                    <div className="mb-4">
+                    <div className="mb-1">
                       <label
                         htmlFor="gender"
-                        className="block text-slate-300 text-sm font-bold mb-2"
+                        className="block text-slate-300 text-[12px] font-thin"
                       >
                         Gender
                       </label>
@@ -160,21 +209,19 @@ function NpForm({ isOpen, closeModal, formData, setFormData, setFetchingSwitch, 
                         value={formik.values.gender}
                         onChange={formik.handleChange}
                         onBlur={formik.handleBlur}
-                        className="shadow appearance-none rounded w-full py-2 px-3 bg-zinc-800 text-slate-300 leading-tight focus:outline-none focus:shadow-outline transition-all duration-200 dark:bg-zinc-800 dark:text-slate-300"
+                        className="shadow appearance-none rounded w-full text-[12px] font-thin py-1 px-3 bg-zinc-800 text-slate-300 leading-tight focus:outline-none focus:shadow-outline transition-all duration-200 dark:bg-zinc-800 dark:text-slate-300"
                       >
                         <option value="">Select Gender</option>
                         <option value="Male">Male</option>
                         <option value="Female">Female</option>
                       </select>
-                      {formik.touched.gender && formik.errors.gender ? (
-                        <div className="text-red-500 text-xs mt-1">{formik.errors.gender}</div>
-                      ) : null}
+
                     </div>
 
-                    <div className="mb-4">
+                    <div className="mb-1">
                       <label
                         htmlFor="height"
-                        className="block text-slate-300 text-sm font-bold mb-2"
+                        className="block text-slate-300 text-[12px] font-thin"
                       >
                         Height (cm)
                       </label>
@@ -188,18 +235,16 @@ function NpForm({ isOpen, closeModal, formData, setFormData, setFetchingSwitch, 
                         value={formik.values.height}
                         onChange={formik.handleChange}
                         onBlur={formik.handleBlur}
-                        className="shadow appearance-none rounded w-full py-2 px-3 bg-zinc-800 text-slate-300 leading-tight focus:outline-none focus:shadow-outline transition-all duration-200 dark:bg-zinc-800 dark:text-slate-300"
+                        className="shadow appearance-none rounded w-full text-[12px] font-thin py-1 px-3 bg-zinc-800 text-slate-300 leading-tight focus:outline-none focus:shadow-outline transition-all duration-200 dark:bg-zinc-800 dark:text-slate-300"
                         placeholder="Enter height"
                       />
-                      {formik.touched.height && formik.errors.height ? (
-                        <div className="text-red-500 text-xs mt-1">{formik.errors.height}</div>
-                      ) : null}
+
                     </div>
 
-                    <div className="mb-4">
+                    <div className="mb-1">
                       <label
                         htmlFor="weight"
-                        className="block text-slate-300 text-sm font-bold mb-2"
+                        className="block text-slate-300 text-[12px] font-thin"
                       >
                         Weight (kg)
                       </label>
@@ -213,18 +258,16 @@ function NpForm({ isOpen, closeModal, formData, setFormData, setFetchingSwitch, 
                         value={formik.values.weight}
                         onChange={formik.handleChange}
                         onBlur={formik.handleBlur}
-                        className="shadow appearance-none rounded w-full py-2 px-3 bg-zinc-800 text-slate-300 leading-tight focus:outline-none focus:shadow-outline transition-all duration-200 dark:bg-zinc-800 dark:text-slate-300"
+                        className="shadow appearance-none rounded w-full text-[12px] font-thin py-1 px-3 bg-zinc-800 text-slate-300 leading-tight focus:outline-none focus:shadow-outline transition-all duration-200 dark:bg-zinc-800 dark:text-slate-300"
                         placeholder="Enter weight"
                       />
-                      {formik.touched.weight && formik.errors.weight ? (
-                        <div className="text-red-500 text-xs mt-1">{formik.errors.weight}</div>
-                      ) : null}
+
                     </div>
 
-                    <div className="mb-4">
+                    <div className="mb-1">
                       <label
                         htmlFor="status"
-                        className="block text-slate-300 text-sm font-bold mb-2"
+                        className="block text-slate-300 text-[12px] font-thin"
                       >
                         Status
                       </label>
@@ -234,34 +277,33 @@ function NpForm({ isOpen, closeModal, formData, setFormData, setFetchingSwitch, 
                         value={formik.values.status}
                         onChange={formik.handleChange}
                         onBlur={formik.handleBlur}
-                        className="shadow appearance-none rounded w-full py-2 px-3 bg-zinc-800 text-slate-300 leading-tight focus:outline-none focus:shadow-outline transition-all duration-200 dark:bg-zinc-800 dark:text-slate-300"
+                        className="shadow appearance-none rounded w-full text-[12px] font-thin py-1 px-3 bg-zinc-800 text-slate-300 leading-tight focus:outline-none focus:shadow-outline transition-all duration-200 dark:bg-zinc-800 dark:text-slate-300"
                       >
                         <option value="">Select Status</option>
                         <option value="Rehabilitation">Rehabilitation</option>
                         <option value="Training">Training</option>
                       </select>
-                      {formik.touched.status && formik.errors.status ? (
-                        <div className="text-red-500 text-xs mt-1">{formik.errors.status}</div>
-                      ) : null}
+
                     </div>
                   </Fragment>
 
-                  <div className="flex flex-row justify-between">
-                    <div className="mt-4 justify-end">
+                  <div className="flex flex-row gap-2 justify-end">
+                    <div className="mt-1 justify-end">
+                      <button
+                        type="button"
+                        onClick={closeNpFormModal}
+                        className="inline-flex w-full justify-center rounded-md bg-neutral-800 px-2 text-[12px] font-medium text-slate-300 font-mono hover:bg-black/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/75 transition-all duration-200"
+                      >
+                        Close
+                      </button>
+                    </div>
+                    <div className="mt-1 justify-end">
                       <button
                         type="submit"
                         disabled={!formik.isValid || formik.isSubmitting}
-                        className="inline-flex w-full justify-center rounded-md bg-zinc-950 px-2 py-2 text-sm font-medium text-slate-300 font-mono hover:bg-black/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/75 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 dark:bg-zinc-950 dark:text-slate-300"
+                        className="inline-flex w-full justify-center rounded-md bg-neutral-800 px-2 text-[12px] font-medium text-slate-300 font-mono hover:bg-black/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/75 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
                       >
-                        Save
-                      </button>
-                    </div>
-                    <div className="mt-4 justify-start">
-                      <button
-                        onClick={closeModal}
-                        className="inline-flex w-full justify-center rounded-md bg-zinc-950 px-2 py-2 text-sm font-medium text-slate-300 font-mono hover:bg-black/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/75 transition-all duration-200 dark:bg-zinc-950 dark:text-slate-300"
-                      >
-                        Close
+                        {formik.isSubmitting ? 'Saving...' : 'Save'}
                       </button>
                     </div>
                   </div>

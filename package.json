@@ -8,7 +8,8 @@
     "start-dev": "cross-env NODE_ENV=development electron electron/main.js",
     "start-electron": "electron-builder start",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "electron-builder"
+    "build": "electron-builder",
+    "dist": "electron-builder --publish never"
   },
   "keywords": [],
   "author": "Antonio Logarzo",
@@ -41,18 +42,22 @@
     ],
     "extraFiles": [],
     "win": {
-      "target": [
-        "portable",
-        "nsis"
-      ],
-      "icon": "build/icons/icon.ico"
+      "target": "nsis",
+      "icon": "build/favicon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Fulcrum"
     },
     "asar": true,
-    "publish": {
+    "publish": [{
       "provider": "github",
       "owner": "MrTimedying",
       "repo": "fulcrumproject",
       "releaseType": "release"
-    }
+    }]
   }
 }

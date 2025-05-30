@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, shell } = require('electron');
 const path = require('path');
 const url = require('url');
 const fs = require('fs');
@@ -14,6 +14,13 @@ autoUpdater.logger = require('electron-log');
 autoUpdater.logger.transports.file.level = 'info';
 autoUpdater.autoDownload = false;
 autoUpdater.autoInstallOnAppQuit = true;
+
+// Set the feed URL for GitHub releases
+autoUpdater.setFeedURL({
+  provider: 'github',
+  owner: 'MrTimedying',
+  repo: 'fulcrumproject'
+});
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -71,11 +78,34 @@ app.on('activate', () => {
   }
 });
 
-// Update handlers
+// Update handlers with retry mechanism
+function checkForUpdatesWithRetry(retries = 3) {
+  let attempts = 0;
+  
+  function attempt() {
+    attempts++;
+    console.log(`Checking for updates (attempt ${attempts}/${retries})`);
+    
+    autoUpdater.checkForUpdates().catch(err => {
+      console.error(`Error checking for updates (attempt ${attempts}/${retries}):`, err);
+      
+      if (attempts < retries) {
+        console.log(`Retrying in 5 seconds...`);
+        setTimeout(attempt, 5000);
+      } else {
+        console.error('Max retry attempts reached. Update check failed.');
+        if (mainWindow) {
+          mainWindow.webContents.send('update-error', 'Network error: Unable to check for updates after multiple attempts.');
+        }
+      }
+    });
+  }
+  
+  attempt();
+}
+
 function checkForUpdates() {
-  autoUpdater.checkForUpdates().catch(err => {
-    console.error('Error checking for updates:', err);
-  });
+  checkForUpdatesWithRetry(3);
 }
 
 // Auto-updater event handlers
@@ -132,6 +162,16 @@ ipcMain.handle('check-for-updates', async () => {
     console.error('Error checking for updates:', error);
     throw new Error(`Failed to check for updates: ${error.message}`);
   }
+});
+
+// Get app version for the renderer process
+ipcMain.handle('get-app-version', () => {
+  return app.getVersion();
+});
+
+// Open external URLs (like GitHub releases page)
+ipcMain.on('open-external', (event, url) => {
+  shell.openExternal(url);
 });
 
 ipcMain.handle('download-update', async () => {

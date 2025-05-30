@@ -26,7 +26,19 @@ export default function MyDropdown({ formData, setFormData, setFetchingSwitch, h
   };
 
   const handlePatientCreation = () => {
-    handleEditPatient();
+    setIsNpFormModalOpen(true);
+    setIsEditing(false);
+    // Reset form data
+    setFormData({
+      name: "",
+      surname: "",
+      age: "",
+      gender: "",
+      bmi: "",
+      height: "",
+      weight: "",
+      status: "",
+    });
   }
 
   const handlePatientDelete = (patientId) => {
