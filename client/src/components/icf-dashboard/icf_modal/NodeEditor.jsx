@@ -89,7 +89,7 @@ const NodeEditor = ({
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full w-full">
       {/* Search and Actions Bar */}
       <div className="p-4 border-b border-zinc-800">
         <div className="flex items-center gap-2 mb-4">

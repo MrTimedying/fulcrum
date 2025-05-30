@@ -1,0 +1,63 @@
+{
+  "name": "fulcrum",
+  "version": "1.0.1",
+  "description": "This versions has a new approach to invervention creation and patient management leveraging flow diagrams.",
+  "main": "electron/main.js",
+  "scripts": {
+    "start": "cross-env NODE_ENV=production electron electron/main.js",
+    "start-dev": "cross-env NODE_ENV=development electron electron/main.js",
+    "start-electron": "electron-builder start",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "electron-builder",
+    "dist": "electron-builder --publish never"
+  },
+  "keywords": [],
+  "author": "Antonio Logarzo",
+  "license": "CC BY-NC-ND 4.0 Deed",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "electron-log": "^4.4.8",
+    "electron-updater": "^6.6.2",
+    "keytar": "^7.9.0"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "electron": "^35.0.1",
+    "electron-builder": "^26.0.12",
+    "node-abi": "github:lgeiger/node-abi",
+    "nodemon": "^3.1.9"
+  },
+  "build": {
+    "appId": "com.antoniologarzo.fulcrum",
+    "productName": "Fulcrum",
+    "directories": {
+      "output": "fulcrum_dist"
+    },
+    "files": [
+      "build/**/*",
+      "package.json",
+      "electron/main.js",
+      "electron/preload.js",
+      "electron/encryptionUtils.js"
+    ],
+    "extraFiles": [],
+    "win": {
+      "target": "nsis",
+      "icon": "build/favicon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Fulcrum"
+    },
+    "asar": true,
+    "publish": [{
+      "provider": "github",
+      "owner": "MrTimedying",
+      "repo": "fulcrumproject",
+      "releaseType": "release"
+    }]
+  }
+}

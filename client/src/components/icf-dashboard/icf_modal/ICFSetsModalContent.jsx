@@ -392,7 +392,7 @@ const ICFSetsModalContent = ({ onClose }) => {
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full w-full">
       <div className="flex flex-grow overflow-hidden">
         {/* Sidebar */}
         <Sidebar 
@@ -402,7 +402,7 @@ const ICFSetsModalContent = ({ onClose }) => {
         />
         
         {/* Main Content Area */}
-        <div className="flex-grow">
+        <div className="flex w-full">
           {activeView === "nodeEditor" ? (
             <NodeEditor
               records={records}

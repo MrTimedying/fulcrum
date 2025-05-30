@@ -53,17 +53,17 @@ const ICFSetsModal = ({ isOpen, onClose }) => {
         style={{ display: "flex", flexDirection: "column" }}
       >
         {/* Modal Content Wrapper */}
-        <div className="bg-zinc-900 text-white shadow-lg overflow-hidden flex flex-col h-full rounded-lg border border-zinc-800">
+        <div className="bg-zinc-900 text-white shadow-lg overflow-hidden flex flex-col h-full rounded-lg border border-zinc-600">
           {/* Header - Use modal-handle for dragging */}
-          <div className="bg-zinc-800 py-2 px-4 flex justify-between items-center modal-handle cursor-move rounded-t-lg">
-            <h2 className="text-sm font-medium">ICF Sets Manager</h2>
+          <div className="bg-zinc-800 px-2 flex justify-between items-center modal-handle cursor-move rounded-t-lg">
+            <h2 className="text-xs font-thin">ICF Sets Manager</h2>
             <button
               onClick={onClose}
-              className="text-zinc-400 hover:text-white transition duration-150"
+              className="text-zinc-400 hover:text-white text-lg font-medium transition duration-150"
               aria-label="Close modal"
               title="Close"
             >
-              <Close />
+              x
             </button>
           </div>
 

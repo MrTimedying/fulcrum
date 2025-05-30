@@ -8,18 +8,18 @@ const Sidebar = ({ activeView, setActiveView, isEditorView }) => {
   ];
 
   return (
-    <div className="w-48 bg-zinc-900 border-r border-zinc-800 flex flex-col h-full">
-      <div className="p-3 border-b border-zinc-800">
+    <div className="w-1/6 bg-zinc-900 border-r border-zinc-800 flex flex-col h-full">
+      {/* <div className="p-3 border-b border-zinc-800">
         <h3 className="text-sm font-medium text-white">ICF Manager</h3>
-      </div>
-      <nav className="flex-grow">
-        <ul className="py-2">
+      </div> */}
+      <nav className="w-full flex-grow">
+        <ul className="flex flex-col justify-start">
           {navigationItems.map((item) => (
             <li key={item.id}>
               <button
                 onClick={() => !item.disabled && setActiveView(item.id)}
                 disabled={item.disabled}
-                className={`w-full text-left px-4 py-2 text-sm ${
+                className={`w-full px-2 text-left  text-[10px] ${
                   activeView === item.id
                     ? "bg-zinc-800 text-white font-medium"
                     : item.disabled
