@@ -1,5 +1,20 @@
 # Changelog - Fulcrum App
 
+## 1.0.1 - 2025-05-30
+
+### Features
+
+#### ICFSetsModal Improvements:
+- Refactored ICFSetsModal component for better state management
+- Moved selection controls to footer for better UX
+- Improved field buttons visibility and interaction
+
+### Fixes
+- Fixed reference errors in ICFSetsModal component
+- Resolved issues with record selection and set creation
+- Improved error handling for single-element set prevention
+- Fixed state management between parent and child components
+
 ## 1.0.0 - 2025-05-19
 
 ### Features

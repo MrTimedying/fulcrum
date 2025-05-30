@@ -1,6 +1,6 @@
 {
   "name": "fulcrum-app",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Management software for movement science experts, leveraging flow diagrams for intervention creation and patient management, including comprehensive data analysis.",
   "keywords": [
     "fitness",

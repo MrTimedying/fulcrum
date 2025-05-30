@@ -32,7 +32,6 @@ import { getProfileComposerTemplates } from "../variables";
 import Inspector from "../data_analysis/Inspector";
 import SelectionMenu from "../selectionMenu";
 import useKeyboardShortcuts from "../util/KeyboardShortcuts";
-import FlowControls from "../controls/flowControls";
 
 
 

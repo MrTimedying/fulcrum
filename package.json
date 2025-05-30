@@ -1,6 +1,6 @@
 {
   "name": "fulcrum",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "This versions has a new approach to invervention creation and patient management leveraging flow diagrams.",
   "main": "electron/main.js",
   "scripts": {

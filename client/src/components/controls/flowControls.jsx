@@ -8,8 +8,9 @@ import { SlSizeActual } from "react-icons/sl";
 import { CiUnlock, CiLock, CiMenuBurger } from "react-icons/ci"; // Features Menu Icon
 import { IoIosColorPalette } from "react-icons/io"; // Style Menu Icon
 import { MdOutlineEdit } from "react-icons/md"; // Icon for Bulk Edit
+import { BsGrid3X3 } from "react-icons/bs"; // Icon for ICF Sets
 
-export default function FlowControls({ setIsFeaturesMenuOpen, setIsStyleMenuOpen, handleOpenBulkEditModal, singleNodeSelected }) {
+export default function FlowControls({ setIsFeaturesMenuOpen, setIsStyleMenuOpen, handleOpenBulkEditModal, singleNodeSelected, setIsICFSetsModalOpen, isICFSetsModalOpen }) {
   const reactFlowInstance = useReactFlow();
   const { zoomIn, zoomOut, fitView } = reactFlowInstance;
   const [isLocked, setIsLocked] = useState(false);
@@ -79,6 +80,16 @@ export default function FlowControls({ setIsFeaturesMenuOpen, setIsStyleMenuOpen
         title="Bulk Edit Exercises (Select a single node)"
       >
         <MdOutlineEdit />
+      </button>
+
+      {/* ICF Sets Button */}
+      <button
+        onClick={() => setIsICFSetsModalOpen(!isICFSetsModalOpen)}
+        className="p-1 rounded-md text-xs bg-zinc-800 hover:bg-zinc-700 text-white transition-all duration-200 ease-in-out shadow hover:shadow-md menu-trigger"
+        aria-label="ICF Sets and Templates"
+        title="ICF Sets and Templates"
+      >
+        <BsGrid3X3 />
       </button>
       
       {/* Zoom In Button */}

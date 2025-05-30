@@ -20,6 +20,7 @@ import PopPrimitive from "./controls/popPrimitive";
 import StyleMenu from "./controls/styleMenu";
 import BulkExerciseEditModal from "./BulkExerciseEditModal";
 import NpForm from "./npform";
+import ICFSetsModal from "./icf-dashboard/ICFSetsModal";
 
 // Bind modal to your appElement (http://reactcommunity.org/react-modal/accessibility/)
 Modal.setAppElement("#root");
@@ -62,6 +63,7 @@ function MainBody({ handleEditPatient }) {
   const [isFeaturesMenuOpen, setIsFeaturesMenuOpen] = useState(false);
   const [isStyleMenuOpen, setIsStyleMenuOpen] = useState(false);
   const [activeMenu, setActiveMenu] = useState(null);
+  const [isICFSetsModalOpen, setIsICFSetsModalOpen] = useState(false);
 
   // State for Bulk Exercise Edit Modal
   const [isBulkEditModalOpen, setIsBulkEditModalOpen] = useState(false);
@@ -359,41 +361,10 @@ function MainBody({ handleEditPatient }) {
                 setIsInspectorOpen={setIsInspectorOpen}
                 handleEditPatient={handleEditPatient}
               />
-              <div className="absolute bottom-4 left-4 z-10">
-
-                {/* PopPrimitive for StyleMenu */}
-                <PopPrimitive
-                  isOpen={isStyleMenuOpen || isFeaturesMenuOpen} // Open if either menu state is true
-                  onClose={() => {
-                    setIsFeaturesMenuOpen(false); // Ensure both are closed on generic close
-                    setIsStyleMenuOpen(false);
-                  }}
-                  menuType="style"  // Corrected: This PopPrimitive is for the StyleMenu
-                  activeMenu={activeMenu}
-                >
-                  <StyleMenu nodes={nodes} setNodes={setNodes} />
-                </PopPrimitive>
-                {/* PopPrimitive for FeaturesMenu (UtilityMenu) */}
-                <PopPrimitive
-                  isOpen={isFeaturesMenuOpen || isStyleMenuOpen} // Open if either menu state is true
-                  onClose={() => {
-                    setIsFeaturesMenuOpen(false); // Ensure both are closed on generic close
-                    setIsStyleMenuOpen(false);
-                  }}
-                  menuType="features" // Corrected: This PopPrimitive is for the Features/UtilityMenu
-                  activeMenu={activeMenu}
-                >
-                  <UtilityMenu />
-                </PopPrimitive>
-                {/* Pass bulk edit handlers and status to FlowControls */} {/* Render FlowControls here as it's part of the UI */}
-                 <FlowControls
-                   setIsFeaturesMenuOpen={setIsFeaturesMenuOpen}
-                   setIsStyleMenuOpen={setIsStyleMenuOpen}
-                   handleOpenBulkEditModal={handleOpenBulkEditModal}
-                   singleNodeSelected={isEditorSingleNodeSelected} // Use the state from Editor
-                 />
-
-              </div>
+              <ICFSetsModal
+                isOpen={activeTab === "Profile" && isICFSetsModalOpen}
+                onClose={() => setIsICFSetsModalOpen(false)}
+              />
             </ReactFlowProvider>
           </Tab.Panel>
           <Tab.Panel key="interventionEditor" className="h-full">
@@ -405,42 +376,6 @@ function MainBody({ handleEditPatient }) {
                   onOpenBulkEditRequest={handleOpenBulkEditModal}
                   onSingleNodeSelectedChange={handleEditorSingleNodeSelectedChange}
               />
-
-              <div className="absolute bottom-4 left-4 z-10">
-
-                {/* PopPrimitive for StyleMenu */}
-                <PopPrimitive
-                  isOpen={isStyleMenuOpen || isFeaturesMenuOpen} // Open if either menu state is true
-                  onClose={() => {
-                    setIsFeaturesMenuOpen(false); // Ensure both are closed on generic close
-                    setIsStyleMenuOpen(false);
-                  }}
-                  menuType="style"  // Corrected: This PopPrimitive is for the StyleMenu
-                  activeMenu={activeMenu}
-                >
-                  <StyleMenu nodes={nodes} setNodes={setNodes} />
-                </PopPrimitive>
-                {/* PopPrimitive for FeaturesMenu (UtilityMenu) */}
-                <PopPrimitive
-                  isOpen={isFeaturesMenuOpen || isStyleMenuOpen} // Open if either menu state is true
-                  onClose={() => {
-                    setIsFeaturesMenuOpen(false); // Ensure both are closed on generic close
-                    setIsStyleMenuOpen(false);
-                  }}
-                  menuType="features" // Corrected: This PopPrimitive is for the Features/UtilityMenu
-                  activeMenu={activeMenu}
-                >
-                  <UtilityMenu />
-                </PopPrimitive>
-                {/* Pass bulk edit handlers and status to FlowControls */} {/* Render FlowControls here as it's part of the UI */}
-                 <FlowControls
-                   setIsFeaturesMenuOpen={setIsFeaturesMenuOpen}
-                   setIsStyleMenuOpen={setIsStyleMenuOpen}
-                   handleOpenBulkEditModal={handleOpenBulkEditModal}
-                   singleNodeSelected={isEditorSingleNodeSelected} // Use the state from Editor
-                 />
-
-              </div>
             </ReactFlowProvider>
           </Tab.Panel>
         </Tab.Panels>
@@ -454,25 +389,60 @@ function MainBody({ handleEditPatient }) {
         className=" bg-neutral-800 h-full"
 
       >
-        {TabStructure()}
-        <Composer
-          isComposerOpen={isComposerOpen}
-          setIsComposerOpen={setIsComposerOpen} />
-        <InterventionModal
-          isOpen={isInterventionModalOpen}
-          onClose={() => setIsInterventionModalOpen(false)}  />
-        <TemplateModal
-          isOpen={isTemplateModalOpen}
-          onClose={() => setIsTemplateModalOpen(false)} />
-        <DatepickerModal
-          isOpen={isDatepickerModalOpen}
-          onClose={() => setIsDatepickerModalOpen(false)} />
-        {/* Render the Bulk Edit Modal here */}
-        <BulkExerciseEditModal
-            isOpen={isBulkEditModalOpen}
-            onClose={handleCloseBulkEditModal}
-            targetSessionNodes={targetSessionNodes}
-        />
+        <ReactFlowProvider>
+          {TabStructure()}
+
+          <div className="absolute bottom-4 left-4 z-10">
+             <PopPrimitive
+                isOpen={isStyleMenuOpen || isFeaturesMenuOpen}
+                onClose={() => {
+                  setIsFeaturesMenuOpen(false);
+                  setIsStyleMenuOpen(false);
+                }}
+                menuType="style"
+                activeMenu={activeMenu}
+              >
+                <StyleMenu nodes={nodes} setNodes={setNodes} />
+              </PopPrimitive>
+              <PopPrimitive
+                isOpen={isFeaturesMenuOpen || isStyleMenuOpen}
+                onClose={() => {
+                  setIsFeaturesMenuOpen(false);
+                  setIsStyleMenuOpen(false);
+                }}
+                menuType="features"
+                activeMenu={activeMenu}
+              >
+                <UtilityMenu />
+              </PopPrimitive>
+             <FlowControls
+                setIsFeaturesMenuOpen={setIsFeaturesMenuOpen}
+                setIsStyleMenuOpen={setIsStyleMenuOpen}
+                handleOpenBulkEditModal={handleOpenBulkEditModal}
+                singleNodeSelected={activeTab === "Editor" ? isEditorSingleNodeSelected : false}
+                setIsICFSetsModalOpen={setIsICFSetsModalOpen}
+                isICFSetsModalOpen={isICFSetsModalOpen}
+              />
+          </div>
+
+          <Composer
+            isComposerOpen={isComposerOpen}
+            setIsComposerOpen={setIsComposerOpen} />
+          <InterventionModal
+            isOpen={isInterventionModalOpen}
+            onClose={() => setIsInterventionModalOpen(false)}  />
+          <TemplateModal
+            isOpen={isTemplateModalOpen}
+            onClose={() => setIsTemplateModalOpen(false)} />
+          <DatepickerModal
+            isOpen={isDatepickerModalOpen}
+            onClose={() => setIsDatepickerModalOpen(false)} />
+          <BulkExerciseEditModal
+              isOpen={isBulkEditModalOpen}
+              onClose={handleCloseBulkEditModal}
+              targetSessionNodes={targetSessionNodes}
+          />
+        </ReactFlowProvider>
       </div>
     );
   } else {
