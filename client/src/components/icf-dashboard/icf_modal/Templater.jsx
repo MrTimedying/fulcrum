@@ -50,7 +50,7 @@ const Templater = ({
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col w-full h-full">
       {/* Search Bar */}
       <div className="p-4 border-b border-zinc-800">
         <div className="relative mb-4">
@@ -60,7 +60,7 @@ const Templater = ({
             placeholder="Search templates..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 p-2 w-full rounded bg-zinc-800 border border-zinc-700 text-white focus:outline-none focus:border-blue-600"
+            className="pl-10 text-[10px] py-1 w-full rounded bg-zinc-800 border  text-white focus:outline-none caret-white border-r-2 border-zinc-900"
           />
         </div>
 
@@ -85,13 +85,13 @@ const Templater = ({
       <div className="flex-grow overflow-y-auto p-4">
 
         <div>
-          <h3 className="text-lg font-medium text-white mb-3">ICF Set Templates</h3>
+          <h3 className="text-lg font-light text-white mb-3">@ ICF Set Templates</h3>
           {filteredTemplates.filter(t => t.type === 'icfSet').length === 0 ? (
             <div className="text-center py-4 text-zinc-500 bg-zinc-800/50 rounded-lg">
               <p>No ICF Set templates found</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               {filteredTemplates
                 .filter(t => t.type === 'icfSet')
                 .map(template => (
@@ -99,8 +99,8 @@ const Templater = ({
                     key={template.id}
                     className={`p-3 rounded-lg border ${
                       selectedTemplates.has(template.id)
-                        ? "border-blue-500 bg-zinc-800"
-                        : "border-zinc-700 bg-zinc-900 hover:border-zinc-600"
+                        ? "border-blue-500 bg-neutral-800"
+                        : "border-neutral-700 bg-neutral-900 hover:border-neutral-600"
                     } transition-all duration-200 cursor-pointer`}
                     onClick={() => handleTemplateSelect(template.id)}
                   >

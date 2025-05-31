@@ -92,7 +92,7 @@ const NodeEditor = ({
     <div className="flex flex-col h-full w-full">
       {/* Search and Actions Bar */}
       <div className="p-4 border-b border-zinc-800">
-        <div className="flex items-center gap-2 mb-4">
+        <div className="flex items-center gap-2 ">
           <div className="relative flex-grow">
             <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-zinc-500" />
             <input
@@ -100,12 +100,12 @@ const NodeEditor = ({
               placeholder="Search by code, description..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 p-2 w-full rounded bg-zinc-800 border border-zinc-700 text-white focus:outline-none focus:border-blue-600"
+              className="pl-10 text-[10px] py-1 w-full rounded bg-zinc-800 border  text-white focus:outline-none caret-white border-r-2 border-zinc-900"
             />
           </div>
           <button
             onClick={handleAddRecord}
-            className="inline-flex items-center gap-1 p-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors duration-200"
+            className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded bg-zinc-800 text-white hover:bg-slate-800 border border-zinc-900 transition-colors duration-200"
             title="Add new record"
           >
             <FiPlusCircle />
@@ -115,7 +115,7 @@ const NodeEditor = ({
 
         {/* Save as Template Form */}
         {showSaveSetForm && (
-          <div className="mt-3 p-3 bg-zinc-800 rounded-lg">
+          <div className=" p-3 bg-zinc-800 rounded-lg">
             <div className="flex gap-2">
               <input
                 type="text"
@@ -176,7 +176,7 @@ const NodeEditor = ({
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             {filteredRecords.map((record) => (
               <RecordEditor
                 key={record.id}

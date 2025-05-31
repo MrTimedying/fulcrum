@@ -23,13 +23,13 @@ const RecordEditor = ({
 
   return (
     <div 
-      className={`p-4 rounded-lg border ${
+      className={`p-2 rounded-lg border ${
         isSelected 
-          ? "border-blue-500 bg-zinc-800" 
-          : "border-zinc-700 bg-zinc-900 hover:border-zinc-600"
+          ? "border-rose-800 bg-neutral-800" 
+          : "border-neutral-700 bg-neutral-900 hover:border-neutral-600"
       } mb-4 transition-all duration-200`}
     >
-      <div className="flex justify-between items-center mb-3">
+      <div className="flex justify-between items-center ">
         <div className="flex items-center gap-3">
           {/* Selection checkbox moved inside */}
           <div onClick={(e) => e.stopPropagation()}>
@@ -38,16 +38,16 @@ const RecordEditor = ({
               id={`select-${record.id}`}
               checked={isSelected}
               onChange={() => onToggleSelect(record.id)}
-              className="w-4 h-4 rounded border-zinc-700 text-blue-600 focus:ring-blue-500"
+              className="w-3 h-3 rounded border-zinc-700 text-gray-600 focus:ring-gray-500"
             />
           </div>
-          <div className="text-lg font-medium text-white">
-            <InlineEdit
+          <div className="text-lg font-light text-white">
+            <div className="flex flex-row gap-1">@ <InlineEdit
               value={record.code || ""}
               placeholder="Enter descriptor name"
               onSave={(value) => onUpdateRecordLabel(record.id, "code", value)}
-              className="font-bold"
-            />
+              className="font-light focus:outline-none focus:ring-0"
+            /></div>
           </div>
         </div>
         <button
@@ -63,7 +63,7 @@ const RecordEditor = ({
         </button>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-3 text-[10px]">
         {record.fields.map((field) => (
           <Field
             key={field.id}

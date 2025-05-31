@@ -27,9 +27,7 @@ const Field = ({
             value={value || ""}
             onChange={handleChange}
             placeholder={field.label}
-            className={`p-2 rounded bg-zinc-800 border ${
-              error ? "border-red-500" : "border-zinc-700"
-            } text-white focus:outline-none focus:border-blue-600 w-full`}
+            className="px-2 text-[10px] py-1 w-full rounded bg-zinc-800 border text-white focus:outline-none caret-white border-r-2 border-zinc-900"
           />
         );
       case "textarea":
@@ -41,9 +39,7 @@ const Field = ({
             onChange={handleChange}
             placeholder={field.label}
             rows="3"
-            className={`p-2 rounded bg-zinc-800 border ${
-              error ? "border-red-500" : "border-zinc-700"
-            } text-white focus:outline-none focus:border-blue-600 w-full resize-none`}
+            className="px-2 text-[10px] py-1 w-full rounded bg-zinc-800 border text-white focus:outline-none caret-white border-r-2 border-zinc-900 resize-none"
           />
         );
       case "number":
@@ -55,9 +51,7 @@ const Field = ({
             value={value || ""}
             onChange={handleChange}
             placeholder={field.label}
-            className={`p-2 rounded bg-zinc-800 border ${
-              error ? "border-red-500" : "border-zinc-700"
-            } text-white focus:outline-none focus:border-blue-600 w-full`}
+            className="px-2 text-[10px] py-1 w-full rounded bg-zinc-800 border text-white focus:outline-none caret-white border-r-2 border-zinc-900"
           />
         );
       case "select":
@@ -73,9 +67,7 @@ const Field = ({
             name={field.name}
             value={value || ""}
             onChange={handleChange}
-            className={`p-2 rounded bg-zinc-800 border ${
-              error ? "border-red-500" : "border-zinc-700"
-            } text-white focus:outline-none focus:border-blue-600 w-full`}
+            className="px-2 text-[10px] py-1 w-full rounded bg-zinc-800 border text-white focus:outline-none caret-white border-r-2 border-zinc-900"
           >
             <option value="">Select {field.label}</option>
             {options.map((option) => (
@@ -94,20 +86,18 @@ const Field = ({
             value={value || ""}
             onChange={handleChange}
             placeholder={field.label}
-            className={`p-2 rounded bg-zinc-800 border ${
-              error ? "border-red-500" : "border-zinc-700"
-            } text-white focus:outline-none focus:border-blue-600 w-full`}
+            className="px-2 text-[10px] py-1 w-full rounded bg-zinc-800 border text-white focus:outline-none caret-white border-r-2 border-zinc-900"
           />
         );
     }
   };
 
   return (
-    <div className="mb-4 relative group">
+    <div className="mb-1 relative group">
       <div className="flex items-center justify-between mb-1">
         <label
           htmlFor={`${recordId}_${field.id}`}
-          className="text-sm font-medium text-white block"
+          className="text-[10px] text-white block"
         >
           {field.label}
           {field.required && <span className="text-red-500 ml-1">*</span>}
