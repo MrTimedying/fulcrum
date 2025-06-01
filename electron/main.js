@@ -19,7 +19,7 @@ autoUpdater.autoInstallOnAppQuit = true;
 autoUpdater.setFeedURL({
   provider: 'github',
   owner: 'MrTimedying',
-  repo: 'fulcrumproject'
+  repo: 'fulcrum'
 });
 
 function createWindow() {
@@ -49,12 +49,26 @@ function createWindow() {
 
   mainWindow.loadURL(indexPath);
   if (isDevelopment) {
-    mainWindow.webContents.openDevTools();
+    // mainWindow.webContents.openDevTools(); // Removed automatic opening
   }
 
   mainWindow.on('closed', function () {
     mainWindow = null;
   });
+
+  // Register F12 to open/close DevTools in development
+  if (isDevelopment) {
+    mainWindow.webContents.on('before-input-event', (event, input) => {
+      if (input.key === 'F12') {
+        event.preventDefault(); // Prevent default F12 behavior
+        if (mainWindow.webContents.isDevToolsOpened()) {
+          mainWindow.webContents.closeDevTools();
+        } else {
+          mainWindow.webContents.openDevTools();
+        }
+      }
+    });
+  }
 
   // Check for updates after window is created (but only in production)
   if (!isDevelopment) {
@@ -62,6 +76,11 @@ function createWindow() {
       checkForUpdates();
     }, 3000); // Delay to ensure app is fully loaded
   }
+
+  // Unregister the F12 shortcut on app quit, if it was registered.
+  app.on('will-quit', () => {
+    //globalShortcut.unregister('F12');
+  });
 }
 
 app.whenReady().then(createWindow);

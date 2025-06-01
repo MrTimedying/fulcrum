@@ -105,6 +105,16 @@ const UpdateManager = () => {
       });
     };
 
+    const updateNotAvailableHandler = (info) => {
+      console.log('Update not available:', info);
+      setToaster({
+        type: 'info',
+        message: 'No updates available. You have the latest version.',
+        show: true,
+        duration: 5000,
+      });
+    };
+
     const updateErrorHandler = (error) => {
       console.error('Update error:', error);
       
@@ -127,6 +137,7 @@ const UpdateManager = () => {
     window.electronAPI.on('update-downloaded', updateDownloadedHandler);
     window.electronAPI.on('update-error', updateErrorHandler);
     window.electronAPI.on('update-progress', updateProgressHandler);
+    window.electronAPI.on('update-not-available', updateNotAvailableHandler);
 
     // Check for updates on component mount (only in production)
     if (process.env.NODE_ENV === 'production') {
@@ -141,6 +152,7 @@ const UpdateManager = () => {
         window.electronAPI.removeAllListeners?.('update-downloaded');
         window.electronAPI.removeAllListeners?.('update-error');
         window.electronAPI.removeAllListeners?.('update-progress');
+        window.electronAPI.removeAllListeners?.('update-not-available');
       };
     }
     
@@ -149,6 +161,7 @@ const UpdateManager = () => {
       window.electronAPI.removeAllListeners?.('update-downloaded');
       window.electronAPI.removeAllListeners?.('update-error');
       window.electronAPI.removeAllListeners?.('update-progress');
+      window.electronAPI.removeAllListeners?.('update-not-available');
     };
   }, [setUpdateAvailable, setUpdateDownloaded, setToaster, checkForUpdates]);
 

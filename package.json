@@ -9,7 +9,8 @@
     "start-electron": "electron-builder start",
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "electron-builder",
-    "dist": "electron-builder --publish never"
+    "dist": "electron-builder --publish never",
+    "start-dev-all": "concurrently \"cross-env NODE_ENV=development electron electron/main.js\" \"npm run dev --prefix client\""
   },
   "keywords": [],
   "author": "Antonio Logarzo",
@@ -25,7 +26,8 @@
     "electron": "^35.0.1",
     "electron-builder": "^26.0.12",
     "node-abi": "github:lgeiger/node-abi",
-    "nodemon": "^3.1.9"
+    "nodemon": "^3.1.9",
+    "concurrently": "^8.2.2"
   },
   "build": {
     "appId": "com.antoniologarzo.fulcrum",
@@ -53,11 +55,13 @@
       "shortcutName": "Fulcrum"
     },
     "asar": true,
-    "publish": [{
-      "provider": "github",
-      "owner": "MrTimedying",
-      "repo": "fulcrumproject",
-      "releaseType": "release"
-    }]
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "MrTimedying",
+        "repo": "fulcrumproject",
+        "releaseType": "release"
+      }
+    ]
   }
 }
