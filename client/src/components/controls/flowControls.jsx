@@ -9,11 +9,22 @@ import { CiUnlock, CiLock, CiMenuBurger } from "react-icons/ci"; // Features Men
 import { IoIosColorPalette } from "react-icons/io"; // Style Menu Icon
 import { MdOutlineEdit } from "react-icons/md"; // Icon for Bulk Edit
 import { BsGrid3X3 } from "react-icons/bs"; // Icon for ICF Sets
+import useFlowStore from "../../state/flowState"; // Import the flow store
+import { FaArrowDown, FaArrowRight } from "react-icons/fa"; // Icons for layout buttons
 
 export default function FlowControls({ setIsFeaturesMenuOpen, setIsStyleMenuOpen, handleOpenBulkEditModal, singleNodeSelected, setIsICFSetsModalOpen, isICFSetsModalOpen }) {
   const reactFlowInstance = useReactFlow();
   const { zoomIn, zoomOut, fitView } = reactFlowInstance;
   const [isLocked, setIsLocked] = useState(false);
+  
+  // Get activeTab from the store to check if we're in Editor
+  const activeTab = useFlowStore((state) => state.activeTab);
+  
+  // Get the applyLayout function from the store
+  const applyLayout = useFlowStore((state) => state.applyLayout);
+  
+  // ICF Sets should be disabled in Editor tab
+  const isICFSetsDisabled = activeTab === "Editor";
 
   const handleToggleLock = () => {
     const newState = !isLocked;
@@ -84,14 +95,33 @@ export default function FlowControls({ setIsFeaturesMenuOpen, setIsStyleMenuOpen
 
       {/* ICF Sets Button */}
       <button
-        onClick={() => setIsICFSetsModalOpen(!isICFSetsModalOpen)}
-        className="p-1 rounded-md text-xs bg-zinc-800 hover:bg-zinc-700 text-white transition-all duration-200 ease-in-out shadow hover:shadow-md menu-trigger"
+        onClick={() => !isICFSetsDisabled && setIsICFSetsModalOpen(!isICFSetsModalOpen)}
+        disabled={isICFSetsDisabled}
+        className={`p-1 rounded-md text-xs ${isICFSetsDisabled ? 'bg-gray-600 cursor-not-allowed' : 'bg-zinc-800 hover:bg-zinc-700'} text-white transition-all duration-200 ease-in-out shadow hover:shadow-md menu-trigger`}
         aria-label="ICF Sets and Templates"
-        title="ICF Sets and Templates"
+        title={isICFSetsDisabled ? "ICF Sets are only available in Profile tab" : "ICF Sets and Templates"}
       >
         <BsGrid3X3 />
       </button>
       
+      {/* Layout Buttons */}
+      <button
+        onClick={() => applyLayout('TB')}
+        className="p-1 rounded-md text-xs bg-zinc-800 hover:bg-zinc-700 text-white transition-all duration-200 ease-in-out shadow hover:shadow-md"
+        aria-label="Apply Vertical Layout (Top-Bottom)"
+        title="Apply Vertical Layout (Top-Bottom)"
+      >
+        <FaArrowDown />
+      </button>
+      <button
+        onClick={() => applyLayout('LR')}
+        className="p-1 rounded-md text-xs bg-zinc-800 hover:bg-zinc-700 text-white transition-all duration-200 ease-in-out shadow hover:shadow-md"
+        aria-label="Apply Horizontal Layout (Left-Right)"
+        title="Apply Horizontal Layout (Left-Right)"
+      >
+        <FaArrowRight />
+      </button>
+
       {/* Zoom In Button */}
       <button
         onClick={() => zoomIn()}

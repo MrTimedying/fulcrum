@@ -677,6 +677,20 @@ const useFlowStore = create(
         });
       },
 
+      // Bulk update node data by nodeId and property
+      bulkUpdateNodeData: (nodeId, property, value) => {
+        set((state) => ({
+          nodes: state.nodes.map((node) => {
+            if (node.id === nodeId) {
+              const updatedNode = _.cloneDeep(node);
+              _.set(updatedNode, `data.${property}`, value);
+              return updatedNode;
+            }
+            return node;
+          }),
+        }));
+      },
+
       // Update a specific exercise in the selected node
       updateExerciseData: (exerciseId, field, value) => {
         set((state) => {
@@ -1331,7 +1345,7 @@ const useFlowStore = create(
           // Step 4: Update the state with these nodes first
           set({ nodes: mergedNodes });
           
-          // Step 5: Now stack the session nodes below their parents
+          // Step 5: Now position session nodes based on direction and order
           // Find all session nodes and organize by parent
           const parentMap = new Map(); // Maps parent ID to array of child session nodes
           
@@ -1361,30 +1375,58 @@ const useFlowStore = create(
             const parentNode = updatedNodes.find(node => node.id === parentId);
             if (!parentNode) return;
             
-            // Calculate starting position below the parent
-            const startX = parentNode.position.x; // Same X as parent
-            let startY = parentNode.position.y + 150; // Start below parent with some spacing
-            
-            // Sort nodes by existing X position to maintain relative horizontal order
-            const sortedChildren = [...childNodes].sort((a, b) => 
-              (a.position?.x || 0) - (b.position?.x || 0)
-            );
-            
-            // Position each child node in a vertical column beneath the parent
-            sortedChildren.forEach((node, index) => {
-              // Find the node in our updatedNodes array
-              const nodeIndex = updatedNodes.findIndex(n => n.id === node.id);
-              if (nodeIndex !== -1) {
-                // Update the position
-                updatedNodes[nodeIndex] = {
-                  ...updatedNodes[nodeIndex],
-                  position: {
-                    x: startX,
-                    y: startY + (index * 150) // Stack vertically with 150px spacing
-                  }
-                };
+            // Sort nodes by order property if available, otherwise by existing position
+            const sortedChildren = [...childNodes].sort((a, b) => {
+              // If both nodes have an order, sort by order
+              if (a.data?.order !== null && b.data?.order !== null && 
+                  a.data?.order !== undefined && b.data?.order !== undefined) {
+                return (a.data?.order || 0) - (b.data?.order || 0);
+              }
+              // Otherwise fall back to existing position (X for horizontal, Y for vertical)
+              if (direction === "LR") {
+                return (a.position?.x || 0) - (b.position?.x || 0);
+              } else {
+                return (a.position?.y || 0) - (b.position?.y || 0);
               }
             });
+            
+            if (direction === "LR") {
+              // Horizontal layout: position session nodes in a row to the right of parent
+              const startX = parentNode.position.x + 200; // Start to the right of parent with spacing
+              const startY = parentNode.position.y; // Same Y as parent
+              
+              // Position each child node horizontally
+              sortedChildren.forEach((node, index) => {
+                const nodeIndex = updatedNodes.findIndex(n => n.id === node.id);
+                if (nodeIndex !== -1) {
+                  updatedNodes[nodeIndex] = {
+                    ...updatedNodes[nodeIndex],
+                    position: {
+                      x: startX + (index * 200), // Stack horizontally with 200px spacing
+                      y: startY
+                    }
+                  };
+                }
+              });
+            } else {
+              // Vertical layout (TB): position session nodes in a column below parent
+              const startX = parentNode.position.x; // Same X as parent
+              const startY = parentNode.position.y + 150; // Start below parent with spacing
+              
+              // Position each child node vertically
+              sortedChildren.forEach((node, index) => {
+                const nodeIndex = updatedNodes.findIndex(n => n.id === node.id);
+                if (nodeIndex !== -1) {
+                  updatedNodes[nodeIndex] = {
+                    ...updatedNodes[nodeIndex],
+                    position: {
+                      x: startX,
+                      y: startY + (index * 150) // Stack vertically with 150px spacing
+                    }
+                  };
+                }
+              });
+            }
           });
           
           // Step 6: Update the state with the final node positions
@@ -1395,12 +1437,12 @@ const useFlowStore = create(
         }
       },
 
-      // Update applyLayout to use hybridLayout for TB direction
+      // Update applyLayout to use hybridLayout for both TB and LR directions
       applyLayout: (direction = "TB") => {
         const { hybridLayout } = get();
         
-        // Use hybrid layout for TB direction, standard ELK for others
-        if (direction === "TB") {
+        // Use hybrid layout for TB and LR directions
+        if (direction === "TB" || direction === "LR") {
           hybridLayout(direction);
           return;
         }
@@ -1521,9 +1563,13 @@ const useFlowStore = create(
             // Sort nodes by order property if available, otherwise by position
             const sortedChildren = [...childNodes].sort((a, b) => {
               // If both nodes have an order, sort by order
-              if (a.data?.order !== null && b.data?.order !== null) {
+              if (a.data?.order !== null && b.data?.order !== null && 
+                  a.data?.order !== undefined && b.data?.order !== undefined) {
                 return (a.data?.order || 0) - (b.data?.order || 0);
               }
+              // If only one has an order, prioritize the one with order
+              if (a.data?.order !== null && a.data?.order !== undefined) return -1;
+              if (b.data?.order !== null && b.data?.order !== undefined) return 1;
               // Otherwise fall back to X position
               return (a.position?.x || 0) - (b.position?.x || 0);
             });

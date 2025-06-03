@@ -19,6 +19,7 @@ import FlowControls from "./controls/flowControls";
 import PopPrimitive from "./controls/popPrimitive";
 import StyleMenu from "./controls/styleMenu";
 import BulkExerciseEditModal from "./BulkExerciseEditModal";
+import BulkNodeDataModal from "./editor/bulk_node_modal/BulkNodeDataModal";
 import NpForm from "./npform";
 import ICFSetsModal from "./icf-dashboard/ICFSetsModal";
 
@@ -69,6 +70,9 @@ function MainBody({ handleEditPatient }) {
   const [isBulkEditModalOpen, setIsBulkEditModalOpen] = useState(false);
   const [targetSessionNodes, setTargetSessionNodes] = useState([]);
   const [isEditorSingleNodeSelected, setIsEditorSingleNodeSelected] = useState(false); // To track selection in Editor
+
+  // State for Bulk Node Data Modal
+  const [isBulkNodeDataModalOpen, setIsBulkNodeDataModalOpen] = useState(false);
 
   // Handler to receive single node selection status from Editor
   const handleEditorSingleNodeSelectedChange = useCallback((isSelected) => {
@@ -222,27 +226,35 @@ function MainBody({ handleEditPatient }) {
 
     // Early return for common error states
     if (id === "composer") {
+      // Open Bulk Node Data Modal instead of the old composer for Data functionality
+      if (activeTab !== "Editor") {
+        setToaster({
+          type: "error",
+          message: "Data editing is only available in the Editor tab.",
+          show: true,
+        });
+        return;
+      }
+
       if (!nodeSelectedInEditor) {
         setToaster({
           type: "error",
-          message: "No node is selected. Please select a node to edit.",
+          message: "Please select a node to edit its data and descendants.",
           show: true,
         });
         return;
       }
-      if (
-        nodeSelectedInEditor.type === "bodyStructure" ||
-        nodeSelectedInEditor.type === "activities" ||
-        nodeSelectedInEditor.type === "participation"
-      ) {
+
+      if (multipleNodesSelectedInEditor) {
         setToaster({
-          message: "These are just placeholders. You can't edit them.",
           type: "error",
+          message: "Please select only one node for bulk data editing.",
           show: true,
         });
         return;
       }
-      setIsComposerOpen(true);
+
+      setIsBulkNodeDataModalOpen(true);
       return;
     }  
 
@@ -441,6 +453,10 @@ function MainBody({ handleEditPatient }) {
               isOpen={isBulkEditModalOpen}
               onClose={handleCloseBulkEditModal}
               targetSessionNodes={targetSessionNodes}
+          />
+          <BulkNodeDataModal
+            isOpen={isBulkNodeDataModalOpen}
+            onClose={() => setIsBulkNodeDataModalOpen(false)}
           />
         </ReactFlowProvider>
       </div>

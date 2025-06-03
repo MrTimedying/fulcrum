@@ -43,18 +43,21 @@ const dataTemplates = {
     id: uuidv4(),
     scope: "Phase Scope",
     color: "rgba(28, 28, 28, 1)",
+    tags: "",
     order: null, // Will be assigned when connected to a parent
   }),
   micro: () => ({
     id: uuidv4(),
     scope: "Micro Scope",
     color: "rgba(28, 28, 28, 1)",
+    tags: "",
     order: null, // Will be assigned when connected to a parent
   }),
   session: () => ({
     id: uuidv4(),
     scope: "Session Scope",
     color: "rgba(28, 28, 28, 1)",
+    tags: "",
     exercises: [],
     tests: [],
     order: null, // Will be assigned when connected to a parent

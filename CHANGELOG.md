@@ -1,5 +1,25 @@
 # Changelog - Fulcrum App
 
+## 1.1.0 - [Current Date]
+
+### Features
+
+#### Layouting Improvements:
+- Enhanced vertical stacking of nodes by order in `stackSessionNodes`.
+- Added horizontal stacking of nodes by order in `hybridLayout` for LR direction.
+
+#### Profile Enhancements:
+- Implemented the ICF sets and ICF modal composer in the Profile section.
+
+#### Bulk Edit Modal:
+- Implemented the Bulk Node Data Modal with editable properties filtered per node type (excluding ID, color, order).
+- Integrated a tag system using Material UI components and validation.
+
+### Fixes
+
+#### UI/UX Fixes:
+- Disabled/greyed out the ICF Templater button in the Editor tab with an appropriate tooltip.
+
 ## 1.0.1 - 2025-05-30
 
 ### Features
