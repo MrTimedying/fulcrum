@@ -377,6 +377,39 @@ function MainBody({ handleEditPatient }) {
                 isOpen={activeTab === "Profile" && isICFSetsModalOpen}
                 onClose={() => setIsICFSetsModalOpen(false)}
               />
+              {/* FlowControls for Profile tab */}
+              <div className="absolute bottom-4 left-4 z-10">
+                <PopPrimitive
+                  isOpen={isStyleMenuOpen || isFeaturesMenuOpen}
+                  onClose={() => {
+                    setIsFeaturesMenuOpen(false);
+                    setIsStyleMenuOpen(false);
+                  }}
+                  menuType="style"
+                  activeMenu={activeMenu}
+                >
+                  <StyleMenu nodes={nodes} setNodes={setNodes} />
+                </PopPrimitive>
+                <PopPrimitive
+                  isOpen={isFeaturesMenuOpen || isStyleMenuOpen}
+                  onClose={() => {
+                    setIsFeaturesMenuOpen(false);
+                    setIsStyleMenuOpen(false);
+                  }}
+                  menuType="features"
+                  activeMenu={activeMenu}
+                >
+                  <UtilityMenu />
+                </PopPrimitive>
+                <FlowControls
+                  setIsFeaturesMenuOpen={setIsFeaturesMenuOpen}
+                  setIsStyleMenuOpen={setIsStyleMenuOpen}
+                  handleOpenBulkEditModal={handleOpenBulkEditModal}
+                  singleNodeSelected={false} // Profile tab doesn't use single node selection
+                  setIsICFSetsModalOpen={setIsICFSetsModalOpen}
+                  isICFSetsModalOpen={isICFSetsModalOpen}
+                />
+              </div>
             </ReactFlowProvider>
           </Tab.Panel>
           <Tab.Panel key="interventionEditor" className="h-full">
@@ -388,6 +421,39 @@ function MainBody({ handleEditPatient }) {
                   onOpenBulkEditRequest={handleOpenBulkEditModal}
                   onSingleNodeSelectedChange={handleEditorSingleNodeSelectedChange}
               />
+              {/* FlowControls for Editor tab */}
+              <div className="absolute bottom-4 left-4 z-10">
+                <PopPrimitive
+                  isOpen={isStyleMenuOpen || isFeaturesMenuOpen}
+                  onClose={() => {
+                    setIsFeaturesMenuOpen(false);
+                    setIsStyleMenuOpen(false);
+                  }}
+                  menuType="style"
+                  activeMenu={activeMenu}
+                >
+                  <StyleMenu nodes={nodes} setNodes={setNodes} />
+                </PopPrimitive>
+                <PopPrimitive
+                  isOpen={isFeaturesMenuOpen || isStyleMenuOpen}
+                  onClose={() => {
+                    setIsFeaturesMenuOpen(false);
+                    setIsStyleMenuOpen(false);
+                  }}
+                  menuType="features"
+                  activeMenu={activeMenu}
+                >
+                  <UtilityMenu />
+                </PopPrimitive>
+                <FlowControls
+                  setIsFeaturesMenuOpen={setIsFeaturesMenuOpen}
+                  setIsStyleMenuOpen={setIsStyleMenuOpen}
+                  handleOpenBulkEditModal={handleOpenBulkEditModal}
+                  singleNodeSelected={isEditorSingleNodeSelected}
+                  setIsICFSetsModalOpen={setIsICFSetsModalOpen}
+                  isICFSetsModalOpen={isICFSetsModalOpen}
+                />
+              </div>
             </ReactFlowProvider>
           </Tab.Panel>
         </Tab.Panels>
@@ -401,41 +467,7 @@ function MainBody({ handleEditPatient }) {
         className=" bg-neutral-800 h-full"
 
       >
-        <ReactFlowProvider>
           {TabStructure()}
-
-          <div className="absolute bottom-4 left-4 z-10">
-             <PopPrimitive
-                isOpen={isStyleMenuOpen || isFeaturesMenuOpen}
-                onClose={() => {
-                  setIsFeaturesMenuOpen(false);
-                  setIsStyleMenuOpen(false);
-                }}
-                menuType="style"
-                activeMenu={activeMenu}
-              >
-                <StyleMenu nodes={nodes} setNodes={setNodes} />
-              </PopPrimitive>
-              <PopPrimitive
-                isOpen={isFeaturesMenuOpen || isStyleMenuOpen}
-                onClose={() => {
-                  setIsFeaturesMenuOpen(false);
-                  setIsStyleMenuOpen(false);
-                }}
-                menuType="features"
-                activeMenu={activeMenu}
-              >
-                <UtilityMenu />
-              </PopPrimitive>
-             <FlowControls
-                setIsFeaturesMenuOpen={setIsFeaturesMenuOpen}
-                setIsStyleMenuOpen={setIsStyleMenuOpen}
-                handleOpenBulkEditModal={handleOpenBulkEditModal}
-                singleNodeSelected={activeTab === "Editor" ? isEditorSingleNodeSelected : false}
-                setIsICFSetsModalOpen={setIsICFSetsModalOpen}
-                isICFSetsModalOpen={isICFSetsModalOpen}
-              />
-          </div>
 
           <Composer
             isComposerOpen={isComposerOpen}
@@ -458,7 +490,6 @@ function MainBody({ handleEditPatient }) {
             isOpen={isBulkNodeDataModalOpen}
             onClose={() => setIsBulkNodeDataModalOpen(false)}
           />
-        </ReactFlowProvider>
       </div>
     );
   } else {

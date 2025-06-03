@@ -4,7 +4,7 @@ import {
   BarChart, Bar, ComposedChart, Area, PieChart, Pie, Cell
 } from 'recharts';
 import useFlowStore from '../../state/flowState';
-import { getExerciseContainerDisplayName } from '../../utils/exerciseUtils';
+import { getExerciseContainerDisplayName, enhanceExercisesWithInheritedTags } from '../../utils/exerciseUtils';
 
 function MicroNodeInspector({ node }) {
   const { nodes, edges } = useFlowStore();
@@ -83,7 +83,8 @@ function MicroNodeInspector({ node }) {
             // Add new properties to store arrays of values
             setRepsArray: [],
             setDurationsArray: [],
-            setIntensitiesArray: []
+            setIntensitiesArray: [],
+            allTags: []
           };
           
           // Parse each field in the exercise
@@ -197,11 +198,24 @@ function MicroNodeInspector({ node }) {
       }
     });
     
+    // Enhance all exercises with inherited tags
+    const enhancedExercises = [];
+    sessionNodes.forEach(sessionNode => {
+      const sessionExercises = allExercises.filter(ex => ex.sessionId === sessionNode.id);
+      const enhanced = enhanceExercisesWithInheritedTags(sessionExercises, sessionNode, nodes, edges);
+      enhancedExercises.push(...enhanced);
+    });
+    
+    // Add all tags (exercise + inherited) to tag set
+    enhancedExercises.forEach(exercise => {
+      exercise.allTags.forEach(tag => tagSet.add(tag));
+    });
+    
     return {
-      allExercisesData: allExercises,
+      allExercisesData: enhancedExercises,
       allTags: Array.from(tagSet).sort()
     };
-  }, [sessionNodes]);
+  }, [sessionNodes, nodes, edges]);
   
   // Handle tag selection/filtering
   const handleTagSelection = (tag) => {
@@ -228,11 +242,11 @@ function MicroNodeInspector({ node }) {
     if (showAllTags) return allExercisesData;
     
     if (selectedTags.length === 0) {
-      return allExercisesData.filter(ex => ex.tags.length === 0);
+      return allExercisesData.filter(ex => ex.allTags.length === 0);
     }
     
     return allExercisesData.filter(exercise => 
-      exercise.tags.some(tag => selectedTags.includes(tag))
+      exercise.allTags.some(tag => selectedTags.includes(tag))
     );
   }, [allExercisesData, selectedTags, showAllTags]);
   

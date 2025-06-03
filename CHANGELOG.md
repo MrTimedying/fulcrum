@@ -1,5 +1,21 @@
 # Changelog - Fulcrum App
 
+## 1.2.0 - 2025-06-03
+
+### Features
+
+#### Data Analysis Enhancements:
+- Polished the data analysis components by leveraging the node tag system.
+- Added filtering by node data tags in the ExerciseModal.
+- Implemented tag inheritance for data analysis in inspector components (Phase, Micro, Session).
+
+### Fixes
+
+#### Modal and Control Fixes:
+- Enhanced the intervention save/load modal with a proper node data overview in the "Save" tab.
+- Updated the intervention save/load modal to be compliant with @graphics layout specifications.
+- Fixed FlowControls buttons (zoom in, zoom out, lock/unlock, fit view) by resolving ReactFlow context conflicts.
+
 ## 1.1.0 - [Current Date]
 
 ### Features

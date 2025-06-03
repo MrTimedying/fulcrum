@@ -4,7 +4,7 @@ import {
   BarChart, Bar, ComposedChart, Area, AreaChart, PieChart, Pie, Cell
 } from 'recharts';
 import useFlowStore from '../../state/flowState';
-import { getExerciseContainerDisplayName } from '../../utils/exerciseUtils';
+import { getExerciseContainerDisplayName, enhanceExercisesWithInheritedTags } from '../../utils/exerciseUtils';
 
 function PhaseNodeInspector({ node }) {
   const { nodes, edges } = useFlowStore();
@@ -134,7 +134,8 @@ function PhaseNodeInspector({ node }) {
             // Add new properties to store arrays of values
             setRepsArray: [],
             setDurationsArray: [],
-            setIntensitiesArray: []
+            setIntensitiesArray: [],
+            allTags: []
           };
           
           // Parse each field in the exercise
@@ -248,11 +249,24 @@ function PhaseNodeInspector({ node }) {
       }
     });
     
+    // Enhance all exercises with inherited tags
+    const enhancedExercises = [];
+    allSessionNodes.forEach(sessionNode => {
+      const sessionExercises = allExercises.filter(ex => ex.sessionId === sessionNode.id);
+      const enhanced = enhanceExercisesWithInheritedTags(sessionExercises, sessionNode, nodes, edges);
+      enhancedExercises.push(...enhanced);
+    });
+    
+    // Add all tags (exercise + inherited) to tag set
+    enhancedExercises.forEach(exercise => {
+      exercise.allTags.forEach(tag => tagSet.add(tag));
+    });
+
     return {
-      allExercisesData: allExercises,
+      allExercisesData: enhancedExercises,
       allTags: Array.from(tagSet).sort()
     };
-  }, [allSessionNodes]);
+  }, [allSessionNodes, nodes, edges]);
   
   // Handle tag selection
   const handleTagSelection = (tag) => {
@@ -279,11 +293,11 @@ function PhaseNodeInspector({ node }) {
     if (showAllTags) return allExercisesData;
     
     if (selectedTags.length === 0) {
-      return allExercisesData.filter(ex => ex.tags.length === 0);
+      return allExercisesData.filter(ex => ex.allTags.length === 0);
     }
     
     return allExercisesData.filter(exercise => 
-      exercise.tags.some(tag => selectedTags.includes(tag))
+      exercise.allTags.some(tag => selectedTags.includes(tag))
     );
   }, [allExercisesData, selectedTags, showAllTags]);
   
@@ -314,7 +328,7 @@ function PhaseNodeInspector({ node }) {
       groupedData[microKey].distinctExercises.add(exercise.name);
       
       // Track volume by tag
-      exercise.tags.forEach(tag => {
+      exercise.allTags.forEach(tag => {
         if (!groupedData[microKey].tagVolumes[tag]) {
           groupedData[microKey].tagVolumes[tag] = 0;
         }
@@ -322,7 +336,7 @@ function PhaseNodeInspector({ node }) {
       });
       
       // If no tags, track as "Untagged"
-      if (exercise.tags.length === 0) {
+      if (exercise.allTags.length === 0) {
         if (!groupedData[microKey].tagVolumes["Untagged"]) {
           groupedData[microKey].tagVolumes["Untagged"] = 0;
         }
@@ -428,12 +442,12 @@ function PhaseNodeInspector({ node }) {
     const tagVolumes = {};
     
     filteredExercises.forEach(exercise => {
-      if (exercise.tags.length === 0) {
+      if (exercise.allTags.length === 0) {
         tagVolumes["Untagged"] = (tagVolumes["Untagged"] || 0) + exercise.volume;
         return;
       }
       
-      exercise.tags.forEach(tag => {
+      exercise.allTags.forEach(tag => {
         tagVolumes[tag] = (tagVolumes[tag] || 0) + exercise.volume;
       });
     });

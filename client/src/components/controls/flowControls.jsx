@@ -29,13 +29,39 @@ export default function FlowControls({ setIsFeaturesMenuOpen, setIsStyleMenuOpen
   const handleToggleLock = () => {
     const newState = !isLocked;
     setIsLocked(newState);
-    reactFlowInstance.setNodes((nodes) =>
-      nodes.map((node) => ({
+    
+    reactFlowInstance.setNodes((nodes) => {
+      const updatedNodes = nodes.map((node) => ({
         ...node,
         draggable: !newState,
         selectable: !newState,
-      }))
-    );
+      }));
+      return updatedNodes;
+    });
+  };
+
+  const handleZoomIn = () => {
+    try {
+      zoomIn();
+    } catch (error) {
+      console.error("Error in zoomIn:", error);
+    }
+  };
+
+  const handleZoomOut = () => {
+    try {
+      zoomOut();
+    } catch (error) {
+      console.error("Error in zoomOut:", error);
+    }
+  };
+
+  const handleFitView = () => {
+    try {
+      fitView();
+    } catch (error) {
+      console.error("Error in fitView:", error);
+    }
   };
 
   // Corrected handler for the Style Menu button (IoIosColorPalette)
@@ -124,7 +150,7 @@ export default function FlowControls({ setIsFeaturesMenuOpen, setIsStyleMenuOpen
 
       {/* Zoom In Button */}
       <button
-        onClick={() => zoomIn()}
+        onClick={handleZoomIn}
         className="p-1 rounded-md text-xs bg-zinc-800 hover:bg-zinc-700  text-white  transition-all duration-200 ease-in-out shadow hover:shadow-md "
         aria-label="Zoom In"
       >
@@ -133,7 +159,7 @@ export default function FlowControls({ setIsFeaturesMenuOpen, setIsStyleMenuOpen
 
       {/* Zoom Out Button */}
       <button
-        onClick={() => zoomOut()}
+        onClick={handleZoomOut}
         className="p-1 rounded-md  text-xs text-white  bg-zinc-800 hover:bg-zinc-700  transition-all duration-200 ease-in-out shadow hover:shadow-md "
         aria-label="Zoom Out"
       >
@@ -142,7 +168,7 @@ export default function FlowControls({ setIsFeaturesMenuOpen, setIsStyleMenuOpen
 
       {/* Fit View Button */}
       <button
-        onClick={() => fitView()}
+        onClick={handleFitView}
         className="p-1 rounded-md text-xs text-white  bg-zinc-800 hover:bg-zinc-700  transition-all duration-200 ease-in-out shadow hover:shadow-md "
         aria-label="Fit View"
       >

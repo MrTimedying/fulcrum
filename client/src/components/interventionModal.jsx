@@ -114,8 +114,8 @@ const InterventionModal = ({ isOpen, onClose }) => {
         bounds="window"
         dragHandleClassName="modal-handle"
       >
-        <div className="bg-gray-800 text-white rounded-lg shadow-lg overflow-hidden flex flex-col h-full">
-          <div className="bg-gray-900 p-4 flex justify-between items-center modal-handle cursor-move">
+        <div className="w-full h-full flex flex-col bg-white dark:bg-zinc-800 text-gray-900 dark:text-white shadow-xl rounded-lg overflow-hidden border border-zinc-800">
+          <div className="modal-handle bg-zinc-900 p-4 flex justify-between items-center cursor-move border-b border-zinc-800">
             <h2 className="text-xl font-semibold">Intervention Management</h2>
             <button
               onClick={onClose}
@@ -126,12 +126,12 @@ const InterventionModal = ({ isOpen, onClose }) => {
           </div>
 
           <Tab.Group selectedIndex={activeTabIndex} onChange={setActiveTabIndex}>
-            <Tab.List className="flex bg-gray-900 px-4 border-b border-gray-700">
+            <Tab.List className="flex bg-zinc-900 px-4 border-b border-zinc-800">
               <Tab
                 className={({ selected }) =>
                   `py-3 px-4 text-sm font-medium transition-colors focus:outline-none ${
                     selected
-                      ? "border-b-2 border-indigo-500 text-white"
+                      ? "border-b-2 border-blue-500 text-white"
                       : "text-gray-400 hover:text-gray-200"
                   }`
                 }
@@ -142,7 +142,7 @@ const InterventionModal = ({ isOpen, onClose }) => {
                 className={({ selected }) =>
                   `py-3 px-4 text-sm font-medium transition-colors focus:outline-none ${
                     selected
-                      ? "border-b-2 border-indigo-500 text-white"
+                      ? "border-b-2 border-blue-500 text-white"
                       : "text-gray-400 hover:text-gray-200"
                   }`
                 }
@@ -151,7 +151,7 @@ const InterventionModal = ({ isOpen, onClose }) => {
               </Tab>
             </Tab.List>
 
-            <Tab.Panels className="flex-1 overflow-auto">
+            <Tab.Panels className="flex-1 overflow-auto bg-zinc-900">
               {/* Save New Intervention Panel */}
               <Tab.Panel className="p-6 h-full flex flex-col">
                 <div className="mb-6">
@@ -163,23 +163,97 @@ const InterventionModal = ({ isOpen, onClose }) => {
                     id="interventionName"
                     value={newInterventionName}
                     onChange={(e) => setNewInterventionName(e.target.value)}
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-2 bg-zinc-800 border border-zinc-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                     placeholder="Enter a name for this intervention"
                   />
                 </div>
 
-                <div className="flex-1 bg-gray-700 rounded-md p-4 mb-6 overflow-auto">
-                  <h3 className="text-sm font-medium text-gray-300 mb-2">Intervention Preview</h3>
+                <div className="flex-1 bg-zinc-800 rounded-md p-4 mb-6 overflow-auto border border-zinc-700">
+                  <h3 className="text-sm font-medium mb-3 text-gray-300">Intervention Preview</h3>
                   <div className="text-gray-400 text-sm">
                     {nodes.length > 0 ? (
                       <div>
-                        <p>This intervention contains {nodes.length} nodes.</p>
-                        <ul className="list-disc list-inside mt-2">
-                          {nodes.slice(0, 5).map((node) => (
-                            <li key={node.id}>{node.data.label || "Unnamed node"}</li>
-                          ))}
-                          {nodes.length > 5 && <li>...and {nodes.length - 5} more</li>}
-                        </ul>
+                        <p className="mb-4">This intervention contains {nodes.length} nodes and {edges.length} connections.</p>
+                        
+                        {/* Node Overview Table */}
+                        <div className="space-y-3">
+                          <h4 className="text-xs font-medium text-gray-300 uppercase tracking-wide">Node Details</h4>
+                          <div className="bg-gray-800 rounded border border-gray-600">
+                            <div className="grid grid-cols-4 gap-2 p-2 bg-gray-600 text-xs font-medium text-gray-200 rounded-t">
+                              <div>Type</div>
+                              <div>Label</div>
+                              <div>Scope</div>
+                              <div>Tags</div>
+                            </div>
+                            {nodes.map((node, index) => (
+                              <div key={node.id} className={`grid grid-cols-4 gap-2 p-2 text-xs ${index % 2 === 0 ? 'bg-gray-800' : 'bg-gray-750'} ${index === nodes.length - 1 ? '' : 'border-b border-gray-600'}`}>
+                                <div className="capitalize font-medium">
+                                  <span className={`inline-block w-2 h-2 rounded-full mr-2 ${
+                                    node.type === 'intervention' ? 'bg-blue-500' :
+                                    node.type === 'phase' ? 'bg-green-500' :
+                                    node.type === 'micro' ? 'bg-yellow-500' :
+                                    node.type === 'session' ? 'bg-purple-500' : 'bg-gray-500'
+                                  }`}></span>
+                                  {node.type}
+                                </div>
+                                <div className="text-gray-300 truncate" title={node.data?.label || node.id}>
+                                  {node.data?.label || "Unnamed"}
+                                </div>
+                                <div className="text-gray-400 truncate" title={node.data?.scope}>
+                                  {node.data?.scope || "-"}
+                                </div>
+                                <div className="text-gray-400 truncate" title={node.data?.tags}>
+                                  {node.data?.tags ? (
+                                    <span className="text-xs bg-gray-600 px-1 rounded">
+                                      {node.data.tags.split(';').length} tag(s)
+                                    </span>
+                                  ) : "-"}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Additional Statistics */}
+                        <div className="mt-4 grid grid-cols-2 gap-4">
+                          <div className="bg-gray-800 p-3 rounded border border-gray-600">
+                            <h5 className="text-xs font-medium text-gray-300 mb-2">Node Distribution</h5>
+                            <div className="space-y-1 text-xs">
+                              {['intervention', 'phase', 'micro', 'session'].map(type => {
+                                const count = nodes.filter(n => n.type === type).length;
+                                return count > 0 ? (
+                                  <div key={type} className="flex justify-between">
+                                    <span className="capitalize text-gray-400">{type}:</span>
+                                    <span className="text-gray-300 font-medium">{count}</span>
+                                  </div>
+                                ) : null;
+                              })}
+                            </div>
+                          </div>
+                          
+                          <div className="bg-gray-800 p-3 rounded border border-gray-600">
+                            <h5 className="text-xs font-medium text-gray-300 mb-2">Session Data</h5>
+                            <div className="space-y-1 text-xs">
+                              {(() => {
+                                const sessionNodes = nodes.filter(n => n.type === 'session');
+                                const sessionsWithExercises = sessionNodes.filter(n => n.data?.exercises && Object.keys(n.data.exercises).length > 0);
+                                const sessionsWithDates = sessionNodes.filter(n => n.data?.date);
+                                return (
+                                  <>
+                                    <div className="flex justify-between">
+                                      <span className="text-gray-400">With exercises:</span>
+                                      <span className="text-gray-300 font-medium">{sessionsWithExercises.length}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                      <span className="text-gray-400">With dates:</span>
+                                      <span className="text-gray-300 font-medium">{sessionsWithDates.length}</span>
+                                    </div>
+                                  </>
+                                );
+                              })()}
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     ) : (
                       <p>No nodes in current intervention.</p>
@@ -190,7 +264,7 @@ const InterventionModal = ({ isOpen, onClose }) => {
                 <div className="flex justify-end">
                   <button
                     onClick={handleSaveIntervention}
-                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-md font-medium transition duration-150"
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md font-medium transition-colors duration-200 disabled:bg-gray-600 disabled:cursor-not-allowed"
                     disabled={!newInterventionName.trim() || nodes.length === 0}
                   >
                     <Save fontSize="small" />
@@ -202,30 +276,30 @@ const InterventionModal = ({ isOpen, onClose }) => {
               {/* Load Saved Interventions Panel */}
               <Tab.Panel className="p-6 h-full flex flex-col">
                 <div className="mb-4">
-                  <h3 className="text-sm font-medium text-gray-300 mb-2">Saved Interventions</h3>
+                  <h3 className="text-sm font-medium text-gray-300 mb-3">Saved Interventions</h3>
                   <div className="relative">
                     <input
                       type="text"
-                      className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full px-4 py-2 bg-zinc-800 border border-zinc-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                       placeholder="Search interventions..."
                     />
                   </div>
                 </div>
 
                 <div className="flex-1 overflow-auto">
-                  {(interventions[patientId] || []).length > 0 ?  (
+                  {(interventions[patientId] || []).length > 0 ? (
                     <div className="space-y-3">
                       {interventions[patientId].map((intervention) => (
                         <div
                           key={intervention.id}
-                          className="p-4 bg-gray-700 rounded-md hover:bg-gray-600 transition duration-150 cursor-pointer flex justify-between items-center"
-                          onClick={() => handleLoadIntervention(patientId,intervention.id)}
+                          className="p-4 bg-zinc-800 rounded-md hover:bg-zinc-700 transition-colors duration-200 cursor-pointer flex justify-between items-center border border-zinc-700"
+                          onClick={() => handleLoadIntervention(patientId, intervention.id)}
                         >
                           <div>
                             <h4 className="font-medium text-white">{intervention.name}</h4>
                             <p className="text-xs text-gray-400">Saved on {intervention.date}</p>
                           </div>
-                          <button className="text-indigo-400 hover:text-indigo-300 px-3 py-1 rounded-md text-sm">
+                          <button className="text-blue-400 hover:text-blue-300 px-3 py-1 rounded-md text-sm transition-colors">
                             Load
                           </button>
                         </div>

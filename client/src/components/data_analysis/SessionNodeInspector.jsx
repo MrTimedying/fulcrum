@@ -3,7 +3,8 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   PieChart, Pie, Cell, LineChart, Line
 } from 'recharts';
-import { getExerciseContainerDisplayName } from '../../utils/exerciseUtils';
+import { getExerciseContainerDisplayName, enhanceExercisesWithInheritedTags } from '../../utils/exerciseUtils';
+import useFlowStore from '../../state/flowState';
 
 function SessionNodeInspector({ node }) {
   // State for selected tags for filtering charts
@@ -11,6 +12,9 @@ function SessionNodeInspector({ node }) {
   const [showAllTags, setShowAllTags] = useState(true); // Default to showing all tags
   // New state for tracking the selected exercise for set-by-set analysis
   const [selectedExercise, setSelectedExercise] = useState(null);
+  
+  // Get nodes and edges for tag inheritance
+  const { nodes, edges } = useFlowStore();
   
   // Parse and normalize exercise data from the node
   const { exerciseData, allTags } = useMemo(() => {
@@ -22,89 +26,98 @@ function SessionNodeInspector({ node }) {
     const tagSet = new Set();
 
     // Iterate through each container in the exercises object
-    Object.keys(exercises).forEach(containerName => {
-      const container = exercises[containerName];
+    Object.keys(exercises).forEach(mangledKey => {
+      const container = exercises[mangledKey];
       
-      // Skip if fields aren't present
-      if (!container?.fields || !Array.isArray(container.fields)) return;
+      // Skip if container doesn't have fields array
+      if (!container.fields || !Array.isArray(container.fields)) {
+        return;
+      }
+
+      // Extract the display name from the mangled key
+      const containerName = getExerciseContainerDisplayName(mangledKey);
       
       // Create an object to store parsed exercise data
       const exerciseInfo = {
-        name: getExerciseContainerDisplayName(containerName),
-        originalMangledKey: containerName,
+        name: containerName,
+        originalMangledKey: mangledKey,
         sets: 0,
         reps: 0,
         duration: 0,
         intensity: 0,
+        volume: 0,
         tags: [],
         // Add new properties to store arrays of values
         setRepsArray: [],
         setDurationsArray: [],
         setIntensitiesArray: []
       };
-      
+
       // Parse each field in the exercise
       container.fields.forEach(field => {
-        if (!field || field.value === undefined) return;
-        
-        // Use field.subtype for reliable identification instead of field.name
-        switch(field.subtype) {
+        switch (field.name) {
           case 'sets':
             exerciseInfo.sets = parseInt(field.value) || 0;
             break;
-          case 'reps_constant':
-            exerciseInfo.reps = parseInt(field.value) || 0;
-            break;
-          case 'reps_variant':
-            // Parse variant reps to get an array of values
-            if (field.value) {
-              // Split by semicolon (not comma) based on validation schema
-              const repVariants = field.value.split(';')
-                .filter(rep => rep.trim() !== '')
-                .map(rep => parseInt(rep.trim()))
-                .filter(rep => !isNaN(rep));
-              
-              // Store the array of reps
-              exerciseInfo.setRepsArray = repVariants;
-              
-              // Calculate average for backward compatibility
-              if (repVariants.length > 0) {
-                exerciseInfo.reps = repVariants.reduce((sum, rep) => sum + rep, 0) / repVariants.length;
+          case 'reps':
+            if (field.value && typeof field.value === 'string') {
+              // Handle both single values and arrays stored as strings
+              try {
+                const parsed = JSON.parse(field.value);
+                if (Array.isArray(parsed)) {
+                  exerciseInfo.setRepsArray = parsed;
+                  exerciseInfo.reps = parsed.reduce((sum, rep) => sum + rep, 0) / parsed.length;
+                } else {
+                  exerciseInfo.reps = parseInt(parsed) || 0;
+                }
+              } catch {
+                exerciseInfo.reps = parseInt(field.value) || 0;
               }
+            } else {
+              exerciseInfo.reps = parseInt(field.value) || 0;
             }
             break;
-          case 'duration_constant':
-            exerciseInfo.duration = parseInt(field.value) || 0;
+          case 'duration':
+            exerciseInfo.duration = parseFloat(field.value) || 0;
             break;
-          case 'duration_variant':
-            // Parse variant durations to get an array of values
+          case 'intensity':
+            exerciseInfo.intensity = parseFloat(field.value) || 0;
+            break;
+          case 'duration_string':
+            // Parse duration string to get an array of values
             if (field.value) {
-              // Split by semicolon based on validation schema
               const durationStrings = field.value.split(';')
                 .filter(dur => dur.trim() !== '');
               
-              // Store the array of duration strings
-              exerciseInfo.setDurationsArray = durationStrings;
-              
-              // Calculate average duration in seconds for backward compatibility
               const durationValues = durationStrings.map(durStr => {
-                const parts = durStr.split(':');
-                if (parts.length === 3) {
-                  const hours = parseInt(parts[0]) || 0;
-                  const minutes = parseInt(parts[1]) || 0;
-                  const seconds = parseInt(parts[2]) || 0;
-                  return hours * 3600 + minutes * 60 + seconds;
-                }
-                return 0;
+                const match = durStr.match(/\d+(\.\d+)?/);
+                return match ? parseFloat(match[0]) : 0;
               }).filter(dur => dur > 0);
+              
+              exerciseInfo.setDurationsArray = durationValues;
               
               if (durationValues.length > 0) {
                 exerciseInfo.duration = durationValues.reduce((sum, dur) => sum + dur, 0) / durationValues.length;
               }
             }
             break;
-          case 'intensity_number':
-            exerciseInfo.intensity = parseFloat(field.value) || 0;
+          case 'reps_string':
+            // Parse reps string to get an array of values
+            if (field.value) {
+              const repsStrings = field.value.split(';')
+                .filter(rep => rep.trim() !== '');
+              
+              const repsValues = repsStrings.map(repStr => {
+                const match = repStr.match(/\d+/);
+                return match ? parseInt(match[0]) : 0;
+              }).filter(rep => rep > 0);
+              
+              exerciseInfo.setRepsArray = repsValues;
+              
+              if (repsValues.length > 0) {
+                exerciseInfo.reps = repsValues.reduce((sum, rep) => sum + rep, 0) / repsValues.length;
+              }
+            }
             break;
           case 'intensity_string':
             // Parse intensity string to get an array of values
@@ -152,11 +165,19 @@ function SessionNodeInspector({ node }) {
       normalizedExercises.push(exerciseInfo);
     });
     
+    // Enhance exercises with inherited tags
+    const enhancedExercises = enhanceExercisesWithInheritedTags(normalizedExercises, node, nodes, edges);
+    
+    // Add all inherited tags to the tag set
+    enhancedExercises.forEach(exercise => {
+      exercise.allTags.forEach(tag => tagSet.add(tag));
+    });
+    
     return { 
-      exerciseData: normalizedExercises,
+      exerciseData: enhancedExercises,
       allTags: Array.from(tagSet).sort()
     };
-  }, [node]);
+  }, [node, nodes, edges]);
 
   // Handle tag selection
   const handleTagSelection = useCallback((tag) => {
@@ -191,11 +212,11 @@ function SessionNodeInspector({ node }) {
     
     if (selectedTags.length === 0) {
       // When no tags are selected but "show all" is off, show exercises with no tags
-      return exerciseData.filter(ex => ex.tags.length === 0);
+      return exerciseData.filter(ex => ex.allTags.length === 0);
     }
     
     return exerciseData.filter(exercise => 
-      exercise.tags.some(tag => selectedTags.includes(tag))
+      exercise.allTags.some(tag => selectedTags.includes(tag))
     );
   }, [exerciseData, selectedTags, showAllTags]);
 
@@ -259,9 +280,9 @@ function SessionNodeInspector({ node }) {
       
       // Calculate metrics per tag
       selectedTags.forEach(tag => {
-        // Filter exercises that have this tag
+        // Filter exercises that have this tag (including inherited tags)
         const exercisesWithTag = filteredExerciseData.filter(ex => 
-          ex.tags.includes(tag)
+          ex.allTags.includes(tag)
         );
         
         if (exercisesWithTag.length > 0) {
@@ -306,9 +327,9 @@ function SessionNodeInspector({ node }) {
       tagCounts[tag] = 0;
     });
     
-    // Count exercises by tag
+    // Count exercises by tag (including inherited tags)
     filteredExerciseData.forEach(exercise => {
-      exercise.tags.forEach(tag => {
+      exercise.allTags.forEach(tag => {
         if (tagsToUse.includes(tag)) {
           tagCounts[tag]++;
         }
@@ -344,10 +365,10 @@ function SessionNodeInspector({ node }) {
       tagVolumes[tag] = 0;
     });
     
-    // Sum volume by tag
+    // Sum volume by tag (including inherited tags)
     filteredExerciseData.forEach(exercise => {
       const exerciseVolume = exercise.volume;
-      if (exercise.tags.length === 0) {
+      if (exercise.allTags.length === 0) {
         // Handle untagged exercises if needed
         if (!showAllTags && selectedTags.length === 0) {
           tagVolumes['Untagged'] = (tagVolumes['Untagged'] || 0) + exerciseVolume;
@@ -355,7 +376,7 @@ function SessionNodeInspector({ node }) {
         return;
       }
       
-      exercise.tags.forEach(tag => {
+      exercise.allTags.forEach(tag => {
         if (tagsToUse.includes(tag)) {
           tagVolumes[tag] += exerciseVolume;
         }
@@ -399,7 +420,7 @@ function SessionNodeInspector({ node }) {
     filteredExerciseData.forEach(exercise => {
       if (exercise.intensity <= 0) return; // Skip exercises with no intensity
       
-      if (exercise.tags.length === 0) {
+      if (exercise.allTags.length === 0) {
         // Handle untagged
         if (!showAllTags && selectedTags.length === 0) {
           tagIntensities['Untagged'] = (tagIntensities['Untagged'] || 0) + exercise.intensity;
@@ -408,7 +429,7 @@ function SessionNodeInspector({ node }) {
         return;
       }
       
-      exercise.tags.forEach(tag => {
+      exercise.allTags.forEach(tag => {
         if (tagsToUse.includes(tag)) {
           tagIntensities[tag] += exercise.intensity;
           tagCounts[tag]++;
@@ -924,7 +945,7 @@ function SessionNodeInspector({ node }) {
                   <td className="py-2 px-4 text-right">{exercise.intensity}</td>
                   <td className="py-2 px-4">
                     <div className="flex flex-wrap gap-1">
-                      {exercise.tags.map((tag, i) => (
+                      {exercise.allTags.map((tag, i) => (
                         <span 
                           key={i} 
                           className={`inline-flex items-center px-2 py-1 rounded-full text-xs ${
@@ -937,7 +958,7 @@ function SessionNodeInspector({ node }) {
                           {tag}
                         </span>
                       ))}
-                      {exercise.tags.length === 0 && (
+                      {exercise.allTags.length === 0 && (
                         <span className="text-xs text-gray-500">No tags</span>
                       )}
                     </div>

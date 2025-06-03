@@ -58,4 +58,84 @@ export const createMangledContainerKey = (containerName, containerId) => {
   }
   
   return `${containerName}_${containerId}`;
+};
+
+/**
+ * Calculates inherited tags for exercises based on their parent node hierarchy
+ * @param {Object} sessionNode - The session node containing exercises
+ * @param {Array} allNodes - Array of all nodes in the flow
+ * @param {Array} allEdges - Array of all edges in the flow
+ * @returns {Array} - Array of tag strings inherited from parent nodes
+ */
+export const getInheritedTagsForSession = (sessionNode, allNodes, allEdges) => {
+  if (!sessionNode || !allNodes || !allEdges) return [];
+  
+  const inheritedTags = [];
+  
+  // Add session's own tags
+  if (sessionNode.data?.tags) {
+    const sessionTags = sessionNode.data.tags
+      .split(';')
+      .map(tag => tag.trim())
+      .filter(tag => tag && tag.startsWith('#'))
+      .map(tag => tag.substring(1));
+    inheritedTags.push(...sessionTags);
+  }
+  
+  // Find parent micro node
+  const parentMicroEdge = allEdges.find(edge => 
+    edge.target === sessionNode.id && 
+    allNodes.find(n => n.id === edge.source && n.type === 'micro')
+  );
+  
+  if (parentMicroEdge) {
+    const microNode = allNodes.find(n => n.id === parentMicroEdge.source);
+    if (microNode?.data?.tags) {
+      const microTags = microNode.data.tags
+        .split(';')
+        .map(tag => tag.trim())
+        .filter(tag => tag && tag.startsWith('#'))
+        .map(tag => tag.substring(1));
+      inheritedTags.push(...microTags);
+    }
+    
+    // Find parent phase node
+    const parentPhaseEdge = allEdges.find(edge => 
+      edge.target === microNode.id && 
+      allNodes.find(n => n.id === edge.source && n.type === 'phase')
+    );
+    
+    if (parentPhaseEdge) {
+      const phaseNode = allNodes.find(n => n.id === parentPhaseEdge.source);
+      if (phaseNode?.data?.tags) {
+        const phaseTags = phaseNode.data.tags
+          .split(';')
+          .map(tag => tag.trim())
+          .filter(tag => tag && tag.startsWith('#'))
+          .map(tag => tag.substring(1));
+        inheritedTags.push(...phaseTags);
+      }
+    }
+  }
+  
+  // Remove duplicates and return
+  return [...new Set(inheritedTags)];
+};
+
+/**
+ * Enhances exercise data with inherited tags for analysis purposes
+ * @param {Array} exerciseData - Array of exercise objects
+ * @param {Object} sessionNode - The session node containing these exercises
+ * @param {Array} allNodes - Array of all nodes in the flow
+ * @param {Array} allEdges - Array of all edges in the flow
+ * @returns {Array} - Array of exercise objects with inheritedTags property
+ */
+export const enhanceExercisesWithInheritedTags = (exerciseData, sessionNode, allNodes, allEdges) => {
+  const inheritedTags = getInheritedTagsForSession(sessionNode, allNodes, allEdges);
+  
+  return exerciseData.map(exercise => ({
+    ...exercise,
+    inheritedTags,
+    allTags: [...new Set([...exercise.tags, ...inheritedTags])] // Combine exercise tags with inherited tags
+  }));
 }; 

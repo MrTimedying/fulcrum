@@ -38,6 +38,10 @@ function ExerciseModal({ isOpen, onClose }) {
   const [bulkEditTargetFields, setBulkEditTargetFields] = useState(null);
   const [bulkEditValue, setBulkEditValue] = useState("");
   const [bulkEditOperation, setBulkEditOperation] = useState('replace'); // 'replace' or 'append'
+  
+  // New state for node data tag filtering
+  const [selectedNodeTags, setSelectedNodeTags] = useState(new Set());
+  const [isTagFilterVisible, setIsTagFilterVisible] = useState(false);
 
   const { nodes, updateNodeExerciseData, exercises, saveExercise, deleteExercise } = useFlowStore();
   const {setToaster} = useTransientStore();
@@ -45,6 +49,34 @@ function ExerciseModal({ isOpen, onClose }) {
     () => nodes.find((node) => node.selected),
     [nodes]
   );
+
+  // Extract node data tags
+  const nodeDataTags = useMemo(() => {
+    if (!nodeSelected?.data?.tags) return [];
+    
+    // Parse node data tags (expecting semicolon-separated format like "#tag1;#tag2;")
+    return nodeSelected.data.tags
+      .split(';')
+      .map(tag => tag.trim())
+      .filter(tag => tag && tag.startsWith('#'))
+      .map(tag => tag.substring(1)); // Remove # prefix
+  }, [nodeSelected?.data?.tags]);
+
+  // Filter exercises based on selected node tags
+  const filteredExercises = useMemo(() => {
+    if (selectedNodeTags.size === 0) {
+      return exercises; // Show all exercises if no tags selected
+    }
+    
+    // For now, this is a placeholder - in a real implementation, you would
+    // filter exercises based on some criteria related to the selected tags
+    // This could be based on exercise metadata, categories, etc.
+    return exercises.filter(exercise => {
+      // Placeholder filtering logic - this would need to be implemented
+      // based on how exercises relate to node tags in your system
+      return true; // For now, show all exercises
+    });
+  }, [exercises, selectedNodeTags]);
 
   const defaultModalConfig = {
     width: window.innerWidth, // Set to full width
@@ -648,10 +680,62 @@ function ExerciseModal({ isOpen, onClose }) {
         <div className="bg-zinc-900 flex flex-row items-center gap-4 p-2">
           <CustomAutocompleteSelect
             label="Select exercise"
-            options={exercises}
+            options={filteredExercises}
             onSelect={handleSelection}
             onDelete={deleteExercise}
           />
+          
+          {/* Node Data Tag Filter */}
+          {nodeDataTags.length > 0 && (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsTagFilterVisible(!isTagFilterVisible)}
+                className="px-3 py-1 border border-dashed rounded-md border-neutral-600 text-neutral-400 bg-neutral-800 hover:bg-neutral-700 hover:text-neutral-200 text-sm font-medium transition-all duration-200"
+              >
+                Filter by Node Tags ({nodeDataTags.length})
+              </button>
+              
+              {isTagFilterVisible && (
+                <div className="flex flex-wrap gap-1 max-w-md">
+                  {nodeDataTags.map(tag => (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => {
+                        setSelectedNodeTags(prev => {
+                          const newSet = new Set(prev);
+                          if (newSet.has(tag)) {
+                            newSet.delete(tag);
+                          } else {
+                            newSet.add(tag);
+                          }
+                          return newSet;
+                        });
+                      }}
+                      className={`px-2 py-1 text-xs rounded-md transition-colors duration-200 ${
+                        selectedNodeTags.has(tag)
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-zinc-700 text-gray-300 hover:bg-zinc-600'
+                      }`}
+                    >
+                      #{tag}
+                    </button>
+                  ))}
+                  {selectedNodeTags.size > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedNodeTags(new Set())}
+                      className="px-2 py-1 text-xs rounded-md bg-red-600 text-white hover:bg-red-700 transition-colors duration-200"
+                    >
+                      Clear All
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+          
            {/* Bulk Edit Toggle Button */}
           <button
             type="button"
