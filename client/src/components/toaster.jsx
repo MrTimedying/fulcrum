@@ -1,8 +1,9 @@
 // toaster.jsx content with fixes
-import React from "react";
-import { Snackbar, IconButton, Slide, Alert, Stack } from "@mui/material";
+import React, { useEffect } from "react";
+import { IconButton, Alert } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import useTransientStore from "../state/transientState";
+import { motion, AnimatePresence } from "motion/react";
 
 export const Toaster = () => {
   const toaster_queue = useTransientStore((state) => state.toaster_queue);
@@ -10,49 +11,70 @@ export const Toaster = () => {
 
   const handleToastClose = (event, reason, id) => {
     if (reason === "clickaway") return;
-    removeToaster(id);  // Only remove the toast to prevent loops
+    removeToaster(id);
   };
 
   // Define valid severity types
   const validSeverityTypes = ["error", "info", "success", "warning"];
 
-  const action = (
-    <React.Fragment>
-      <IconButton
-        size="small"
-        aria-label="close"
-        color="inherit"
-        onClick={(event) => handleToastClose(event, null, id)}  // Pass id correctly
-      >
-        <CloseIcon fontSize="small" />
-      </IconButton>
-    </React.Fragment>
+  return (
+    <motion.div
+      style={{
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        display: 'flex',
+        flexDirection: 'column-reverse',
+        gap: '16px',
+        padding: '16px',
+        zIndex: 1400,
+      }}
+    >
+      <AnimatePresence>
+        {toaster_queue.map((toaster) => {
+          return (
+            <motion.div
+              key={toaster.id}
+              layout
+              initial={{ opacity: 0, y: 50 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 50 }}
+              transition={{ duration: 0.3 }}
+            >
+              <ToastItem
+                toaster={toaster}
+                removeToaster={removeToaster}
+                handleToastClose={handleToastClose}
+                validSeverityTypes={validSeverityTypes}
+              />
+            </motion.div>
+          );
+        })}
+      </AnimatePresence>
+    </motion.div>
   );
+};
+
+const ToastItem = ({ toaster, removeToaster, handleToastClose, validSeverityTypes }) => {
+  useEffect(() => {
+    if (toaster.show && toaster.duration && toaster.duration !== null && toaster.duration !== Infinity) {
+      const timer = setTimeout(() => {
+        removeToaster(toaster.id);
+      }, toaster.duration);
+      return () => clearTimeout(timer);
+    }
+  }, [toaster.id, toaster.duration, toaster.show, removeToaster]);
 
   return (
-    <Stack spacing={2}>  {/* Spacing added to ensure visual stacking */}
-      {toaster_queue.map((toaster, index) => (
-        <Snackbar
-          key={toaster.id}
-          open={toaster.show}
-          autoHideDuration={toaster.duration}
-          onClose={(event, reason) => handleToastClose(event, reason, toaster.id)}
-          TransitionComponent={Slide}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}  
-          style={{ marginBottom: `${index * 60}px` }} 
-        >
-          {toaster.show && validSeverityTypes.includes(toaster.type) ? (
-            <Alert
-              onClose={() => handleToastClose(null, null, toaster.id)}  // Ensure closure
-              severity={toaster.type}
-              variant="filled"
-              sx={{ width: "100%" }}
-            >
-              {toaster.message}
-            </Alert>
-          ) : null}
-        </Snackbar>
-      ))}
-    </Stack>
+    toaster.show && validSeverityTypes.includes(toaster.type) ? (
+      <Alert
+        onClose={() => handleToastClose(null, null, toaster.id)}
+        severity={toaster.type}
+        variant="filled"
+        sx={{ width: "100%" }}
+      >
+        {toaster.message}
+      </Alert>
+    ) : null
   );
 };

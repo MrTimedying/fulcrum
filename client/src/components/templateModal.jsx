@@ -188,24 +188,24 @@ const TemplateModal = ({ isOpen, onClose }) => {
         bounds="window"
         dragHandleClassName="modal-handle"
       >
-        <div className="bg-zinc-900 text-white shadow-lg overflow-hidden flex flex-col h-full">
-          <div className="bg-zinc-800 py-1 px-2 flex justify-between items-center modal-handle cursor-move">
-            <h2 className="text-[10px]">Template Management</h2>
+        <div className="w-full h-full flex flex-col bg-zinc-800 text-white shadow-xl rounded-lg overflow-hidden border border-zinc-800">
+          <div className="bg-zinc-900 p-4 flex justify-between items-center modal-handle cursor-move border-b border-zinc-800">
+            <h2 className="text-xl font-thin">Template Management</h2>
             <button
               onClick={onClose}
-              className="text-zinc-400 hover:text-white transition duration-150"
+              className="text-gray-400 hover:text-white transition duration-150"
             >
               <Close />
             </button>
           </div>
 
           <Tab.Group selectedIndex={activeTabIndex} onChange={setActiveTabIndex}>
-            <Tab.List className="flex bg-zinc-900 py-1 px-2 border-b border-neutral-700">
+            <Tab.List className="flex bg-zinc-900 px-4 border-b border-zinc-800">
               <Tab
                 className={({ selected }) =>
-                  `py-1 px-2 text-[10px] transition-colors focus:outline-none ${selected
-                    ? "border-b-2 border-neutral-400 text-white"
-                    : "text-zinc-400 hover:text-zinc-200"
+                  `py-3 px-4 text-sm font-medium transition-colors focus:outline-none ${selected
+                    ? "border-b-2 border-blue-500 text-white"
+                    : "text-gray-400 hover:text-gray-200"
                   }`
                 }
               >
@@ -213,9 +213,9 @@ const TemplateModal = ({ isOpen, onClose }) => {
               </Tab>
               <Tab
                 className={({ selected }) =>
-                  `py-1 px-2 text-[10px] transition-colors focus:outline-none ${selected
-                    ? "border-b-2 border-neutral-400 text-white"
-                    : "text-zinc-400 hover:text-zinc-200"
+                  `py-3 px-4 text-sm font-medium transition-colors focus:outline-none ${selected
+                    ? "border-b-2 border-blue-500 text-white"
+                    : "text-gray-400 hover:text-gray-200"
                   }`
                 }
               >
@@ -223,7 +223,7 @@ const TemplateModal = ({ isOpen, onClose }) => {
               </Tab>
             </Tab.List>
 
-            <Tab.Panels className="flex-1 overflow-auto">
+            <Tab.Panels className="flex-1 overflow-auto bg-zinc-800">
               {/* Save New Template Panel */}
               <Tab.Panel className="p-6 h-full flex flex-col">
                 <div className="mb-6">
@@ -235,56 +235,51 @@ const TemplateModal = ({ isOpen, onClose }) => {
                     id="templateName"
                     value={newTemplateName}
                     onChange={(e) => setNewTemplateName(e.target.value)}
-                    className="w-full px-4 py-2 bg-zinc-700 border border-zinc-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-2 py-1 text-[11px] bg-zinc-800 border border-zinc-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                     placeholder="Enter a name for this template"
                   />
                 </div>
 
-                <div className="flex-1 bg-zinc-800 rounded-md p-4 mb-6 overflow-auto">
-                  <h3 className="text-sm font-medium text-gray-300 mb-2">Template Preview</h3>
-                  <div className="text-gray-400 text-sm">
+                <div className="flex-1 bg-zinc-800 rounded-md p-4 mb-6 overflow-auto border border-zinc-700">
+                  <h3 className="text-sm font-light text-gray-300 mb-3">Template Preview</h3>
+                  <div className="text-gray-400 text-[11px]">
                     {previewNodes.length > 0 ? (
                       <div className="space-y-3">
-                        {previewNodes.slice(0, 5).map((node) => (
-                          <div key={node.id} className="p-3 bg-zinc-900 shadow">
-                            <h4 className="font-thin text-gray-300 text-xl">@ {node.type || "Unnamed node"}</h4>
-                            <div className="text-zinc-400 text-xs mt-2">
-                              {node.type === 'InterventionNode' && node.data && (
-                                <>
-                                  <p>Name: {node.data.name || 'Not defined'}</p>
-                                  <p>Type: {node.data.type || 'Not defined'}</p>
-                                  <p>Global Goal: {node.data.global || 'Not defined'}</p>
-                                  <p>Service Goal: {node.data.service || 'Not defined'}</p>
-                                </>
-                              )}
-                              {node.type === 'PhaseNode' && node.data && (
-                                <>
-                                  <p>Scope: {node.data.scope || 'Not defined'}</p>
-                                  <p>Description: {node.data.description || 'Not defined'}</p>
-                                </>
-                              )}
-                              {node.type === 'MicroNode' && node.data && (
-                                <>
-                                  <p>Scope: {node.data.scope || 'Not defined'}</p>
-                                  <p>Description: {node.data.description || 'Not defined'}</p>
-                                </>
-                              )}
-                              {node.type === 'SessionNode' && node.data && (
-                                <>
-                                  <p>Scope: {node.data.scope || 'Not defined'}</p>
-                                  <p>Date: {node.data.date || 'Not defined'}</p>
-                                  {node.data.exercises && Object.keys(node.data.exercises).length > 0 && (
-                                    <p>{Object.keys(node.data.exercises).length} exercises defined</p>
-                                  )}
-                                </>
-                              )}
-                              {/* Fallback if node type is unknown or data is missing */}
-                              {(!node.type || !node.data) && <p>No detailed data available</p>}
-                            </div>
+                        {/* Node Overview Table */}
+                        <div className="bg-neutral-800 rounded border border-gray-600">
+                          <div className="grid grid-cols-3 gap-2 p-2 bg-neutral-700 text-xs font-medium text-gray-200 rounded-t">
+                            <div>Type</div>
+                            <div>Label</div>
+                            <div>Details</div>
                           </div>
-                        ))}
+                          {previewNodes.slice(0, 5).map((node, index) => (
+                            <div key={node.id} className={`grid grid-cols-3 gap-2 p-2 text-xs ${index % 2 === 0 ? 'bg-neutral-800' : 'bg-neutral-750'} ${index === previewNodes.slice(0, 5).length - 1 ? '' : 'border-b border-gray-600'}`}>
+                              <div className="capitalize font-medium">
+                                <span className={`inline-block w-2 h-2 rounded-full mr-2 ${
+                                  node.type === 'intervention' ? 'bg-blue-500' :
+                                  node.type === 'phase' ? 'bg-green-500' :
+                                  node.type === 'micro' ? 'bg-yellow-500' :
+                                  node.type === 'session' ? 'bg-purple-500' : 'bg-gray-500'
+                                }`}></span>
+                                {node.type}
+                              </div>
+                              <div className="text-gray-300 truncate" title={node.data?.label || node.id}>
+                                {node.data?.label || "Unnamed"}
+                              </div>
+                              <div className="text-gray-400 truncate">
+                                {node.type === 'intervention' && node.data?.name ? `Name: ${node.data.name}` :
+                                 node.type === 'phase' && node.data?.scope ? `Scope: ${node.data.scope}` :
+                                 node.type === 'micro' && node.data?.scope ? `Scope: ${node.data.scope}` :
+                                 node.type === 'session' && node.data?.date ? `Date: ${node.data.date}` :
+                                 "No details"
+                                }
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
                         {previewNodes.length > 5 && (
-                          <p className="text-zinc-400 text-xs">...and {previewNodes.length - 5} more nodes not shown</p>
+                          <p className="text-zinc-400 text-xs mt-2">...and {previewNodes.length - 5} more nodes not shown</p>
                         )}
                       </div>
                     ) : (
@@ -294,21 +289,22 @@ const TemplateModal = ({ isOpen, onClose }) => {
                 </div>
 
                 <div className="flex justify-end">
-
-                  { nodeSelected ? (<button
-                    onClick={handleSaveTemplate}
-                    className="flex items-center text-xs gap-2 px-2 bg-blue-600 rounded-md font-medium transition duration-150"
-                  >
-                    <Save fontSize="small" /> Save Template
-                  </button>) : (
+                  { nodeSelected ? (
+                    <button
+                      onClick={handleSaveTemplate}
+                      className="flex items-center gap-1 px-2 py-1 text-[11px] bg-gray-600 hover:bg-gray-700 rounded-md font-light transition-colors duration-200 disabled:bg-gray-600 disabled:cursor-not-allowed"
+                      disabled={!newTemplateName.trim() || previewNodes.length === 0}
+                    >
+                      <Save fontSize="x-small" /> Save Template
+                    </button>
+                  ) : (
                     <button
                       disabled
-                      className="flex items-center text-xs gap-2 px-2 bg-rose-800 rounded-md font-medium transition duration-150 opacity-50 cursor-not-allowed"
+                      className="flex items-center gap-1 px-2 py-1 text-[11px] bg-gray-600 rounded-md font-light transition-colors duration-200 opacity-50 cursor-not-allowed"
                     >
-                      No selected node
+                      <Save fontSize="x-small" /> No selected node
                     </button>
                   )}
-                  
                 </div>
               </Tab.Panel>
 
@@ -319,7 +315,7 @@ const TemplateModal = ({ isOpen, onClose }) => {
                   <div className="relative">
                     <input
                       type="text"
-                      className="w-full px-4 py-2 bg-zinc-700 border border-zinc-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-2 py-1 text-[11px] bg-zinc-800 border border-zinc-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                       placeholder="Search templates..."
                       value={searchQuery}
                       onChange={e => setSearchQuery(e.target.value)}
@@ -333,7 +329,8 @@ const TemplateModal = ({ isOpen, onClose }) => {
                       {filteredTemplates.map((tpl) => (
                         <div
                           key={tpl.id}
-                          className="p-4 bg-zinc-800 rounded-md hover:bg-zinc-700 transition duration-150 cursor-pointer flex justify-between items-center"
+                          className="p-4 bg-zinc-800 rounded-md hover:bg-zinc-700 transition-colors duration-200 cursor-pointer flex justify-between items-center border border-zinc-700"
+                          onClick={() => handleLoadTemplate(tpl.id)}
                         >
                           <div>
                             <h4 className="font-medium text-white">{tpl.name}</h4>
@@ -342,16 +339,16 @@ const TemplateModal = ({ isOpen, onClose }) => {
                           </div>
                           <div className="flex gap-2">
                             <button
-                              className="flex items-center bg-zinc-700 hover:bg-zinc-600 text-zinc-200 px-3 py-1 rounded-md text-sm transition duration-150"
+                              className="flex items-center px-2 py-1 text-[11px] bg-neutral-800 hover:bg-black/20 text-slate-300 font-medium font-mono rounded-md transition-colors duration-200"
                               onClick={() => handleLoadTemplate(tpl.id)}
                             >
-                              <FolderOpen fontSize="small" style={{marginRight: 4}} /> Load
+                              <FolderOpen fontSize="x-small" style={{marginRight: 4}} /> Load
                             </button>
                             <button
-                              className="flex items-center bg-zinc-700 hover:bg-zinc-600 text-red-400 px-3 py-1 rounded-md text-sm transition duration-150"
+                              className="flex items-center px-2 py-1 text-[11px] bg-neutral-800 hover:bg-black/20 text-red-400 font-medium font-mono rounded-md transition-colors duration-200"
                               onClick={() => handleRemoveTemplate(tpl.id)}
                             >
-                              <Delete fontSize="small" style={{marginRight: 4}} /> Delete
+                              <Delete fontSize="x-small" style={{marginRight: 4}} /> Delete
                             </button>
                           </div>
                         </div>
@@ -363,7 +360,6 @@ const TemplateModal = ({ isOpen, onClose }) => {
                     </div>
                   )}
                 </div>
-
               </Tab.Panel>
             </Tab.Panels>
           </Tab.Group>

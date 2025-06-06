@@ -60,19 +60,19 @@ const Templater = ({
             placeholder="Search templates..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 text-[10px] py-1 w-full rounded bg-zinc-800 border  text-white focus:outline-none caret-white border-r-2 border-zinc-900"
+            className="shadow appearance-none rounded w-full text-[12px] font-thin py-1 pl-10 px-3 bg-zinc-800 text-slate-300 leading-tight focus:outline-none focus:shadow-outline transition-all duration-200 dark:bg-zinc-800 dark:text-slate-300 border border-zinc-700"
           />
         </div>
 
         {/* Selection Controls - Only show when templates are selected */}
         {selectedTemplates.size > 0 && (
           <div className="flex items-center justify-between p-3 bg-zinc-800 rounded-lg">
-            <div className="text-sm text-white">
+            <div className="text-sm text-slate-300">
               <span className="font-medium">{selectedTemplates.size}</span> templates selected
             </div>
             <button
               onClick={handleInsertMultiple}
-              className="inline-flex items-center gap-1 px-3 py-1 rounded bg-green-600 text-white text-sm hover:bg-green-700 transition-colors duration-200"
+              className="inline-flex items-center gap-1 px-2 rounded-md bg-neutral-800 text-slate-300 text-[12px] font-medium font-mono hover:bg-black/20 transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/75"
             >
               <FiPlus size={14} />
               <span>Add to Flow</span>
@@ -85,7 +85,7 @@ const Templater = ({
       <div className="flex-grow overflow-y-auto p-4">
 
         <div>
-          <h3 className="text-lg font-light text-white mb-3">@ ICF Set Templates</h3>
+          <h3 className="text-lg font-light text-slate-300 mb-3">@ ICF Set Templates</h3>
           {filteredTemplates.filter(t => t.type === 'icfSet').length === 0 ? (
             <div className="text-center py-4 text-zinc-500 bg-zinc-800/50 rounded-lg">
               <p>No ICF Set templates found</p>
@@ -99,14 +99,14 @@ const Templater = ({
                     key={template.id}
                     className={`p-3 rounded-lg border ${
                       selectedTemplates.has(template.id)
-                        ? "border-blue-500 bg-neutral-800"
+                        ? "border-zinc-700 bg-neutral-800"
                         : "border-neutral-700 bg-neutral-900 hover:border-neutral-600"
                     } transition-all duration-200 cursor-pointer`}
                     onClick={() => handleTemplateSelect(template.id)}
                   >
                     <div className="flex justify-between items-start">
                       <div>
-                        <h4 className="font-medium text-white flex items-center">
+                        <h4 className="font-medium text-slate-300 flex items-center">
                           {template.name}
                           <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-zinc-700 text-zinc-300">
                             {template.nodes.length} records
@@ -135,7 +135,7 @@ const Templater = ({
                             e.stopPropagation();
                             onInsertTemplate(template);
                           }}
-                          className="p-1 rounded text-xs bg-blue-600 hover:bg-blue-700 text-white transition-colors duration-200"
+                          className="px-2 rounded-md text-[12px] font-medium font-mono bg-neutral-800 text-slate-300 hover:bg-black/20 transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/75"
                         >
                           Insert
                         </button>
@@ -144,7 +144,7 @@ const Templater = ({
                             e.stopPropagation();
                             onDeleteTemplate(template.id);
                           }}
-                          className="p-1 rounded text-zinc-400 hover:text-red-500 transition-colors duration-200"
+                          className="p-1 rounded-md text-zinc-400 hover:text-red-500 transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/75"
                           title="Delete template"
                         >
                           <FiTrash2 size={14} />

@@ -96,7 +96,7 @@ const OptionsModal = ({ isOpen, onClose }) => {
       await window.electronAPI.invoke("download-update");
       // The update-downloaded event will be triggered and handled by the event listener
     } catch (error) {
-      console.error("Failed to download update:", error);
+      console.error("Failed to download update", error);
       setUpdateStatus("error");
     }
   };
@@ -110,13 +110,12 @@ const OptionsModal = ({ isOpen, onClose }) => {
     switch (activeTab) {
       case "general":
         return (
-          <div className="p-4">
-            <h3 className="text-lg font-medium mb-4">General Settings</h3>
-            {/* General settings content here */}
-            <div className="space-y-4">
+          <div className="p-6 h-full flex flex-col">
+            <h3 className="text-lg font-light text-gray-300 mb-4">General Settings</h3>
+            <div className="space-y-4 flex-1 overflow-y-auto">
               <div className="flex flex-col">
-                <label className="text-sm font-medium mb-1">Application Theme</label>
-                <select className="px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md">
+                <label className="text-sm font-light text-gray-400 mb-1">Application Theme</label>
+                <select className="px-2 py-1 text-[11px] bg-zinc-800 border border-zinc-700 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500 transition-colors">
                   <option value="dark">Dark (Default)</option>
                   <option value="light">Light</option>
                   <option value="system">System Preference</option>
@@ -127,9 +126,9 @@ const OptionsModal = ({ isOpen, onClose }) => {
                 <input
                   type="checkbox"
                   id="save-session"
-                  className="mr-2 h-4 w-4"
+                  className="mr-2 h-4 w-4 text-blue-600 bg-gray-700 border-gray-600 rounded"
                 />
-                <label htmlFor="save-session" className="text-sm">Remember session on close</label>
+                <label htmlFor="save-session" className="text-sm text-gray-400 font-light">Remember session on close</label>
               </div>
             </div>
           </div>
@@ -137,19 +136,19 @@ const OptionsModal = ({ isOpen, onClose }) => {
       
       case "updates":
         return (
-          <div className="p-4">
-            <h3 className="text-lg font-medium mb-4">Updates</h3>
-            <div className="space-y-6">
+          <div className="p-6 h-full flex flex-col">
+            <h3 className="text-lg font-light text-gray-300 mb-4">Updates</h3>
+            <div className="space-y-6 flex-1 overflow-y-auto">
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm">Current Version</span>
-                  <span className="text-sm font-mono bg-zinc-800 px-2 py-1 rounded">{currentVersion}</span>
+                  <span className="text-sm text-gray-400 font-light">Current Version</span>
+                  <span className="text-sm font-mono bg-zinc-700 px-2 py-1 rounded text-gray-300">{currentVersion}</span>
                 </div>
                 
                 {updateStatus === "available" && (
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm">Latest Version</span>
-                    <span className="text-sm font-mono bg-zinc-800 px-2 py-1 rounded">{latestVersion}</span>
+                    <span className="text-sm text-gray-400 font-light">Latest Version</span>
+                    <span className="text-sm font-mono bg-zinc-700 px-2 py-1 rounded text-gray-300">{latestVersion}</span>
                   </div>
                 )}
               </div>
@@ -158,35 +157,35 @@ const OptionsModal = ({ isOpen, onClose }) => {
                 {updateStatus === "idle" && (
                   <button 
                     onClick={checkForUpdates}
-                    className="w-full py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-md flex items-center justify-center"
+                    className="w-full py-2 bg-zinc-700 hover:bg-zinc-600 text-white rounded-md flex items-center justify-center text-sm font-light transition-colors duration-200"
                   >
                     <FiRefreshCw className="mr-2" /> Check for Updates
                   </button>
                 )}
                 
                 {updateStatus === "checking" && (
-                  <div className="text-center py-2">
+                  <div className="text-center py-2 text-gray-400 text-sm font-light">
                     <span className="inline-block animate-spin mr-2">⟳</span>
                     Checking for updates...
                   </div>
                 )}
                 
                 {updateStatus === "not-available" && (
-                  <div className="text-center py-2 text-green-500">
+                  <div className="text-center py-2 text-green-500 text-sm font-light">
                     ✓ You're using the latest version
                   </div>
                 )}
                 
                 {updateStatus === "available" && (
                   <div className="space-y-4">
-                    <div className="text-amber-500 py-2">
+                    <div className="text-amber-500 text-sm font-light py-2">
                       ↑ Update available: {latestVersion}
                     </div>
                     
                     {updateInfo && updateInfo.releaseNotes && (
-                      <div className="mt-4 p-3 bg-zinc-800 rounded-md overflow-y-auto max-h-48">
-                        <h4 className="text-sm font-medium mb-2">Release Notes:</h4>
-                        <div className="text-sm text-zinc-300 whitespace-pre-line">
+                      <div className="mt-4 p-3 bg-zinc-700 rounded-md overflow-y-auto max-h-48 border border-zinc-600">
+                        <h4 className="text-sm font-medium mb-2 text-gray-300">Release Notes:</h4>
+                        <div className="text-sm text-gray-400 whitespace-pre-line">
                           {updateInfo.releaseNotes}
                         </div>
                       </div>
@@ -194,7 +193,7 @@ const OptionsModal = ({ isOpen, onClose }) => {
                     
                     <button 
                       onClick={downloadUpdate}
-                      className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
+                      className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm font-medium transition-colors duration-200"
                     >
                       Download Update
                     </button>
@@ -202,7 +201,7 @@ const OptionsModal = ({ isOpen, onClose }) => {
                 )}
                 
                 {updateStatus === "downloading" && (
-                  <div className="text-center py-2">
+                  <div className="text-center py-2 text-gray-400 text-sm font-light">
                     <span className="inline-block animate-spin mr-2">⟳</span>
                     Downloading update...
                   </div>
@@ -211,14 +210,14 @@ const OptionsModal = ({ isOpen, onClose }) => {
                 {updateStatus === "ready" && (
                   <button 
                     onClick={installUpdate}
-                    className="w-full py-2 bg-green-600 hover:bg-green-700 text-white rounded-md"
+                    className="w-full py-2 bg-green-600 hover:bg-green-700 text-white rounded-md text-sm font-medium transition-colors duration-200"
                   >
                     Restart & Install Update
                   </button>
                 )}
                 
                 {updateStatus === "error" && (
-                  <div className="text-center py-2 text-red-500">
+                  <div className="text-center py-2 text-red-500 text-sm font-light">
                     Error checking for updates. Please try again later.
                   </div>
                 )}
@@ -226,11 +225,11 @@ const OptionsModal = ({ isOpen, onClose }) => {
               
               <div className="border-t border-zinc-700 pt-4">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm">Check for updates automatically</span>
+                  <span className="text-sm text-gray-400 font-light">Check for updates automatically</span>
                   <input
                     type="checkbox"
                     id="auto-update-check"
-                    className="h-4 w-4"
+                    className="h-4 w-4 text-blue-600 bg-gray-700 border-gray-600 rounded"
                     defaultChecked={true}
                   />
                 </div>
@@ -241,22 +240,22 @@ const OptionsModal = ({ isOpen, onClose }) => {
       
       case "about":
         return (
-          <div className="p-4">
-            <h3 className="text-lg font-medium mb-4">About</h3>
-            <div className="space-y-4">
+          <div className="p-6 h-full flex flex-col">
+            <h3 className="text-lg font-light text-gray-300 mb-4">About</h3>
+            <div className="space-y-4 flex-1 overflow-y-auto">
               <div>
-                <h4 className="text-md font-medium">Fulcrum</h4>
-                <p className="text-sm text-zinc-400">Version {currentVersion}</p>
-                <p className="text-sm mt-2">{packageInfo.description}</p>
+                <h4 className="text-md font-medium text-gray-200">Fulcrum</h4>
+                <p className="text-sm text-gray-400 font-light">Version {currentVersion}</p>
+                <p className="text-sm mt-2 text-gray-400 font-light">{packageInfo.description}</p>
               </div>
               
               <div className="pt-2 border-t border-zinc-700">
-                <p className="text-sm text-zinc-400">Author: {packageInfo.author}</p>
-                <p className="text-sm text-zinc-400">License: {packageInfo.license}</p>
+                <p className="text-sm text-gray-400 font-light">Author: {packageInfo.author}</p>
+                <p className="text-sm text-gray-400 font-light">License: {packageInfo.license}</p>
               </div>
               
               <div className="pt-2 border-t border-zinc-700">
-                <p className="text-xs text-zinc-500">
+                <p className="text-xs text-gray-500 font-light">
                   Fulcrum is an Electron application for healthcare professionals to create and manage exercise routines for patients.
                 </p>
               </div>
@@ -266,22 +265,21 @@ const OptionsModal = ({ isOpen, onClose }) => {
         
       case "security":
         return (
-          <div className="p-4">
-            <h3 className="text-lg font-medium mb-4">Security</h3>
-            {/* Security settings content here */}
-            <div className="space-y-4">
+          <div className="p-6 h-full flex flex-col">
+            <h3 className="text-lg font-light text-gray-300 mb-4">Security</h3>
+            <div className="space-y-4 flex-1 overflow-y-auto">
               <div className="flex items-center">
                 <input
                   type="checkbox"
                   id="encrypt-data"
-                  className="mr-2 h-4 w-4"
+                  className="mr-2 h-4 w-4 text-blue-600 bg-gray-700 border-gray-600 rounded"
                   defaultChecked={true}
                 />
-                <label htmlFor="encrypt-data" className="text-sm">Encrypt patient data</label>
+                <label htmlFor="encrypt-data" className="text-sm text-gray-400 font-light">Encrypt patient data</label>
               </div>
               
               <div>
-                <button className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-md text-sm">
+                <button className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-md text-sm font-light transition-colors duration-200">
                   Change Encryption Key
                 </button>
               </div>
@@ -317,20 +315,20 @@ const OptionsModal = ({ isOpen, onClose }) => {
       }}
       contentLabel="Options"
     >
-      <div className="flex h-full w-full rounded-lg overflow-hidden">
+      <div className="flex h-full w-full rounded-lg overflow-hidden bg-zinc-800 border border-zinc-700">
         {/* Sidebar */}
         <div className="w-48 bg-zinc-900 border-r border-zinc-800">
           <div className="bg-zinc-900 p-4 border-b border-zinc-800">
-            <h2 className="text-lg font-medium text-gray-200">Options</h2>
+            <h2 className="text-lg font-light text-gray-200">@ Options</h2>
           </div>
-          <nav className="p-2">
+          <nav className="p-1">
             <ul className="space-y-1">
               <li>
                 <button
-                  className={`w-full text-left px-3 py-2 rounded-md flex items-center ${
+                  className={`w-full text-left px-3 py-1 rounded-sm flex items-center text-sm font-light transition-colors duration-200 ${
                     activeTab === "general"
                       ? "bg-zinc-800 text-white"
-                      : "text-gray-300 hover:bg-zinc-800/50"
+                      : "text-gray-300 hover:bg-zinc-700"
                   }`}
                   onClick={() => setActiveTab("general")}
                 >
@@ -339,10 +337,10 @@ const OptionsModal = ({ isOpen, onClose }) => {
               </li>
               <li>
                 <button
-                  className={`w-full text-left px-3 py-2 rounded-md flex items-center ${
+                  className={`w-full text-left px-3 py-1 rounded-sm flex items-center text-sm font-light transition-colors duration-200 ${
                     activeTab === "updates"
                       ? "bg-zinc-800 text-white"
-                      : "text-gray-300 hover:bg-zinc-800/50"
+                      : "text-gray-300 hover:bg-zinc-700"
                   }`}
                   onClick={() => setActiveTab("updates")}
                 >
@@ -351,10 +349,10 @@ const OptionsModal = ({ isOpen, onClose }) => {
               </li>
               <li>
                 <button
-                  className={`w-full text-left px-3 py-2 rounded-md flex items-center ${
+                  className={`w-full text-left px-3 py-1 rounded-sm flex items-center text-sm font-light transition-colors duration-200 ${
                     activeTab === "security"
                       ? "bg-zinc-800 text-white"
-                      : "text-gray-300 hover:bg-zinc-800/50"
+                      : "text-gray-300 hover:bg-zinc-700"
                   }`}
                   onClick={() => setActiveTab("security")}
                 >
@@ -363,10 +361,10 @@ const OptionsModal = ({ isOpen, onClose }) => {
               </li>
               <li>
                 <button
-                  className={`w-full text-left px-3 py-2 rounded-md flex items-center ${
+                  className={`w-full text-left px-3 py-1 rounded-sm flex items-center text-sm font-light transition-colors duration-200 ${
                     activeTab === "about"
                       ? "bg-zinc-800 text-white"
-                      : "text-gray-300 hover:bg-zinc-800/50"
+                      : "text-gray-300 hover:bg-zinc-700"
                   }`}
                   onClick={() => setActiveTab("about")}
                 >
@@ -381,7 +379,7 @@ const OptionsModal = ({ isOpen, onClose }) => {
         <div className="flex-1 bg-zinc-800 flex flex-col">
           {/* Header */}
           <div className="bg-zinc-800 p-4 border-b border-zinc-700 flex justify-between items-center">
-            <h3 className="text-lg font-medium text-gray-200">
+            <h3 className="text-lg font-light text-gray-300">
               {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
             </h3>
             <button

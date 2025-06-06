@@ -47,6 +47,7 @@ function SessionNodeInspector({ node }) {
         intensity: 0,
         volume: 0,
         tags: [],
+        exerciseTitle: '', // Store the exercise name from a text field
         // Add new properties to store arrays of values
         setRepsArray: [],
         setDurationsArray: [],
@@ -55,69 +56,66 @@ function SessionNodeInspector({ node }) {
 
       // Parse each field in the exercise
       container.fields.forEach(field => {
-        switch (field.name) {
+        if (!field || field.value === undefined) return;
+        
+        // Use field.subtype instead of field.name for reliable identification
+        switch(field.subtype) {
           case 'sets':
             exerciseInfo.sets = parseInt(field.value) || 0;
             break;
-          case 'reps':
-            if (field.value && typeof field.value === 'string') {
-              // Handle both single values and arrays stored as strings
-              try {
-                const parsed = JSON.parse(field.value);
-                if (Array.isArray(parsed)) {
-                  exerciseInfo.setRepsArray = parsed;
-                  exerciseInfo.reps = parsed.reduce((sum, rep) => sum + rep, 0) / parsed.length;
-                } else {
-                  exerciseInfo.reps = parseInt(parsed) || 0;
-                }
-              } catch {
-                exerciseInfo.reps = parseInt(field.value) || 0;
+          case 'reps_constant':
+            exerciseInfo.reps = parseInt(field.value) || 0;
+            break;
+          case 'reps_variant':
+            // Parse variant reps to get an array of values
+            if (field.value) {
+              // Split by semicolon based on validation schema
+              const repVariants = field.value.split(';')
+                .filter(rep => rep.trim() !== '')
+                .map(rep => parseInt(rep.trim()))
+                .filter(rep => !isNaN(rep));
+              
+              // Store the array of reps
+              exerciseInfo.setRepsArray = repVariants;
+              
+              // Calculate average for backward compatibility
+              if (repVariants.length > 0) {
+                exerciseInfo.reps = repVariants.reduce((sum, rep) => sum + rep, 0) / repVariants.length;
               }
-            } else {
-              exerciseInfo.reps = parseInt(field.value) || 0;
             }
             break;
-          case 'duration':
-            exerciseInfo.duration = parseFloat(field.value) || 0;
+          case 'duration_constant':
+            exerciseInfo.duration = parseInt(field.value) || 0;
             break;
-          case 'intensity':
-            exerciseInfo.intensity = parseFloat(field.value) || 0;
-            break;
-          case 'duration_string':
-            // Parse duration string to get an array of values
+          case 'duration_variant':
+            // Parse variant durations to get an array of values
             if (field.value) {
+              // Split by semicolon based on validation schema
               const durationStrings = field.value.split(';')
                 .filter(dur => dur.trim() !== '');
               
-              const durationValues = durationStrings.map(durStr => {
-                const match = durStr.match(/\d+(\.\d+)?/);
-                return match ? parseFloat(match[0]) : 0;
-              }).filter(dur => dur > 0);
+              // Store the array of duration strings
+              exerciseInfo.setDurationsArray = durationStrings;
               
-              exerciseInfo.setDurationsArray = durationValues;
+              // Calculate average duration in seconds for backward compatibility
+              const durationValues = durationStrings.map(durStr => {
+                const parts = durStr.split(':');
+                if (parts.length === 3) {
+                  const hours = parseInt(parts[0]) || 0;
+                  const minutes = parseInt(parts[1]) || 0;
+                  const seconds = parseInt(parts[2]) || 0;
+                  return hours * 3600 + minutes * 60 + seconds;
+                }
+                return 0;
+              }).filter(dur => dur > 0);
               
               if (durationValues.length > 0) {
                 exerciseInfo.duration = durationValues.reduce((sum, dur) => sum + dur, 0) / durationValues.length;
               }
             }
             break;
-          case 'reps_string':
-            // Parse reps string to get an array of values
-            if (field.value) {
-              const repsStrings = field.value.split(';')
-                .filter(rep => rep.trim() !== '');
-              
-              const repsValues = repsStrings.map(repStr => {
-                const match = repStr.match(/\d+/);
-                return match ? parseInt(match[0]) : 0;
-              }).filter(rep => rep > 0);
-              
-              exerciseInfo.setRepsArray = repsValues;
-              
-              if (repsValues.length > 0) {
-                exerciseInfo.reps = repsValues.reduce((sum, rep) => sum + rep, 0) / repsValues.length;
-              }
-            }
+          case 'intensity_number':
+            exerciseInfo.intensity = parseFloat(field.value) || 0;
             break;
           case 'intensity_string':
             // Parse intensity string to get an array of values
@@ -156,11 +154,34 @@ function SessionNodeInspector({ node }) {
               tags.forEach(tag => tagSet.add(tag));
             }
             break;
+          default:
+            // For fields without recognized subtypes, check if it could be the exercise name
+            // Look for text fields that might contain the exercise name
+            console.log('Unrecognized field:', { 
+              name: field.name, 
+              type: field.type, 
+              subtype: field.subtype, 
+              label: field.label, 
+              value: field.value 
+            });
+            if (field.type === 'text' && field.value && field.value.trim() !== '' && 
+                !exerciseInfo.exerciseTitle) {
+              exerciseInfo.exerciseTitle = field.value.trim();
+              console.log('Found exercise title:', exerciseInfo.exerciseTitle);
+            }
+            break;
         }
       });
       
       // Calculate volume (sets * reps)
       exerciseInfo.volume = exerciseInfo.sets * exerciseInfo.reps;
+      
+      console.log('Final exerciseInfo:', {
+        name: exerciseInfo.name,
+        exerciseTitle: exerciseInfo.exerciseTitle,
+        sets: exerciseInfo.sets,
+        reps: exerciseInfo.reps
+      });
       
       normalizedExercises.push(exerciseInfo);
     });
@@ -254,8 +275,15 @@ function SessionNodeInspector({ node }) {
     
     // Add exercise-based data points first (LEFT SIDE)
     filteredExerciseData.forEach(exercise => {
+      console.log('Adding exercise to barChartData:', {
+        name: exercise.name,
+        exerciseTitle: exercise.exerciseTitle,
+        sets: exercise.sets,
+        reps: exercise.reps
+      });
       data.push({
         name: exercise.name,
+        exerciseTitle: exercise.exerciseTitle, // Include exercise title for display
         category: "exercise", // Mark as exercise for styling
         sets: exercise.sets,
         reps: exercise.reps,
@@ -307,6 +335,7 @@ function SessionNodeInspector({ node }) {
       });
     }
     
+    console.log('Final barChartData:', data);
     return data;
   }, [filteredExerciseData, selectedTags, showAllTags]);
 
@@ -656,8 +685,8 @@ function SessionNodeInspector({ node }) {
                   <CartesianGrid strokeDasharray="3 3" stroke="#444" />
                   <XAxis 
                     dataKey="name" 
-                    tick={props => {
-                      const { x, y, payload } = props;
+                    tick={(props) => {
+                      const { x, y, payload, index } = props;
                       if (payload.value === "──────") {
                         return (
                           <g transform={`translate(${x},${y})`}>
@@ -668,23 +697,51 @@ function SessionNodeInspector({ node }) {
                       
                       // Use different styling for exercise names vs tag names
                       const isTag = payload.value.startsWith('#');
+                      
+                      // Access the data object from the barChartData using the index
+                      const dataItem = barChartData[index];
+                      const exerciseTitle = dataItem?.exerciseTitle;
+                      
+                      console.log('Tick with index:', { 
+                        index,
+                        value: payload.value, 
+                        dataItem,
+                        exerciseTitle: exerciseTitle
+                      });
+                      
                       return (
                         <g transform={`translate(${x},${y})`}>
+                          {/* Container name (first line) */}
                           <text 
                             x={0} 
                             y={0} 
-                            dy={16} 
+                            dy={8} 
                             textAnchor="end" 
                             fill={isTag ? "#afd5ff" : "#aaa"} 
                             fontWeight={isTag ? "500" : "normal"}
                             transform="rotate(-45)"
+                            fontSize="12"
                           >
                             {payload.value}
                           </text>
+                          {/* Exercise title (second line) - only show if it exists and is different from container name */}
+                          {exerciseTitle && exerciseTitle !== payload.value && (
+                            <text 
+                              x={0} 
+                              y={0} 
+                              dy={24} 
+                              textAnchor="end" 
+                              fill="#888" 
+                              fontSize="10"
+                              transform="rotate(-45)"
+                            >
+                              ({exerciseTitle})
+                            </text>
+                          )}
                         </g>
                       );
                     }}
-                    height={70}
+                    height={90}
                   />
                   <YAxis tick={{ fill: '#aaa' }} />
                   <Tooltip 
@@ -703,7 +760,13 @@ function SessionNodeInspector({ node }) {
                       return label;
                     }}
                   />
-                  <Legend wrapperStyle={{ color: '#ccc' }} />
+                  <Legend 
+                    wrapperStyle={{ color: '#ccc' }} 
+                    layout="vertical"
+                    verticalAlign="middle"
+                    align="left"
+                    iconType="square"
+                  />
                   
                   {/* Render bars with custom colors based on category */}
                   <Bar 
@@ -815,7 +878,10 @@ function SessionNodeInspector({ node }) {
                   />
                   <Legend 
                     wrapperStyle={{ color: '#ccc' }} 
-                    formatter={(value) => `#${value}`} 
+                    layout="vertical"
+                    verticalAlign="middle"
+                    align="left"
+                    iconType="square"
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -862,7 +928,10 @@ function SessionNodeInspector({ node }) {
                   />
                   <Legend 
                     wrapperStyle={{ color: '#ccc' }} 
-                    formatter={(value) => `#${value}`} 
+                    layout="vertical"
+                    verticalAlign="middle"
+                    align="left"
+                    iconType="square"
                   />
                 </PieChart>
               </ResponsiveContainer>
@@ -909,7 +978,10 @@ function SessionNodeInspector({ node }) {
                   />
                   <Legend 
                     wrapperStyle={{ color: '#ccc' }} 
-                    formatter={(value) => `#${value}`} 
+                    layout="vertical"
+                    verticalAlign="middle"
+                    align="left"
+                    iconType="square"
                   />
                 </PieChart>
               </ResponsiveContainer>

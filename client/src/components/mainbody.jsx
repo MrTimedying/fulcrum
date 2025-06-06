@@ -1,7 +1,6 @@
 import React, { Fragment, useState, useEffect, useCallback } from "react";
 import Modal from "react-modal";
 import { Rnd } from "react-rnd";
-import { Tab } from "@headlessui/react";
 import Editor from "./editor/editor";
 import Profile from "./icf-dashboard/profile";
 import { ReactFlowProvider } from "@xyflow/react";
@@ -22,6 +21,9 @@ import BulkExerciseEditModal from "./BulkExerciseEditModal";
 import BulkNodeDataModal from "./editor/bulk_node_modal/BulkNodeDataModal";
 import NpForm from "./npform";
 import ICFSetsModal from "./icf-dashboard/ICFSetsModal";
+import { MdOutlineEdit } from "react-icons/md";
+import { BsGrid3X3 } from "react-icons/bs";
+import FloatingModeToggle from "./FloatingModeToggle";
 
 // Bind modal to your appElement (http://reactcommunity.org/react-modal/accessibility/)
 Modal.setAppElement("#root");
@@ -61,7 +63,7 @@ function MainBody({ handleEditPatient }) {
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
   const [isDatepickerModalOpen, setIsDatepickerModalOpen] = useState(false);
   const [isInspectorOpen, setIsInspectorOpen] = useState(false);
-  const [isFeaturesMenuOpen, setIsFeaturesMenuOpen] = useState(false);
+  const [isMainActionsMenuOpen, setIsMainActionsMenuOpen] = useState(false);
   const [isStyleMenuOpen, setIsStyleMenuOpen] = useState(false);
   const [activeMenu, setActiveMenu] = useState(null);
   const [isICFSetsModalOpen, setIsICFSetsModalOpen] = useState(false);
@@ -69,7 +71,7 @@ function MainBody({ handleEditPatient }) {
   // State for Bulk Exercise Edit Modal
   const [isBulkEditModalOpen, setIsBulkEditModalOpen] = useState(false);
   const [targetSessionNodes, setTargetSessionNodes] = useState([]);
-  const [isEditorSingleNodeSelected, setIsEditorSingleNodeSelected] = useState(false); // To track selection in Editor
+  const [isEditorSingleNodeSelected, setIsEditorSingleNodeSelected] = useState(false);
 
   // State for Bulk Node Data Modal
   const [isBulkNodeDataModalOpen, setIsBulkNodeDataModalOpen] = useState(false);
@@ -79,7 +81,7 @@ function MainBody({ handleEditPatient }) {
       setIsEditorSingleNodeSelected(isSelected);
   }, []);
 
-  // Handler to open Bulk Edit Modal (called by FlowControls)
+  // Handler to open Bulk Edit Modal (called by GraphActionsMenu)
   const handleOpenBulkEditModal = useCallback(() => {
       // This logic was moved from editor.jsx
       const selectedNode = nodes.find((node) => node.selected); // Find the actually selected node from global state
@@ -126,14 +128,14 @@ function MainBody({ handleEditPatient }) {
 
   // Update activeMenu when either menu state changes
   useEffect(() => {
-    if (isFeaturesMenuOpen) {
-      setActiveMenu('features');
+    if (isMainActionsMenuOpen) {
+      setActiveMenu('mainActions');
     } else if (isStyleMenuOpen) {
       setActiveMenu('style');
     } else {
       setActiveMenu(null);
     }
-  }, [isFeaturesMenuOpen, isStyleMenuOpen]);
+  }, [isMainActionsMenuOpen, isStyleMenuOpen]);
 
   // Effect to synchronize profile node data with patient data when patient data changes
   useEffect(() => {
@@ -180,14 +182,6 @@ function MainBody({ handleEditPatient }) {
         });
         return;
       }
-      // if (!nodeSelectedInEditor) {
-      //   setToaster({
-      //     type: "error",
-      //     message: "No node is selected. Please select a node first.",
-      //     show: true,
-      //   });
-      //   return;
-      // }
       setIsInterventionModalOpen(true);
       return;
     }
@@ -202,6 +196,32 @@ function MainBody({ handleEditPatient }) {
         return;
       }
       setIsTemplateModalOpen(true);
+      return;
+    }
+
+    if (id === "icfSetsMenu") {
+      if (activeTab === "Editor") {
+        setToaster({
+          type: "error",
+          message: "ICF Sets are only available in Profile tab.",
+          show: true,
+        });
+        return;
+      }
+      setIsICFSetsModalOpen(!isICFSetsModalOpen);
+      return;
+    }
+
+    if (id === "bulkEditMenu") {
+      if (activeTab !== "Editor") {
+        setToaster({
+          type: "error",
+          message: "Bulk Edit is only available in the Editor tab.",
+          show: true,
+        });
+        return;
+      }
+      handleOpenBulkEditModal();
       return;
     }
 
@@ -279,224 +299,183 @@ function MainBody({ handleEditPatient }) {
     });
   }
 
-
-  function UtilityMenu() {
+  function GraphActionsMenu() {
     return (
-      <div className="flex flex-col ">
-        {/* <p className="font-light text-xl text-zinc-300 p-1">@ Utility Menu</p> */}
-
+      <div className="flex flex-col">
         <button
           id="composer"
-          className=" hover:bg-zinc-700 text-slate-300 flex justify-start gap-2 font-sans text-xs m-2 px-1 rounded-md cursor-pointer  transition-colors duration-200"
+          className="hover:bg-zinc-700 text-slate-300 flex justify-start gap-2 font-sans text-xs  py-2 px-2 rounded-sm cursor-pointer transition-colors duration-200"
           onClick={(e) => handleModalOpening(e.currentTarget.id)}
         >
-          <GiNotebook className="text-lg font-extralight" /> Data
+          <GiNotebook className="text-lg font-extralight" /> Edit Node Data
         </button>
         <button
           id="interventionMenu"
-          className=" hover:bg-zinc-700 text-slate-300 flex justify-start gap-2 font-sans text-xs m-2 px-1 rounded-md cursor-pointer  transition-colors duration-200"
+          className="hover:bg-zinc-700 text-slate-300 flex justify-start gap-2 font-sans text-xs  py-2 px-2 rounded-sm cursor-pointer transition-colors duration-200"
           onClick={(e) => handleModalOpening(e.currentTarget.id)}
         >
-          <AiOutlineSave className="text-lg font-extralight"/> Save/Load
+          <AiOutlineSave className="text-lg font-extralight"/> Save/Load Intervention
         </button>
         <button
           id="templateMenu"
-          className=" hover:bg-zinc-700 text-slate-300 flex justify-start gap-2 font-sans text-xs m-2 px-1 rounded-md cursor-pointer  transition-colors duration-200"
+          className="hover:bg-zinc-700 text-slate-300 flex justify-start gap-2 font-sans text-xs  py-2 px-2 rounded-sm cursor-pointer transition-colors duration-200"
           onClick={(e) => handleModalOpening(e.currentTarget.id)}
         >
           <GoProjectTemplate className="text-lg font-extralight" /> Template Nodes
         </button>
         <button
           id="calendarMenu"
-          className=" hover:bg-zinc-700 text-slate-300 flex justify-start gap-2 font-sans text-xs m-2 px-1 rounded-md cursor-pointer  transition-colors duration-200"
+          className="hover:bg-zinc-700 text-slate-300 flex justify-start gap-2 font-sans text-xs  py-2 px-2 rounded-sm cursor-pointer transition-colors duration-200"
           onClick={(e) => handleModalOpening(e.currentTarget.id)}
         >
           <IoCalendarOutline className="text-lg font-extralight" /> Schedule Session
+        </button>
+        <button
+          id="bulkEditMenu"
+          className={`hover:bg-zinc-700 text-slate-300 flex justify-start gap-2 font-sans text-xs  py-2 px-2 rounded-sm cursor-pointer transition-colors duration-200 ${
+            activeTab !== "Editor" || !isEditorSingleNodeSelected ? 'opacity-50 cursor-not-allowed' : ''
+          }`}
+          onClick={(e) => handleModalOpening(e.currentTarget.id)}
+          disabled={activeTab !== "Editor" || !isEditorSingleNodeSelected}
+        >
+          <MdOutlineEdit className="text-lg font-extralight" /> Bulk Edit Exercises
+        </button>
+        <button
+          id="icfSetsMenu"
+          className={`hover:bg-zinc-700 text-slate-300 flex justify-start gap-2 font-sans text-xs  py-2 px-2 rounded-sm cursor-pointer transition-colors duration-200 ${
+            activeTab === "Editor" ? 'opacity-50 cursor-not-allowed' : ''
+          }`}
+          onClick={(e) => handleModalOpening(e.currentTarget.id)}
+          disabled={activeTab === "Editor"}
+        >
+          <BsGrid3X3 className="text-lg font-extralight" /> ICF Sets & Templates
         </button>
       </div>
     );
   }
 
-  function TabStructure() {
-    const handleActiveTab = (tab) => {
-      setActiveTab(tab);
-    };
-
-    const initialIndex = activeTab === "Profile" ? 0 : 1;
-
-    return (
-      <Tab.Group
-        as="div"
-        className="flex flex-col h-full w-full"
-        defaultIndex={initialIndex}>
-        <div className="flex flex-row w-full bg-zinc-900">
-          <div className="h-8 flex flex-row items-center place-self-center">
-            <Tab.List className="flex mx-auto h-auto text-xl font-extralight">
-              <Tab as={Fragment}>
-                {({ selected }) => (
-                  <button
-                    onClick={() => handleActiveTab("Profile")}
-                    className={`my-2  ${
-                      selected
-                        ? " rounded-none bg-zinc-800 text-gray-300 hover:text-white p-1 cursor-pointer focus:outline-none focus:text-white"
-                        : " text-gray-300 text-opacity-30 hover:text-white p-1 cursor-pointer focus:outline-none focus:text-white transition duration-300 "
-                    }`}
-                  >
-                    # Profile
-                  </button>
-                )}
-              </Tab>
-              <Tab as={Fragment}>
-                {({ selected }) => (
-                  <button
-                    onClick={() => handleActiveTab("Editor")}
-                    className={`my-2  ${
-                      selected
-                        ? " rounded-none bg-zinc-800 text-gray-300 hover:text-white p-1 cursor-pointer focus:outline-none focus:text-white "
-                        : " text-gray-300 text-opacity-30 hover:text-white px-1 cursor-pointer focus:outline-none focus:text-white transition duration-300 "
-                    }`}
-                  >
-                    # Editor
-                  </button>
-                )}
-              </Tab>
-            </Tab.List>
+  function renderActiveView() {
+    if (activeTab === "Profile") {
+      return (
+        <ReactFlowProvider>
+          <Profile 
+            isInspectorOpen={isInspectorOpen} 
+            setIsInspectorOpen={setIsInspectorOpen}
+            handleEditPatient={handleEditPatient}
+          />
+          <ICFSetsModal
+            isOpen={activeTab === "Profile" && isICFSetsModalOpen}
+            onClose={() => setIsICFSetsModalOpen(false)}
+          />
+          <div className="absolute bottom-4 left-4 z-10">
+            <PopPrimitive
+              isOpen={isStyleMenuOpen || isMainActionsMenuOpen}
+              onClose={() => {
+                setIsMainActionsMenuOpen(false);
+                setIsStyleMenuOpen(false);
+              }}
+              menuType="style"
+              activeMenu={activeMenu}
+            >
+              <StyleMenu nodes={nodes} setNodes={setNodes} />
+            </PopPrimitive>
+            <PopPrimitive
+              isOpen={isMainActionsMenuOpen || isStyleMenuOpen}
+              onClose={() => {
+                setIsMainActionsMenuOpen(false);
+                setIsStyleMenuOpen(false);
+              }}
+              menuType="mainActions"
+              activeMenu={activeMenu}
+            >
+              <GraphActionsMenu />
+            </PopPrimitive>
+            <FlowControls
+              setIsMainActionsMenuOpen={setIsMainActionsMenuOpen}
+              setIsStyleMenuOpen={setIsStyleMenuOpen}
+            />
           </div>
-          {/* <UtilityMenu /> */}
-        </div>
-
-        <Tab.Panels className="h-full overflow-y-auto">
-          <Tab.Panel key="icfProfile" className="h-full">
-            <ReactFlowProvider>
-              <Profile 
-                isInspectorOpen={isInspectorOpen} 
-                setIsInspectorOpen={setIsInspectorOpen}
-                handleEditPatient={handleEditPatient}
-              />
-              <ICFSetsModal
-                isOpen={activeTab === "Profile" && isICFSetsModalOpen}
-                onClose={() => setIsICFSetsModalOpen(false)}
-              />
-              {/* FlowControls for Profile tab */}
-              <div className="absolute bottom-4 left-4 z-10">
-                <PopPrimitive
-                  isOpen={isStyleMenuOpen || isFeaturesMenuOpen}
-                  onClose={() => {
-                    setIsFeaturesMenuOpen(false);
-                    setIsStyleMenuOpen(false);
-                  }}
-                  menuType="style"
-                  activeMenu={activeMenu}
-                >
-                  <StyleMenu nodes={nodes} setNodes={setNodes} />
-                </PopPrimitive>
-                <PopPrimitive
-                  isOpen={isFeaturesMenuOpen || isStyleMenuOpen}
-                  onClose={() => {
-                    setIsFeaturesMenuOpen(false);
-                    setIsStyleMenuOpen(false);
-                  }}
-                  menuType="features"
-                  activeMenu={activeMenu}
-                >
-                  <UtilityMenu />
-                </PopPrimitive>
-                <FlowControls
-                  setIsFeaturesMenuOpen={setIsFeaturesMenuOpen}
-                  setIsStyleMenuOpen={setIsStyleMenuOpen}
-                  handleOpenBulkEditModal={handleOpenBulkEditModal}
-                  singleNodeSelected={false} // Profile tab doesn't use single node selection
-                  setIsICFSetsModalOpen={setIsICFSetsModalOpen}
-                  isICFSetsModalOpen={isICFSetsModalOpen}
-                />
-              </div>
-            </ReactFlowProvider>
-          </Tab.Panel>
-          <Tab.Panel key="interventionEditor" className="h-full">
-            <ReactFlowProvider>
-              {/* Pass handler to Editor */} {/* Report selection status back to MainBody */}
-              <Editor
-                  isInspectorOpen={isInspectorOpen}
-                  setIsInspectorOpen={setIsInspectorOpen}
-                  onOpenBulkEditRequest={handleOpenBulkEditModal}
-                  onSingleNodeSelectedChange={handleEditorSingleNodeSelectedChange}
-              />
-              {/* FlowControls for Editor tab */}
-              <div className="absolute bottom-4 left-4 z-10">
-                <PopPrimitive
-                  isOpen={isStyleMenuOpen || isFeaturesMenuOpen}
-                  onClose={() => {
-                    setIsFeaturesMenuOpen(false);
-                    setIsStyleMenuOpen(false);
-                  }}
-                  menuType="style"
-                  activeMenu={activeMenu}
-                >
-                  <StyleMenu nodes={nodes} setNodes={setNodes} />
-                </PopPrimitive>
-                <PopPrimitive
-                  isOpen={isFeaturesMenuOpen || isStyleMenuOpen}
-                  onClose={() => {
-                    setIsFeaturesMenuOpen(false);
-                    setIsStyleMenuOpen(false);
-                  }}
-                  menuType="features"
-                  activeMenu={activeMenu}
-                >
-                  <UtilityMenu />
-                </PopPrimitive>
-                <FlowControls
-                  setIsFeaturesMenuOpen={setIsFeaturesMenuOpen}
-                  setIsStyleMenuOpen={setIsStyleMenuOpen}
-                  handleOpenBulkEditModal={handleOpenBulkEditModal}
-                  singleNodeSelected={isEditorSingleNodeSelected}
-                  setIsICFSetsModalOpen={setIsICFSetsModalOpen}
-                  isICFSetsModalOpen={isICFSetsModalOpen}
-                />
-              </div>
-            </ReactFlowProvider>
-          </Tab.Panel>
-        </Tab.Panels>
-      </Tab.Group>
-    );
+        </ReactFlowProvider>
+      );
+    } else {
+      return (
+        <ReactFlowProvider>
+          <Editor
+            isInspectorOpen={isInspectorOpen}
+            setIsInspectorOpen={setIsInspectorOpen}
+            onOpenBulkEditRequest={handleOpenBulkEditModal}
+            onSingleNodeSelectedChange={handleEditorSingleNodeSelectedChange}
+          />
+          <div className="absolute bottom-4 left-4 z-10">
+            <PopPrimitive
+              isOpen={isStyleMenuOpen || isMainActionsMenuOpen}
+              onClose={() => {
+                setIsMainActionsMenuOpen(false);
+                setIsStyleMenuOpen(false);
+              }}
+              menuType="style"
+              activeMenu={activeMenu}
+            >
+              <StyleMenu nodes={nodes} setNodes={setNodes} />
+            </PopPrimitive>
+            <PopPrimitive
+              isOpen={isMainActionsMenuOpen || isStyleMenuOpen}
+              onClose={() => {
+                setIsMainActionsMenuOpen(false);
+                setIsStyleMenuOpen(false);
+              }}
+              menuType="mainActions"
+              activeMenu={activeMenu}
+            >
+              <GraphActionsMenu />
+            </PopPrimitive>
+            <FlowControls
+              setIsMainActionsMenuOpen={setIsMainActionsMenuOpen}
+              setIsStyleMenuOpen={setIsStyleMenuOpen}
+            />
+          </div>
+        </ReactFlowProvider>
+      );
+    }
   }
 
   if (patientId) {
     return (
-      <div
-        className=" bg-neutral-800 h-full"
+      <div className="bg-neutral-800 h-full relative">
+        <div className="h-full">
+          {renderActiveView()}
+        </div>
 
-      >
-          {TabStructure()}
+        {/* Floating Mode Toggle */}
+        <FloatingModeToggle />
 
-          <Composer
-            isComposerOpen={isComposerOpen}
-            setIsComposerOpen={setIsComposerOpen} />
-          <InterventionModal
-            isOpen={isInterventionModalOpen}
-            onClose={() => setIsInterventionModalOpen(false)}  />
-          <TemplateModal
-            isOpen={isTemplateModalOpen}
-            onClose={() => setIsTemplateModalOpen(false)} />
-          <DatepickerModal
-            isOpen={isDatepickerModalOpen}
-            onClose={() => setIsDatepickerModalOpen(false)} />
-          <BulkExerciseEditModal
-              isOpen={isBulkEditModalOpen}
-              onClose={handleCloseBulkEditModal}
-              targetSessionNodes={targetSessionNodes}
-          />
-          <BulkNodeDataModal
-            isOpen={isBulkNodeDataModalOpen}
-            onClose={() => setIsBulkNodeDataModalOpen(false)}
-          />
+        <Composer
+          isComposerOpen={isComposerOpen}
+          setIsComposerOpen={setIsComposerOpen} />
+        <InterventionModal
+          isOpen={isInterventionModalOpen}
+          onClose={() => setIsInterventionModalOpen(false)}  />
+        <TemplateModal
+          isOpen={isTemplateModalOpen}
+          onClose={() => setIsTemplateModalOpen(false)} />
+        <DatepickerModal
+          isOpen={isDatepickerModalOpen}
+          onClose={() => setIsDatepickerModalOpen(false)} />
+        <BulkExerciseEditModal
+            isOpen={isBulkEditModalOpen}
+            onClose={handleCloseBulkEditModal}
+            targetSessionNodes={targetSessionNodes}
+        />
+        <BulkNodeDataModal
+          isOpen={isBulkNodeDataModalOpen}
+          onClose={() => setIsBulkNodeDataModalOpen(false)}
+        />
       </div>
     );
   } else {
     return (
       <div
         className="flex items-center justify-center text-stone-400 bg-neutral-800 p-4 h-full"
-        // style={{ borderLeft: "solid 2px #1c1c1c" }}
       >
         Select a patient to view their information.
         <button

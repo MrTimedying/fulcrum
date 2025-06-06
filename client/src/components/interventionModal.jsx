@@ -116,7 +116,7 @@ const InterventionModal = ({ isOpen, onClose }) => {
       >
         <div className="w-full h-full flex flex-col bg-white dark:bg-zinc-800 text-gray-900 dark:text-white shadow-xl rounded-lg overflow-hidden border border-zinc-800">
           <div className="modal-handle bg-zinc-900 p-4 flex justify-between items-center cursor-move border-b border-zinc-800">
-            <h2 className="text-xl font-semibold">Intervention Management</h2>
+            <h2 className="text-xl font-thin">@ Intervention Management</h2>
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-white transition duration-150"
@@ -155,7 +155,7 @@ const InterventionModal = ({ isOpen, onClose }) => {
               {/* Save New Intervention Panel */}
               <Tab.Panel className="p-6 h-full flex flex-col">
                 <div className="mb-6">
-                  <label htmlFor="interventionName" className="block text-sm font-medium text-gray-300 mb-2">
+                  <label htmlFor="interventionName" className="block text-sm font-light text-gray-300 mb-2">
                     Intervention Name
                   </label>
                   <input
@@ -163,14 +163,14 @@ const InterventionModal = ({ isOpen, onClose }) => {
                     id="interventionName"
                     value={newInterventionName}
                     onChange={(e) => setNewInterventionName(e.target.value)}
-                    className="w-full px-4 py-2 bg-zinc-800 border border-zinc-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    className="w-full px-2 py-1 text-[11px] bg-zinc-800 border border-zinc-600 rounded-md text-white focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500 transition-colors"
                     placeholder="Enter a name for this intervention"
                   />
                 </div>
 
                 <div className="flex-1 bg-zinc-800 rounded-md p-4 mb-6 overflow-auto border border-zinc-700">
-                  <h3 className="text-sm font-medium mb-3 text-gray-300">Intervention Preview</h3>
-                  <div className="text-gray-400 text-sm">
+                  <h3 className="text-sm font-light mb-3 text-gray-300">Intervention Preview</h3>
+                  <div className="text-gray-400 text-[11px]">
                     {nodes.length > 0 ? (
                       <div>
                         <p className="mb-4">This intervention contains {nodes.length} nodes and {edges.length} connections.</p>
@@ -178,15 +178,15 @@ const InterventionModal = ({ isOpen, onClose }) => {
                         {/* Node Overview Table */}
                         <div className="space-y-3">
                           <h4 className="text-xs font-medium text-gray-300 uppercase tracking-wide">Node Details</h4>
-                          <div className="bg-gray-800 rounded border border-gray-600">
-                            <div className="grid grid-cols-4 gap-2 p-2 bg-gray-600 text-xs font-medium text-gray-200 rounded-t">
+                          <div className="bg-neutral-800 rounded border border-gray-600">
+                            <div className="grid grid-cols-4 gap-2 p-2 bg-neutral-700 text-xs font-medium text-gray-200 rounded-t">
                               <div>Type</div>
                               <div>Label</div>
                               <div>Scope</div>
                               <div>Tags</div>
                             </div>
                             {nodes.map((node, index) => (
-                              <div key={node.id} className={`grid grid-cols-4 gap-2 p-2 text-xs ${index % 2 === 0 ? 'bg-gray-800' : 'bg-gray-750'} ${index === nodes.length - 1 ? '' : 'border-b border-gray-600'}`}>
+                              <div key={node.id} className={`grid grid-cols-4 gap-2 p-2 text-xs ${index % 2 === 0 ? 'bg-neutral-800' : 'bg-neutral-750'} ${index === nodes.length - 1 ? '' : 'border-b border-gray-600'}`}>
                                 <div className="capitalize font-medium">
                                   <span className={`inline-block w-2 h-2 rounded-full mr-2 ${
                                     node.type === 'intervention' ? 'bg-blue-500' :
@@ -216,7 +216,7 @@ const InterventionModal = ({ isOpen, onClose }) => {
 
                         {/* Additional Statistics */}
                         <div className="mt-4 grid grid-cols-2 gap-4">
-                          <div className="bg-gray-800 p-3 rounded border border-gray-600">
+                          <div className="bg-neutral-800 p-3 rounded border border-gray-600">
                             <h5 className="text-xs font-medium text-gray-300 mb-2">Node Distribution</h5>
                             <div className="space-y-1 text-xs">
                               {['intervention', 'phase', 'micro', 'session'].map(type => {
@@ -231,7 +231,7 @@ const InterventionModal = ({ isOpen, onClose }) => {
                             </div>
                           </div>
                           
-                          <div className="bg-gray-800 p-3 rounded border border-gray-600">
+                          <div className="bg-neutral-800 p-3 rounded border border-gray-600">
                             <h5 className="text-xs font-medium text-gray-300 mb-2">Session Data</h5>
                             <div className="space-y-1 text-xs">
                               {(() => {
@@ -264,10 +264,10 @@ const InterventionModal = ({ isOpen, onClose }) => {
                 <div className="flex justify-end">
                   <button
                     onClick={handleSaveIntervention}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md font-medium transition-colors duration-200 disabled:bg-gray-600 disabled:cursor-not-allowed"
+                    className="flex items-center gap-1 px-2 py-1 text-[11px] bg-gray-600 hover:bg-gray-700 rounded-md font-light transition-colors duration-200 disabled:bg-gray-600 disabled:cursor-not-allowed"
                     disabled={!newInterventionName.trim() || nodes.length === 0}
                   >
-                    <Save fontSize="small" />
+                    <Save fontSize="x-small" />
                     Save Intervention
                   </button>
                 </div>
@@ -276,11 +276,11 @@ const InterventionModal = ({ isOpen, onClose }) => {
               {/* Load Saved Interventions Panel */}
               <Tab.Panel className="p-6 h-full flex flex-col">
                 <div className="mb-4">
-                  <h3 className="text-sm font-medium text-gray-300 mb-3">Saved Interventions</h3>
+                  <h3 className="text-sm font-light text-gray-300 mb-3">Saved Interventions</h3>
                   <div className="relative">
                     <input
                       type="text"
-                      className="w-full px-4 py-2 bg-zinc-800 border border-zinc-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      className="w-full px-2 py-1 text-[11px] bg-zinc-800 border border-zinc-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                       placeholder="Search interventions..."
                     />
                   </div>
