@@ -53,14 +53,17 @@ const editableProperties = {
   ],
   phase: [
     { name: 'scope', label: 'Scope', type: 'text' },
+    { name: 'description', label: 'Description', type: 'textarea' },
     { name: 'tags', label: 'Tags', type: 'tags' },
   ],
   micro: [
     { name: 'scope', label: 'Scope', type: 'text' },
+    { name: 'description', label: 'Description', type: 'textarea' },
     { name: 'tags', label: 'Tags', type: 'tags' },
   ],
   session: [
     { name: 'scope', label: 'Scope', type: 'text' },
+    { name: 'description', label: 'Description', type: 'textarea' },
     { name: 'tags', label: 'Tags', type: 'tags' },
   ]
 };

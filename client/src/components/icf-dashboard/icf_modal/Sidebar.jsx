@@ -19,12 +19,12 @@ const Sidebar = ({ activeView, setActiveView, isEditorView }) => {
               <button
                 onClick={() => !item.disabled && setActiveView(item.id)}
                 disabled={item.disabled}
-                className={`w-full px-2 text-left  text-[10px] ${
+                className={`w-full px-2 py-1 rounded-[3px] text-left text-[11px] ${
                   activeView === item.id
                     ? "bg-zinc-800 text-white font-medium"
                     : item.disabled
                     ? "text-zinc-600 cursor-not-allowed"
-                    : "text-zinc-400 hover:bg-zinc-800 hover:text-white"
+                    : "text-zinc-400 hover:bg-zinc-800 hover:bg-opacity-50 hover:text-white"
                 } transition-colors duration-200`}
               >
                 {item.label}

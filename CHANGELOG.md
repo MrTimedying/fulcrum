@@ -8,6 +8,7 @@
 - Polished the data analysis components by leveraging the node tag system.
 - Added filtering by node data tags in the ExerciseModal.
 - Implemented tag inheritance for data analysis in inspector components (Phase, Micro, Session).
+- Enabled editing of the 'description' field for Phase, Micro, and Session nodes in the Bulk Node Data Modal.
 
 ### Fixes
 
