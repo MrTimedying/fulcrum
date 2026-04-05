@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import MainBody from './mainbody';
 import Sidebar from './sidebar';
+import IconBar from './IconBar';
 import Composer from './editor/composer';
 import CustomFrame from './frame/customFrame';
 import { Toaster } from './toaster';
@@ -11,14 +12,22 @@ import 'split-pane-react/esm/themes/default.css';
 import './splitpane.css';
 import useFlowStore from '../state/flowState';
 import NpForm from './npform';
+import OptionsModal from './OptionsModal';
 
-// Define custom styles for the SplitPane components
 const containerStyle = {
   height: 'calc(100vh - 18px)',
   width: '100%',
   display: 'flex',
+  flexDirection: 'row', // VS Code style: IconBar is a sibling of the main area
+  overflow: 'hidden'
+};
+
+const mainAreaStyle = {
+  flex: 1,
+  display: 'flex',
   flexDirection: 'column',
-  overflow: 'hidden' // Prevent scrolling in the container
+  overflow: 'hidden',
+  position: 'relative'
 };
 
 const splitPaneContainerStyle = {
@@ -32,68 +41,53 @@ const splitPaneContainerStyle = {
 function Home() {
   const location = useLocation();
   const isComposer = location.pathname === '/composer';
-  const [sizes, setSizes] = useState(['20%', 'auto']);
+  const [sizes, setSizes] = useState(['250px', 'auto']);
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef(null);
   const { patients, patientId } = useFlowStore();
   
-  // State variables to manage patient edit modal (shared between MainBody and Sidebar)
+  // Layout state
+  const [activeSidebarContext, setActiveSidebarContext] = useState('patients');
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isOptionsModalOpen, setIsOptionsModalOpen] = useState(false);
+
+  // State variables to manage patient edit modal
   const [isPatientEditModalOpen, setIsPatientEditModalOpen] = useState(false);
   const [patientFormData, setPatientFormData] = useState({
-    name: "",
-    surname: "",
-    age: "",
-    gender: "",
-    bmi: "",
-    height: "",
-    weight: "",
-    status: "",
+    name: "", surname: "", age: "", gender: "", bmi: "", height: "", weight: "", status: "",
   });
   const [isEditing, setIsEditing] = useState(false);
 
-  // Handler for editing patient data (shared between MainBody and Sidebar)
   const handleEditPatient = useCallback((node) => {
-    // If called from profile node in MainBody, the node object contains the patient data
     if (node && node.type === 'profile') {
-      // Get the patient ID from the node data or from the store
       const nodePatientId = node.data.PatientId || patientId;
       if (nodePatientId && patients[nodePatientId]) {
-        setPatientFormData({
-          ...patients[nodePatientId],
-          PatientId: nodePatientId, // Ensure PatientId is included for the form to update correctly
-        });
+        setPatientFormData({ ...patients[nodePatientId], PatientId: nodePatientId });
         setIsEditing(true);
         setIsPatientEditModalOpen(true);
         return;
       }
     }
-    
-    // If called without a node or if node doesn't have patient data (e.g. from sidebar)
     if (patientId && patients[patientId]) {
-      setPatientFormData({
-        ...patients[patientId],
-        PatientId: patientId,
-      });
+      setPatientFormData({ ...patients[patientId], PatientId: patientId });
       setIsEditing(true);
       setIsPatientEditModalOpen(true);
     }
   }, [patientId, patients]);
 
-  // Close patient edit modal
   const closePatientEditModal = useCallback(() => {
     setIsPatientEditModalOpen(false);
-    setPatientFormData({
-      name: "",
-      surname: "",
-      age: "",
-      gender: "",
-      bmi: "",
-      height: "",
-      weight: "",
-      status: "",
-    });
     setIsEditing(false);
   }, []);
+
+  const handleContextChange = (newContext) => {
+    if (newContext === activeSidebarContext) {
+      setIsSidebarCollapsed(!isSidebarCollapsed);
+    } else {
+      setActiveSidebarContext(newContext);
+      setIsSidebarCollapsed(false);
+    }
+  };
 
   const handleDragStart = () => {
     setIsDragging(true);
@@ -105,16 +99,12 @@ function Home() {
     document.body.classList.remove('resizing');
   };
 
-  // Apply dragging class to the actual resizer element
   useEffect(() => {
     if (containerRef.current) {
       const resizer = containerRef.current.querySelector('.sash-vertical');
       if (resizer) {
-        if (isDragging) {
-          resizer.classList.add('dragging');
-        } else {
-          resizer.classList.remove('dragging');
-        }
+        if (isDragging) resizer.classList.add('dragging');
+        else resizer.classList.remove('dragging');
       }
     }
   }, [isDragging]);
@@ -132,33 +122,45 @@ function Home() {
 
   return (
     <CustomFrame>
-      <div className="App" style={containerStyle}>
-        <UpdateManager />
-        <Toaster />
-        <div ref={containerRef} style={splitPaneContainerStyle}>
-          <SplitPane 
-            split="vertical" 
-            sizes={sizes} 
-            onChange={setSizes}
-            className={`split-pane-row ${isDragging ? 'is-resizing' : ''}`}
-            onDragStart={handleDragStart}
-            onDragEnd={handleDragEnd}
-          >
-            <Pane minSize={300} maxSize="50%" className="sidebar-pane">
-              <Sidebar handleEditPatient={handleEditPatient} />
-            </Pane>
-            <Pane minSize={300} className="mainbody-pane">
-              <div style={{ height: '100%', width: '100%', overflow: 'auto' }}>
-                <Routes>
-                  <Route path="/patients/:ID" element={<MainBody handleEditPatient={handleEditPatient} />} />
-                  <Route path="/" element={<MainBody handleEditPatient={handleEditPatient} />} />
-                </Routes>
-              </div>
-            </Pane>
-          </SplitPane>
+      <div className="App bg-zinc-950" style={containerStyle}>
+        <IconBar 
+          activeContext={activeSidebarContext} 
+          onContextChange={handleContextChange} 
+          isSidebarCollapsed={isSidebarCollapsed}
+          onSettingsClick={() => setIsOptionsModalOpen(true)}
+        />
+        
+        <div style={mainAreaStyle}>
+          <UpdateManager />
+          <Toaster />
+          <div ref={containerRef} style={splitPaneContainerStyle}>
+            <SplitPane 
+              split="vertical" 
+              sizes={isSidebarCollapsed ? [0, 'auto'] : sizes} 
+              onChange={setSizes}
+              className={`split-pane-row ${isDragging ? 'is-resizing' : ''} ${isSidebarCollapsed ? 'collapsed' : ''}`}
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}
+            >
+              <Pane minSize={isSidebarCollapsed ? 0 : 250} maxSize="50%">
+                <div className="h-full bg-zinc-900 overflow-hidden border-r border-zinc-800">
+                   {!isSidebarCollapsed && (
+                     <Sidebar context={activeSidebarContext} handleEditPatient={handleEditPatient} />
+                   )}
+                </div>
+              </Pane>
+              <Pane minSize={400}>
+                <div style={{ height: '100%', width: '100%', overflow: 'hidden' }} className="bg-zinc-950">
+                  <Routes>
+                    <Route path="/patients/:ID" element={<MainBody handleEditPatient={handleEditPatient} />} />
+                    <Route path="/" element={<MainBody handleEditPatient={handleEditPatient} />} />
+                  </Routes>
+                </div>
+              </Pane>
+            </SplitPane>
+          </div>
         </div>
         
-        {/* Patient Edit Form Modal - now at Home level */}
         <NpForm
           isOpen={isPatientEditModalOpen}
           closeModal={closePatientEditModal}
@@ -167,6 +169,11 @@ function Home() {
           setFetchingSwitch={() => {}}
           isEditing={isEditing}
           setIsEditing={setIsEditing}
+        />
+
+        <OptionsModal 
+          isOpen={isOptionsModalOpen} 
+          onClose={() => setIsOptionsModalOpen(false)} 
         />
       </div>
     </CustomFrame>

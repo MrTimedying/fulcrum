@@ -10,6 +10,7 @@ import { AiOutlineSave } from "react-icons/ai";
 import { GiNotebook } from "react-icons/gi";
 import { GoProjectTemplate } from "react-icons/go";
 import { IoCalendarOutline } from "react-icons/io5";
+import SessionEditor from "./editor/SessionEditor";
 import { Composer } from "./editor/composer";
 import useTransientStore from "../state/transientState";
 import InterventionModal from "./interventionModal";
@@ -77,10 +78,9 @@ function MainBody({ handleEditPatient }) {
 
   // Handler to open Bulk Edit Modal (called by FlowControls)
   const handleOpenBulkEditModal = useCallback(() => {
-      // This logic was moved from editor.jsx
-      const selectedNode = nodes.find((node) => node.selected); // Find the actually selected node from global state
+      const selectedNode = nodes.find((node) => node.selected);
 
-      if (!isEditorSingleNodeSelected || !selectedNode) { // Use the status reported by Editor
+      if (!isEditorSingleNodeSelected || !selectedNode) {
           setToaster({
               type: "info",
               message: "Please select a single node to bulk edit its subtree exercises.",
@@ -89,12 +89,7 @@ function MainBody({ handleEditPatient }) {
           return;
       }
 
-      console.log("Opening bulk edit modal for subtree of node:", selectedNode.id);
-
-      // 1. Get all descendants using the helper
       const { nodes: allDescendantNodes } = getAllDescendants(selectedNode.id, nodes, edges);
-
-      // 2. Filter for only Session nodes
       const sessionNodes = allDescendantNodes.filter(node => node.type === 'session');
 
       if (sessionNodes.length === 0) {
@@ -106,21 +101,15 @@ function MainBody({ handleEditPatient }) {
           return;
       }
 
-      console.log("Target Session nodes for bulk edit:", sessionNodes.map(n => n.id));
-
-      // 3. Set state and open the modal
       setTargetSessionNodes(sessionNodes);
       setIsBulkEditModalOpen(true);
+  }, [nodes, edges, isEditorSingleNodeSelected, setToaster]);
 
-  }, [nodes, edges, isEditorSingleNodeSelected, setToaster]); // Depend on nodes and edges from store
-
-  // Handler to close Bulk Edit Modal
   const handleCloseBulkEditModal = useCallback(() => {
       setIsBulkEditModalOpen(false);
-      setTargetSessionNodes([]); // Clear target nodes when closing
+      setTargetSessionNodes([]);
   }, []);
 
-  // Update activeMenu when either menu state changes
   useEffect(() => {
     if (isFeaturesMenuOpen) {
       setActiveMenu('features');
@@ -131,13 +120,10 @@ function MainBody({ handleEditPatient }) {
     }
   }, [isFeaturesMenuOpen, isStyleMenuOpen]);
 
-  // Effect to synchronize profile node data with patient data when patient data changes
   useEffect(() => {
     if (activeTab === "Profile" && patientId && nodes.length > 0) {
-      // Find profile node
       const profileNode = nodes.find(node => node.type === "profile");
       if (profileNode && patients[patientId]) {
-        // Compare data to see if update is needed
         const patientData = patients[patientId];
         const nodeNeedsUpdate = 
           profileNode.data.name !== patientData.name ||
@@ -150,7 +136,6 @@ function MainBody({ handleEditPatient }) {
           profileNode.data.bmi !== patientData.bmi;
         
         if (nodeNeedsUpdate) {
-          // Update the node data with latest patient data
           setNodes(nds => nds.map(n => 
             n.id === profileNode.id 
               ? { ...n, data: { ...n.data, ...patientData, PatientId: patientId } } 
@@ -162,9 +147,7 @@ function MainBody({ handleEditPatient }) {
   }, [patients, patientId, activeTab, nodes, setNodes]);
 
   function handleModalOpening(id) {
-    // Check if a node is selected - Use the status from Editor
-    // Note: The actual selected node object is accessed directly in handleOpenBulkEditModal
-    const nodeSelectedInEditor = nodes.find(node => node.selected); // Still need to find the node for other modals
+    const nodeSelectedInEditor = nodes.find(node => node.selected);
     const multipleNodesSelectedInEditor = nodes.filter(node => node.selected).length > 1;
 
     if (id === "interventionMenu") {
@@ -176,14 +159,6 @@ function MainBody({ handleEditPatient }) {
         });
         return;
       }
-      // if (!nodeSelectedInEditor) {
-      //   setToaster({
-      //     type: "error",
-      //     message: "No node is selected. Please select a node first.",
-      //     show: true,
-      //   });
-      //   return;
-      // }
       setIsInterventionModalOpen(true);
       return;
     }
@@ -201,8 +176,7 @@ function MainBody({ handleEditPatient }) {
       return;
     }
 
-    // Check selection status using the state updated by Editor
-    if (!nodeSelectedInEditor) { // Use the node object for checks relevant to specific modals
+    if (!nodeSelectedInEditor) {
       setToaster({
         type: "error",
         message: "No node is selected. Please select a node first.",
@@ -211,7 +185,7 @@ function MainBody({ handleEditPatient }) {
       return;
     }
 
-     if (multipleNodesSelectedInEditor) { // Use the node object for checks relevant to specific modals
+     if (multipleNodesSelectedInEditor) {
       setToaster({
         type: "error",
         message: "Tools are disabled when multiple nodes are selected.",
@@ -220,7 +194,6 @@ function MainBody({ handleEditPatient }) {
       return;
     }
 
-    // Early return for common error states
     if (id === "composer") {
       if (!nodeSelectedInEditor) {
         setToaster({
@@ -247,7 +220,7 @@ function MainBody({ handleEditPatient }) {
     }  
 
     if (id === "calendarMenu") {
-      if (nodeSelectedInEditor.type !== 'session' || activeTab !== "Editor") { // Use node object for type check
+      if (nodeSelectedInEditor.type !== 'session' || activeTab !== "Editor") {
         setToaster({
           type: "error",
           message: "Calendar only works on sessions, in the intervention editor tool only.",
@@ -259,7 +232,6 @@ function MainBody({ handleEditPatient }) {
       return;
     }
 
-    // Fallback/default: no action for unknown menu
     setToaster({
       type: "error",
       message: "Unknown menu action.",
@@ -267,12 +239,9 @@ function MainBody({ handleEditPatient }) {
     });
   }
 
-
   function UtilityMenu() {
     return (
       <div className="flex flex-col ">
-        {/* <p className="font-light text-xl text-zinc-300 p-1">@ Utility Menu</p> */}
-
         <button
           id="composer"
           className=" hover:bg-zinc-700 text-slate-300 flex justify-start gap-2 font-sans text-xs m-2 px-1 rounded-md cursor-pointer  transition-colors duration-200"
@@ -350,7 +319,6 @@ function MainBody({ handleEditPatient }) {
               </Tab>
             </Tab.List>
           </div>
-          {/* <UtilityMenu /> */}
         </div>
 
         <Tab.Panels className="h-full overflow-y-auto">
@@ -368,15 +336,7 @@ function MainBody({ handleEditPatient }) {
             </ReactFlowProvider>
           </Tab.Panel>
           <Tab.Panel key="interventionEditor" className="h-full">
-            <ReactFlowProvider>
-              {/* Pass handler to Editor */} {/* Report selection status back to MainBody */}
-              <Editor
-                  isInspectorOpen={isInspectorOpen}
-                  setIsInspectorOpen={setIsInspectorOpen}
-                  onOpenBulkEditRequest={handleOpenBulkEditModal}
-                  onSingleNodeSelectedChange={handleEditorSingleNodeSelectedChange}
-              />
-            </ReactFlowProvider>
+            <SessionEditor />
           </Tab.Panel>
         </Tab.Panels>
       </Tab.Group>
@@ -385,10 +345,7 @@ function MainBody({ handleEditPatient }) {
 
   if (patientId) {
     return (
-      <div
-        className=" bg-neutral-800 h-full"
-
-      >
+      <div className="bg-neutral-800 h-full">
         <ReactFlowProvider>
           {TabStructure()}
 
@@ -447,10 +404,7 @@ function MainBody({ handleEditPatient }) {
     );
   } else {
     return (
-      <div
-        className="flex items-center justify-center text-stone-400 bg-neutral-800 p-4 h-full"
-        // style={{ borderLeft: "solid 2px #1c1c1c" }}
-      >
+      <div className="flex items-center justify-center text-stone-400 bg-neutral-800 p-4 h-full">
         Select a patient to view their information.
         <button
           onClick={() => {

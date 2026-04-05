@@ -27,7 +27,10 @@
   background-color: #444 !important;
   cursor: col-resize !important;
   z-index: 10 !important;
-  
+}
+
+.split-pane-row.collapsed .sash-vertical {
+  display: none !important;
 }
 
 .sash-vertical:hover {
