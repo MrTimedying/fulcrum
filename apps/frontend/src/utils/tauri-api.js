@@ -46,27 +46,48 @@ class TauriAPI {
   // Window controls
   window = {
     minimize: async () => {
+      console.log('TauriAPI: window.minimize called');
       if (!this.api) await this.init();
       if (!this.api) throw new Error('TauriAPI not initialized');
       
-      const window = this.api.getCurrentWindow();
-      return await window.minimize();
+      try {
+        const window = this.api.getCurrentWindow();
+        console.log('TauriAPI: Got current window object:', window.label);
+        return await window.minimize();
+      } catch (e) {
+        console.error('TauriAPI: minimize failed:', e);
+        throw e;
+      }
     },
 
     maximize: async () => {
+      console.log('TauriAPI: window.maximize called');
       if (!this.api) await this.init();
       if (!this.api) throw new Error('TauriAPI not initialized');
       
-      const window = this.api.getCurrentWindow();
-      return await window.toggleMaximize();
+      try {
+        const window = this.api.getCurrentWindow();
+        console.log('TauriAPI: Got current window object:', window.label);
+        return await window.toggleMaximize();
+      } catch (e) {
+        console.error('TauriAPI: maximize failed:', e);
+        throw e;
+      }
     },
 
     close: async () => {
+      console.log('TauriAPI: window.close called');
       if (!this.api) await this.init();
       if (!this.api) throw new Error('TauriAPI not initialized');
       
-      const window = this.api.getCurrentWindow();
-      return await window.close();
+      try {
+        const window = this.api.getCurrentWindow();
+        console.log('TauriAPI: Got current window object:', window.label);
+        return await window.close();
+      } catch (e) {
+        console.error('TauriAPI: close failed:', e);
+        throw e;
+      }
     },
 
     isMaximized: async () => {
@@ -100,6 +121,37 @@ class TauriAPI {
       if (!this.api) throw new Error('TauriAPI not initialized');
       
       return await this.api.invoke('save_app_state', { appState: state });
+    },
+
+    // POC Methods
+    getPocState: async () => {
+      if (!this.api) await this.init();
+      if (!this.api) throw new Error('TauriAPI not initialized');
+      
+      return await this.api.invoke('get_poc_state');
+    },
+
+    updatePocState: async (testMessage) => {
+      if (!this.api) await this.init();
+      if (!this.api) throw new Error('TauriAPI not initialized');
+      
+      return await this.api.invoke('update_poc_state', { testMessage });
+    },
+
+    spawnPocWindow: async () => {
+      if (!this.api) await this.init();
+      if (!this.api) throw new Error('TauriAPI not initialized');
+      
+      return await this.api.invoke('spawn_poc_window');
+    },
+
+    listenToPocSync: async (callback) => {
+      if (!this.api) await this.init();
+      if (!this.api) throw new Error('TauriAPI not initialized');
+      
+      return await this.api.listen('poc-state-sync', (event) => {
+        callback(event.payload);
+      });
     }
   };
 

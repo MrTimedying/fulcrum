@@ -5,7 +5,11 @@ import { tauriAPI } from '../../utils/tauri-api';
 
 const WindowControls = () => {
 
-  const {patientId, activeTab, setEditorState, setProfileState} = useFlowStore();
+  const store = useFlowStore();
+  const patientId = store?.patientId;
+  const activeTab = store?.activeTab;
+  const setEditorState = store?.setEditorState;
+  const setProfileState = store?.setProfileState;
 
   const minimizeWindow = async () => {
     try {
@@ -25,25 +29,33 @@ const WindowControls = () => {
 
   const closeWindow = async () => {
     try {
-      if (activeTab === 'Profile') {
-        setProfileState(patientId);
-      } else if (activeTab === 'Editor') {
-        setEditorState(patientId);
-      } else if (!patientId) {
-        // Close the window if no patient is selected
-        await tauriAPI.window.close();
-        return;
+      // Perform state saving only if we are in the main window (activeTab exists)
+      if (activeTab) {
+        if (activeTab === 'Profile') {
+          setProfileState(patientId);
+        } else if (activeTab === 'Editor') {
+          setEditorState(patientId);
+        }
       }
+      
+      // Always attempt to close the current window
       await tauriAPI.window.close();
     } catch (error) {
       console.error('Failed to close window:', error);
+      // Fallback: try direct close if tauriAPI fails for some reason
+      try {
+        const { getCurrentWindow } = await import('@tauri-apps/api/window');
+        await getCurrentWindow().close();
+      } catch (e) {
+        console.error('Critical failure closing window:', e);
+      }
     }
   };
 
 
   return (
-    <div id="custom-frame" className="bg-zinc-900 border-b border-zinc-700 flex flex-row justify-between text-slate-300 items-end pr-2" style={{height:"18px"}}>
-      <div id="title" className='font-mono font-semibold pl-2 text-xs'>Fulcrum</div>
+    <div id="custom-frame" data-tauri-drag-region className="bg-zinc-900 border-b border-zinc-700 flex flex-row justify-between text-slate-300 items-end pr-2" style={{height:"18px"}}>
+      <div id="title" data-tauri-drag-region className='font-mono font-semibold pl-2 text-xs'>Fulcrum</div>
       <div id="buttons">
       <button className='ml-2' onClick={() => minimizeWindow()}>-</button>
       <button className='ml-2' onClick={() => maximizeWindow()}>□</button>

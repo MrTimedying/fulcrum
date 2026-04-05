@@ -1,6 +1,7 @@
 # Dependency directories
 node_modules/
 .pnpm-store/
+docs/
 
 # React / Vite
 apps/frontend/dist/

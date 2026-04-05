@@ -12,6 +12,7 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "Fulcrum",
         "width": 800,
         "height": 600,
@@ -27,8 +28,8 @@
       "capabilities": [
         {
           "identifier": "main-capability",
-          "description": "Capability for the main window",
-          "windows": ["main"],
+          "description": "Capability for all windows",
+          "windows": ["*"],
           "permissions": [
             "core:window:allow-close",
             "core:window:allow-minimize",
