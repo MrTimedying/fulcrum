@@ -3,10 +3,29 @@ import {
   HiUsers, 
   HiMagnifyingGlass,
   HiOutlineCircleStack,
-  HiOutlineCog6Tooth
+  HiOutlineCog6Tooth,
+  HiOutlineTrash
 } from "react-icons/hi2";
+import { usePatientStore } from "../state/core/usePatientStore";
+import { useInterventionStore } from "../state/core/useInterventionStore";
+import { useNavigationStore } from "../state/core/useNavigationStore";
 
 const IconBar = ({ activeContext, onContextChange, isSidebarCollapsed, onSettingsClick }) => {
+  const clearPatients = usePatientStore(state => state.clearPatients);
+  const clearInterventions = useInterventionStore(state => state.clearInterventions);
+  const setPatientId = useNavigationStore(state => state.setPatientId);
+
+  const isDevelopment = process.env.NODE_ENV === 'development';
+
+  const handlePurge = () => {
+    if (window.confirm("ARE YOU SURE? This will PURGE ALL PATIENTS and ALL INTERVENTIONS. This cannot be undone.")) {
+      clearPatients();
+      clearInterventions();
+      setPatientId("");
+      window.location.reload(); // Reload to ensure all components reset
+    }
+  };
+
   const iconGroups = [
     { id: 'patients', icon: HiUsers, label: 'Patients' },
     { id: 'interventions', icon: HiOutlineCircleStack, label: 'Interventions' },
@@ -44,6 +63,18 @@ const IconBar = ({ activeContext, onContextChange, isSidebarCollapsed, onSetting
 
       {/* Bottom Icons */}
       <div className="w-full flex flex-col items-center pb-2">
+        {isDevelopment && (
+          <div
+            onClick={handlePurge}
+            className="relative flex items-center justify-center w-full py-3 cursor-pointer group transition-all"
+            title="PURGE ALL DATA (DEV ONLY)"
+          >
+            <HiOutlineTrash 
+              size={24} 
+              className="text-red-500/50 group-hover:text-red-500 transition-colors duration-200"
+            />
+          </div>
+        )}
         <div
           onClick={onSettingsClick}
           className={`relative flex items-center justify-center w-full py-3 cursor-pointer group transition-all`}

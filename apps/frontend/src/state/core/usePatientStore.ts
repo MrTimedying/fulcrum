@@ -29,6 +29,7 @@ export interface PatientState {
   addIcfRecord: (patientId: string, dimension: string, record: Omit<IcfRecord, 'id'>) => void;
   deleteIcfRecord: (patientId: string, dimension: string, recordId: string) => void;
   moveIcfRecord: (patientId: string, sourceDimension: string, targetDimension: string, recordId: string, newIndex: number) => void;
+  clearPatients: () => void;
 }
 
 export const usePatientStore = create<PatientState>()(
@@ -36,12 +37,18 @@ export const usePatientStore = create<PatientState>()(
     (set) => ({
       patients: {},
 
+      clearPatients: () => set({ patients: {} }),
+
       addPatient: (patientId, patientDetails) => {
         set((state) => ({
           patients: {
             ...state.patients,
             [patientId]: {
-              details: { ...patientDetails },
+              ...(state.patients[patientId] || {}),
+              details: { 
+                ...(state.patients[patientId]?.details || {}),
+                ...patientDetails 
+              },
               icf: {
                 bodyStructure: [],
                 activities: [],
@@ -50,7 +57,6 @@ export const usePatientStore = create<PatientState>()(
                 personalFactors: [],
                 ...(state.patients[patientId]?.icf || {}),
               },
-              ...state.patients[patientId],
             },
           },
         }));

@@ -19,14 +19,11 @@ function App() {
     );
   }
 
-  // Handle all routes in Home, and mount the POC sandbox as a floating UI for testing
+  // Handle all routes in Home
   return (
-    <>
-      <Routes>
-        <Route path="/*" element={<Home />} />
-      </Routes>
-      <PocSandbox />
-    </>
+    <Routes>
+      <Route path="/*" element={<Home />} />
+    </Routes>
   );
 }
 

@@ -21,6 +21,7 @@ import MultiListBox from "./exercise_modal/MultiListBox";
 import { HiOutlineCalendarDays } from "react-icons/hi2";
 import DateTimeline from "../DateTimeline";
 import DatepickerModal from "../dateModal";
+import { getOrderedSessions } from "../../utils/nodeDateCalculator";
 
 const SessionEditor = () => {
   const [containers, setContainers] = useState([]);
@@ -50,6 +51,13 @@ const SessionEditor = () => {
     () => selectedSessionId ? sessions[selectedSessionId] : null,
     [sessions, selectedSessionId]
   );
+
+  const orderedSessions = useMemo(() => {
+    if (selectedInterventionId) {
+      return getOrderedSessions(sessions, selectedInterventionId);
+    }
+    return [];
+  }, [sessions, selectedInterventionId]);
 
   useEffect(() => {
     // Helper to save current local state back to store
@@ -306,10 +314,16 @@ const SessionEditor = () => {
 
   if (!selectedSession) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-zinc-500 space-y-4 bg-zinc-900">
-        <HiOutlineCalendarDays size={48} className="text-zinc-700" />
-        <p className="text-lg font-medium">No session selected</p>
-        <p className="text-sm">Select a session from the navigator to start editing</p>
+      <div className="flex flex-col items-center justify-center h-full text-zinc-500 space-y-4 bg-zinc-900 border-l border-zinc-800 shadow-inner">
+        <div className="p-6 rounded-full bg-zinc-800/50 border border-zinc-800 shadow-inner">
+          <HiOutlineCalendarDays size={48} className="text-zinc-600 animate-pulse" />
+        </div>
+        <div className="text-center space-y-1">
+          <p className="text-lg font-medium text-zinc-300">No session selected</p>
+          <p className="text-sm max-w-[200px] leading-relaxed">
+            Select a session from the timeline or navigator to begin editing exercises.
+          </p>
+        </div>
       </div>
     );
   }
@@ -345,8 +359,7 @@ const SessionEditor = () => {
 
       {/* Timeline Integration */}
       <DateTimeline 
-        sessions={sessions} 
-        interventionId={selectedInterventionId} 
+        items={orderedSessions} 
         selectedId={selectedSessionId}
         onNodeClick={(id) => setSelectedSessionId(id)}
       />

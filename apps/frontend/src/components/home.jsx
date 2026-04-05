@@ -11,6 +11,7 @@ import 'split-pane-react/esm/themes/default.css';
 import './splitpane.css';
 import { usePatientStore } from '../state/core/usePatientStore';
 import { useNavigationStore } from '../state/core/useNavigationStore';
+import { useInterventionStore } from '../state/core/useInterventionStore';
 import useUIStore from '../state/core/useUIStore';
 import NpForm from './npform';
 import OptionsModal from './OptionsModal';
@@ -48,9 +49,17 @@ function Home() {
   const { patients } = usePatientStore();
   const { patientId, setActiveTab } = useNavigationStore();
   const { setToaster } = useUIStore();
+  const { setSelectedInterventionId, setSelectedSessionId } = useInterventionStore();
   
   // Layout state
   const [activeSidebarContext, setActiveSidebarContext] = useState('patients');
+
+  useEffect(() => {
+    // Clear selection when patient changes to prevent stale data
+    setSelectedInterventionId(null);
+    setSelectedSessionId(null);
+  }, [patientId, setSelectedInterventionId, setSelectedSessionId]);
+
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isOptionsModalOpen, setIsOptionsModalOpen] = useState(false);
 

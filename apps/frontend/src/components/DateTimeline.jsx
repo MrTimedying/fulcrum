@@ -1,20 +1,11 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { format } from 'date-fns';
 import { standardizeDate } from '../utils/dateUtils';
-import { getOrderedNodes, getOrderedSessions } from '../utils/nodeDateCalculator';
 
 /**
- * Timeline visualization for ordered Session nodes or session objects
+ * Timeline visualization for ordered Session objects
  */
-const DateTimeline = ({ nodes, sessions, interventionId, selectedId, onNodeClick }) => {
-  // Support both legacy node array or new session map
-  const items = useMemo(() => {
-    if (sessions && interventionId) {
-      return getOrderedSessions(sessions, interventionId);
-    }
-    return getOrderedNodes(nodes);
-  }, [nodes, sessions, interventionId]);
-  
+const DateTimeline = ({ items = [], selectedId, onNodeClick }) => {
   if (!items.length) {
     return (
       <div className="p-4 text-zinc-600 text-center text-xs italic">
@@ -29,9 +20,9 @@ const DateTimeline = ({ nodes, sessions, interventionId, selectedId, onNodeClick
         <div className="flex items-center space-x-2">
           {items.map((item) => {
             const isSelected = item.id === selectedId;
-            const dateVal = item.date || item.data?.date;
-            const order = item.order || item.data?.order;
-            const name = item.name || item.data?.name || item.data?.label || `Session ${order}`;
+            const dateVal = item.date;
+            const order = item.order;
+            const name = item.name || `Session ${order}`;
             
             const hasDate = !!dateVal;
             const date = standardizeDate(dateVal);
@@ -66,12 +57,12 @@ const DateTimeline = ({ nodes, sessions, interventionId, selectedId, onNodeClick
             <React.Fragment key={`connector-${item.id}`}>
               <div className={`
                 h-0.5 flex-1 transition-colors duration-500
-                ${(item.date || item.data?.date) ? 'bg-indigo-500' : 'bg-zinc-700'}
+                ${item.date ? 'bg-indigo-500' : 'bg-zinc-700'}
               `} />
               {index < items.length - 1 && (
                 <div className={`
                   h-1.5 w-1.5 rounded-full transition-colors
-                  ${(item.date || item.data?.date) ? 'bg-indigo-400' : 'bg-zinc-600'}
+                  ${item.date ? 'bg-indigo-400' : 'bg-zinc-600'}
                 `} />
               )}
             </React.Fragment>

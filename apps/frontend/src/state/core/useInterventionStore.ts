@@ -74,6 +74,7 @@ export interface InterventionState {
   loadTemplate: (templateId: string) => void;
 
   bulkUpdateNodeData: (nodeId: string, property: string, value: any) => void;
+  clearInterventions: () => void;
 }
 
 export const useInterventionStore = create<InterventionState>()(
@@ -85,6 +86,14 @@ export const useInterventionStore = create<InterventionState>()(
       templates: [],
       selectedInterventionId: null,
       selectedSessionId: null,
+
+      clearInterventions: () => set({ 
+        interventions: {}, 
+        sessions: {}, 
+        exercises: [], 
+        selectedInterventionId: null, 
+        selectedSessionId: null 
+      }),
 
       setSelectedInterventionId: (id) => set({ selectedInterventionId: id }),
       setSelectedSessionId: (id) => set({ selectedSessionId: id }),

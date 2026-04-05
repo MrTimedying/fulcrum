@@ -8,7 +8,7 @@ function Profile() {
   return (
     <div
       id="wrapper"
-      className="flex flex-col h-full overflow-hidden bg-zinc-950"
+      className="flex flex-col h-full overflow-hidden bg-zinc-900"
     >
       <header className="px-6 py-4 border-b border-zinc-800 flex justify-between items-center">
         <div>

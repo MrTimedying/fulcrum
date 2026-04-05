@@ -28,8 +28,9 @@ const PatientsSidebar = ({ handleEditPatient }) => {
     const searchWords = inputValue.trim().toLowerCase().split(/\s+/);
 
     const containsWord = (word, value) => {
+      const details = value.details || {};
       const fullText =
-        `${value.name} ${value.surname} ${value.status}`.toLowerCase();
+        `${details.name || ""} ${details.surname || ""} ${details.status || ""}`.toLowerCase();
       return fullText.includes(word);
     };
 
@@ -85,7 +86,7 @@ const PatientsSidebar = ({ handleEditPatient }) => {
                 onClick={() => handleSelection(key)}
               >
                 <Link to={patientId === key ? "/" : `/patients/${key}`}>
-                  {value.name} {value.surname}
+                  {value.details?.name} {value.details?.surname}
                 </Link>
               </li>
             )
