@@ -1,0 +1,23 @@
+{
+  "name": "fulcrum-monorepo",
+  "version": "1.0.1",
+  "description": "Fulcrum monorepo with Tauri desktop app and React frontend",
+  "author": "Antonio Logarzo",
+  "license": "CC BY-NC-ND 4.0 Deed",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter=fulcrum-app dev",
+    "dev:tauri": "cd apps/tauri && pnpm tauri dev",
+    "tauri": "cd apps/tauri && pnpm tauri",
+    "tauri:dev": "cd apps/tauri && pnpm tauri dev",
+    "tauri:build": "cd apps/tauri && pnpm tauri build",
+    "build": "pnpm --filter=fulcrum-app build",
+    "build:tauri": "cd apps/tauri && pnpm tauri build",
+    "lint": "pnpm --filter=fulcrum-app lint",
+    "install:all": "pnpm install && pnpm --filter=fulcrum-app install && pnpm --filter=fulcrum-tauri install"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2",
+    "wait-on": "^8.0.3"
+  }
+}

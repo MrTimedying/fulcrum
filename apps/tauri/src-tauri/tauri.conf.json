@@ -1,0 +1,73 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Fulcrum",
+  "version": "1.0.1",
+  "identifier": "com.antoniologarzo.fulcrum",
+  "build": {
+    "frontendDist": "../../frontend/dist",
+    "devUrl": "http://localhost:5173",
+    "beforeBuildCommand": "cd ../frontend && pnpm build",
+    "beforeDevCommand": "cd ../frontend && pnpm dev"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "Fulcrum",
+        "width": 800,
+        "height": 600,
+        "minWidth": 800,
+        "minHeight": 600,
+        "resizable": true,
+        "fullscreen": false,
+        "decorations": false
+      }
+    ],
+    "security": {
+      "csp": null,
+      "capabilities": [
+        {
+          "identifier": "main-capability",
+          "description": "Capability for the main window",
+          "windows": ["main"],
+          "permissions": [
+            "core:window:allow-close",
+            "core:window:allow-minimize",
+            "core:window:allow-maximize",
+            "core:window:allow-toggle-maximize",
+            "core:window:allow-show",
+            "core:window:allow-hide",
+            "core:app:allow-version",
+            "core:app:allow-name",
+            "core:app:default"
+          ]
+        }
+      ]
+    },
+    "withGlobalTauri": true
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "publisher": "Antonio Logarzo",
+    "copyright": "Copyright © 2024 Antonio Logarzo. All rights reserved.",
+    "category": "Productivity",
+    "shortDescription": "Management software for movement science experts"
+  },
+  "plugins": {
+    "updater": {
+      "active": true,
+      "endpoints": [
+        "https://api.github.com/repos/MrTimedying/fulcrumproject/releases/latest"
+      ],
+      "dialog": false,
+      "pubkey": ""
+    }
+  }
+} 

@@ -1,0 +1,27 @@
+# Dependency directories
+node_modules/
+.pnpm-store/
+
+# React / Vite
+apps/frontend/dist/
+apps/frontend/.env
+apps/frontend/.env.local
+
+# Tauri / Rust
+apps/tauri/src-tauri/target/
+apps/tauri/src-tauri/gen/
+apps/tauri/rustup-init.exe
+
+# System Files
+.DS_Store
+Thumbs.db
+*.log
+
+# Editor settings
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
