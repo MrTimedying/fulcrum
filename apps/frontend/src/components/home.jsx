@@ -3,7 +3,6 @@ import { Routes, Route, useLocation } from 'react-router-dom';
 import MainBody from './mainbody';
 import Sidebar from './sidebar';
 import IconBar from './IconBar';
-import Composer from './editor/composer';
 import CustomFrame from './frame/customFrame';
 import { Toaster } from './toaster';
 import UpdateManager from './UpdateManager';
@@ -11,6 +10,7 @@ import SplitPane, { Pane } from 'split-pane-react';
 import 'split-pane-react/esm/themes/default.css';
 import './splitpane.css';
 import useFlowStore from '../state/flowState';
+import useTransientStore from '../state/transientState';
 import NpForm from './npform';
 import OptionsModal from './OptionsModal';
 
@@ -44,7 +44,8 @@ function Home() {
   const [sizes, setSizes] = useState(['250px', 'auto']);
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef(null);
-  const { patients, patientId } = useFlowStore();
+  const { patients, patientId, setActiveTab } = useFlowStore();
+  const { setToaster } = useTransientStore();
   
   // Layout state
   const [activeSidebarContext, setActiveSidebarContext] = useState('patients');
@@ -84,8 +85,28 @@ function Home() {
     if (newContext === activeSidebarContext) {
       setIsSidebarCollapsed(!isSidebarCollapsed);
     } else {
+      // If switching to interventions, we need a patient selected
+      if (newContext === 'interventions' && !patientId) {
+        setToaster({
+          type: "info",
+          message: "Please select a patient first to manage their interventions.",
+          show: true,
+        });
+        // We still switch context so they can see the tree view (which will show its empty state)
+      }
+
       setActiveSidebarContext(newContext);
       setIsSidebarCollapsed(false);
+
+      // Sync active tab with context
+      if (newContext === 'patients') {
+        setActiveTab('Profile');
+      } else if (newContext === 'interventions') {
+        // Only switch to Editor tab if a patient is selected
+        if (patientId) {
+          setActiveTab('Editor');
+        }
+      }
     }
   };
 
@@ -114,7 +135,9 @@ function Home() {
       <CustomFrame>
         <div className="App" style={containerStyle}>
           <UpdateManager />
-          <Composer />
+          <div className="flex items-center justify-center h-full text-zinc-500">
+            Legacy Composer has been removed.
+          </div>
         </div>
       </CustomFrame>
     );

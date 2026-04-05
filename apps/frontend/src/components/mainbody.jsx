@@ -11,7 +11,6 @@ import { GiNotebook } from "react-icons/gi";
 import { GoProjectTemplate } from "react-icons/go";
 import { IoCalendarOutline } from "react-icons/io5";
 import SessionEditor from "./editor/SessionEditor";
-import { Composer } from "./editor/composer";
 import useTransientStore from "../state/transientState";
 import InterventionModal from "./interventionModal";
 import TemplateModal from "./templateModal";
@@ -56,7 +55,6 @@ function getAllDescendants(parentNodeId, nodes, edges) {
 function MainBody({ handleEditPatient }) {
   const { patientId, activeTab, setActiveTab, nodes, setNodes, edges, patients } = useFlowStore();
   const { setToaster } = useTransientStore();
-  const [isComposerOpen, setIsComposerOpen] = useState(false);
   const [isInterventionModalOpen, setIsInterventionModalOpen] = useState(false);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
   const [isDatepickerModalOpen, setIsDatepickerModalOpen] = useState(false);
@@ -194,31 +192,6 @@ function MainBody({ handleEditPatient }) {
       return;
     }
 
-    if (id === "composer") {
-      if (!nodeSelectedInEditor) {
-        setToaster({
-          type: "error",
-          message: "No node is selected. Please select a node to edit.",
-          show: true,
-        });
-        return;
-      }
-      if (
-        nodeSelectedInEditor.type === "bodyStructure" ||
-        nodeSelectedInEditor.type === "activities" ||
-        nodeSelectedInEditor.type === "participation"
-      ) {
-        setToaster({
-          message: "These are just placeholders. You can't edit them.",
-          type: "error",
-          show: true,
-        });
-        return;
-      }
-      setIsComposerOpen(true);
-      return;
-    }  
-
     if (id === "calendarMenu") {
       if (nodeSelectedInEditor.type !== 'session' || activeTab !== "Editor") {
         setToaster({
@@ -242,13 +215,6 @@ function MainBody({ handleEditPatient }) {
   function UtilityMenu() {
     return (
       <div className="flex flex-col ">
-        <button
-          id="composer"
-          className=" hover:bg-zinc-700 text-slate-300 flex justify-start gap-2 font-sans text-xs m-2 px-1 rounded-md cursor-pointer  transition-colors duration-200"
-          onClick={(e) => handleModalOpening(e.currentTarget.id)}
-        >
-          <GiNotebook className="text-lg font-extralight" /> Data
-        </button>
         <button
           id="interventionMenu"
           className=" hover:bg-zinc-700 text-slate-300 flex justify-start gap-2 font-sans text-xs m-2 px-1 rounded-md cursor-pointer  transition-colors duration-200"
@@ -275,54 +241,10 @@ function MainBody({ handleEditPatient }) {
   }
 
   function TabStructure() {
-    const handleActiveTab = (tab) => {
-      setActiveTab(tab);
-    };
-
-    const initialIndex = activeTab === "Profile" ? 0 : 1;
-
     return (
-      <Tab.Group
-        as="div"
-        className="flex flex-col h-full w-full"
-        defaultIndex={initialIndex}>
-        <div className="flex flex-row w-full bg-zinc-900">
-          <div className="h-8 flex flex-row items-center place-self-center">
-            <Tab.List className="flex mx-auto h-auto text-xl font-extralight">
-              <Tab as={Fragment}>
-                {({ selected }) => (
-                  <button
-                    onClick={() => handleActiveTab("Profile")}
-                    className={`my-2  ${
-                      selected
-                        ? " rounded-none bg-zinc-800 text-gray-300 hover:text-white p-1 cursor-pointer focus:outline-none focus:text-white"
-                        : " text-gray-300 text-opacity-30 hover:text-white p-1 cursor-pointer focus:outline-none focus:text-white transition duration-300 "
-                    }`}
-                  >
-                    # Profile
-                  </button>
-                )}
-              </Tab>
-              <Tab as={Fragment}>
-                {({ selected }) => (
-                  <button
-                    onClick={() => handleActiveTab("Editor")}
-                    className={`my-2  ${
-                      selected
-                        ? " rounded-none bg-zinc-800 text-gray-300 hover:text-white p-1 cursor-pointer focus:outline-none focus:text-white "
-                        : " text-gray-300 text-opacity-30 hover:text-white px-1 cursor-pointer focus:outline-none focus:text-white transition duration-300 "
-                    }`}
-                  >
-                    # Editor
-                  </button>
-                )}
-              </Tab>
-            </Tab.List>
-          </div>
-        </div>
-
-        <Tab.Panels className="h-full overflow-y-auto">
-          <Tab.Panel key="icfProfile" className="h-full">
+      <div className="flex flex-col h-full w-full">
+        {activeTab === "Profile" ? (
+          <div key="icfProfile" className="h-full">
             <ReactFlowProvider>
               <Profile 
                 isInspectorOpen={isInspectorOpen} 
@@ -334,12 +256,13 @@ function MainBody({ handleEditPatient }) {
                 onClose={() => setIsICFSetsModalOpen(false)}
               />
             </ReactFlowProvider>
-          </Tab.Panel>
-          <Tab.Panel key="interventionEditor" className="h-full">
+          </div>
+        ) : (
+          <div key="interventionEditor" className="h-full">
             <SessionEditor />
-          </Tab.Panel>
-        </Tab.Panels>
-      </Tab.Group>
+          </div>
+        )}
+      </div>
     );
   }
 
@@ -382,9 +305,6 @@ function MainBody({ handleEditPatient }) {
               />
           </div>
 
-          <Composer
-            isComposerOpen={isComposerOpen}
-            setIsComposerOpen={setIsComposerOpen} />
           <InterventionModal
             isOpen={isInterventionModalOpen}
             onClose={() => setIsInterventionModalOpen(false)}  />
