@@ -186,6 +186,9 @@ const useFlowStore = create(
       trailingActiveTab: "",
       patients: {},
       interventions: {},
+      sessions: {},
+      selectedInterventionId: null,
+      selectedSessionId: null,
       editorStates: {},
       profileStates: {},
       templates: [],
@@ -580,6 +583,80 @@ const useFlowStore = create(
       setSelectedNodeId: (nodeId) =>
         set((state) => ({ ...state, selectedNodeId: nodeId })),
 
+      setSelectedSessionId: (id) => set({ selectedSessionId: id }),
+      setSelectedInterventionId: (id) => set({ selectedInterventionId: id }),
+
+      addIntervention: (patientId, name) => {
+        const id = uuidv4();
+        set((state) => ({
+          interventions: {
+            ...state.interventions,
+            [id]: { id, name, patientId }
+          }
+        }));
+        return id;
+      },
+
+      updateIntervention: (id, updates) => {
+        set((state) => ({
+          interventions: {
+            ...state.interventions,
+            [id]: { ...state.interventions[id], ...updates }
+          }
+        }));
+      },
+
+      addSession: (interventionId, sessionData) => {
+        const id = uuidv4();
+        const interventionSessions = Object.values(get().sessions).filter(s => s.interventionId === interventionId);
+        const sessionNumber = interventionSessions.length + 1;
+        
+        set((state) => ({
+          sessions: {
+            ...state.sessions,
+            [id]: { 
+              id, 
+              interventionId, 
+              name: `Session ${sessionNumber}`, 
+              date: new Date().toISOString(), 
+              tags: { Phase: "Phase 1", Micro: "Micro 1" }, 
+              exercises: {},
+              order: sessionNumber,
+              ...sessionData 
+            }
+          }
+        }));
+        return id;
+      },
+
+      updateSession: (id, updates) => {
+        set((state) => ({
+          sessions: {
+            ...state.sessions,
+            [id]: { ...state.sessions[id], ...updates }
+          }
+        }));
+      },
+
+      updateMultipleSessions: (updatesMap) => {
+        set((state) => {
+          const newSessions = { ...state.sessions };
+          Object.entries(updatesMap).forEach(([id, updates]) => {
+            if (newSessions[id]) {
+              newSessions[id] = { ...newSessions[id], ...updates };
+            }
+          });
+          return { sessions: newSessions };
+        });
+      },
+
+      deleteSession: (id) => {
+        set((state) => {
+          const { [id]: _, ...rest } = state.sessions;
+          return { sessions: rest, selectedSessionId: state.selectedSessionId === id ? null : state.selectedSessionId };
+        });
+      },
+
       setColumnsLayout: (layout) =>
         set((state) => ({ ...state, columnsLayout: layout })),
 
@@ -589,9 +666,122 @@ const useFlowStore = create(
         set((state) => ({
           patients: {
             ...state.patients,
-            [patientId]: { ...state.patients[patientId], ...patientDetails },
+            [patientId]: { 
+              details: { ...patientDetails },
+              icf: {
+                bodyStructure: [],
+                activities: [],
+                participation: [],
+                environmentalFactors: [],
+                personalFactors: [],
+                ...(state.patients[patientId]?.icf || {})
+              },
+              ...state.patients[patientId]
+            },
           },
         }));
+      },
+
+      updateIcfRecord: (patientId, dimension, recordId, updates) => {
+        set((state) => {
+          const patient = state.patients[patientId];
+          if (!patient || !patient.icf[dimension]) return state;
+
+          const updatedDimension = patient.icf[dimension].map((record) =>
+            record.id === recordId ? { ...record, ...updates } : record
+          );
+
+          return {
+            patients: {
+              ...state.patients,
+              [patientId]: {
+                ...patient,
+                icf: {
+                  ...patient.icf,
+                  [dimension]: updatedDimension,
+                },
+              },
+            },
+          };
+        });
+      },
+
+      addIcfRecord: (patientId, dimension, record) => {
+        set((state) => {
+          const patient = state.patients[patientId];
+          if (!patient) return state;
+
+          const newRecord = { id: uuidv4(), ...record };
+          const dimensionList = patient.icf[dimension] || [];
+
+          return {
+            patients: {
+              ...state.patients,
+              [patientId]: {
+                ...patient,
+                icf: {
+                  ...patient.icf,
+                  [dimension]: [...dimensionList, newRecord],
+                },
+              },
+            },
+          };
+        });
+      },
+
+      deleteIcfRecord: (patientId, dimension, recordId) => {
+        set((state) => {
+          const patient = state.patients[patientId];
+          if (!patient || !patient.icf[dimension]) return state;
+
+          return {
+            patients: {
+              ...state.patients,
+              [patientId]: {
+                ...patient,
+                icf: {
+                  ...patient.icf,
+                  [dimension]: patient.icf[dimension].filter((r) => r.id !== recordId),
+                },
+              },
+            },
+          };
+        });
+      },
+
+      moveIcfRecord: (patientId, sourceDimension, targetDimension, recordId, newIndex) => {
+        set((state) => {
+          const patient = state.patients[patientId];
+          if (!patient) return state;
+
+          let recordToMove;
+          const sourceList = [...patient.icf[sourceDimension]];
+          
+          const recordIndex = sourceList.findIndex(r => r.id === recordId);
+          if (recordIndex === -1) return state;
+          
+          [recordToMove] = sourceList.splice(recordIndex, 1);
+
+          const targetList = sourceDimension === targetDimension 
+            ? sourceList 
+            : [...(patient.icf[targetDimension] || [])];
+          
+          targetList.splice(newIndex, 0, recordToMove);
+
+          return {
+            patients: {
+              ...state.patients,
+              [patientId]: {
+                ...patient,
+                icf: {
+                  ...patient.icf,
+                  [sourceDimension]: sourceList,
+                  [targetDimension]: targetList,
+                },
+              },
+            },
+          };
+        });
       },
 
       removePatient: (patientId) => {
@@ -601,77 +791,19 @@ const useFlowStore = create(
         });
       },
 
-      // Add an intervention for a patient
-      addIntervention: (patientID, interventionData) => {
-        set((state) => {
-          const newState = _.cloneDeep(state);
-          const patientInterventions = _.get(
-            newState,
-            `interventions.${patientID}`,
-            []
-          );
-          _.set(newState, `interventions.${patientID}`, [
-            ...patientInterventions,
-            interventionData,
-          ]);
-          return newState;
-        });
-      },
-
-      loadIntervention: (patientID, interventionID) => {
-        const { interventions } = get();
-
-        const patientInterventions = _.get(interventions, patientID, []);
-        const intervention = patientInterventions.find(
-          (item) => item.id === interventionID
-        );
-
-        if (!intervention) {
-          console.error(
-            `Intervention with ID ${interventionID} not found for patient ${patientID}`
-          );
-          return;
-        }
-
-        set({
-          nodes: intervention.nodes || [],
-          edges: intervention.edges || [],
-        });
-
-        console.log(
-          `Intervention ${interventionID} loaded for patient ${patientID}`
-        );
-      },
-
-      // Remove an intervention for a patient
-      removeIntervention: (patientID, interventionID) => {
-        set((state) => {
-          const newState = _.cloneDeep(state);
-          const patientInterventions = _.get(
-            newState,
-            `interventions.${patientID}`,
-            []
-          );
-          const updatedInterventions = patientInterventions.filter(
-            (intervention) => intervention.interventionID !== interventionID
-          );
-          _.set(newState, `interventions.${patientID}`, updatedInterventions);
-          return newState;
-        });
-      },
-
-      // Update a specific field in the selected node
-      updateNodeData: (field, value) => {
+      // Update a specific field in a node (defaults to selected)
+      updateNodeData: (field, value, nodeId = null) => {
         const { nodes } = get();
 
-        // Prepare the updated nodes array by mapping over the current nodes
-        const updatedNodes = nodes.map((node) =>
-          node.selected
+        // Prepare the updated nodes array
+        const updatedNodes = nodes.map((node) => {
+          const isTarget = nodeId ? node.id === nodeId : node.selected;
+          return isTarget
             ? { ...node, data: { ...node.data, [field]: value } }
-            : node
-        );
+            : node;
+        });
 
-        // Directly set the updated nodes, mimicking loadIntervention's approach
+        // Directly set the updated nodes
         set({
           nodes: updatedNodes,
         });
@@ -1586,11 +1718,13 @@ const useFlowStore = create(
       partialize: (state) => ({
         patients: state.patients,
         interventions: state.interventions,
+        sessions: state.sessions,
+        selectedInterventionId: state.selectedInterventionId,
+        selectedSessionId: state.selectedSessionId,
         editorStates: state.editorStates,
         profileStates: state.profileStates,
         templates: state.templates,
         exercises: state.exercises,
-
       }),
     }
   )

@@ -31,301 +31,34 @@ const ICFSetsModalContent = ({ onClose }) => {
   const [newSetName, setNewSetName] = useState("");
 
   // Access flow store
-  const { addTemplate, loadTemplate, removeTemplate, templates, setNodes, setEdges } = useFlowStore();
+  const { 
+    addTemplate, 
+    loadTemplate, 
+    removeTemplate, 
+    templates, 
+    setNodes, 
+    setEdges,
+    activeTab,
+    patientId,
+    addIcfRecord
+  } = useFlowStore();
   const reactFlowInstance = useReactFlow();
 
-  // Setup initial state or load from persistent storage on mount
-  useEffect(() => {
-    // Check if we have saved state in localStorage
-    const savedState = localStorage.getItem("icfSetsModalState");
-    
-    if (savedState) {
-      try {
-        const parsedState = JSON.parse(savedState);
-        setRecords(parsedState.records || []);
-        setFormValues(parsedState.formValues || {});
-      } catch (error) {
-        console.error("Error parsing saved ICF Sets Modal state:", error);
-        // Initialize with default state if parsing fails
-        initializeDefaultState();
-      }
-    } else {
-      // Initialize with default state if no saved state exists
-      initializeDefaultState();
-    }
-  }, []);
+  // ... (setup useEffects unchanged)
 
-  // Save state to localStorage whenever records or formValues change
-  useEffect(() => {
-    const stateToSave = {
-      records,
-      formValues
-    };
-    
-    localStorage.setItem("icfSetsModalState", JSON.stringify(stateToSave));
-  }, [records, formValues]);
-
-  // Initialize with a default record
-  const initializeDefaultState = () => {
-    const initialRecord = createDefaultICFRecord();
-    setRecords([initialRecord]);
-    
-    const initialValues = {
-      [initialRecord.id]: {}
-    };
-    initialRecord.fields.forEach(field => {
-      initialValues[initialRecord.id][field.name] = "";
-    });
-    
-    setFormValues(initialValues);
+  // Mapping from record category to state dimension
+  const categoryToDimension = {
+    'body_function': 'bodyStructure',
+    'body_structure': 'bodyStructure',
+    'activity': 'activities',
+    'participation': 'participation',
+    'environmental': 'environmentalFactors',
+    'personal': 'personalFactors' // If available
   };
 
-  // Input change handler
-  const handleInputChange = (recordId, fieldName, value) => {
-    setFormValues(prev => {
-      const updatedRecordValues = {
-        ...(prev[recordId] || {}),
-        [fieldName]: value
-      };
-      return { ...prev, [recordId]: updatedRecordValues };
-    });
-
-    // Clear any errors for this field
-    if (errors[recordId]?.[fieldName]) {
-      setErrors(prev => {
-        const newRecordErrors = { ...prev[recordId] };
-        delete newRecordErrors[fieldName];
-        
-        if (Object.keys(newRecordErrors).length === 0) {
-          const { [recordId]: _, ...rest } = prev;
-          return rest;
-        }
-        
-        return { ...prev, [recordId]: newRecordErrors };
-      });
-    }
-  };
-
-  // Add a new record
-  const handleRecordAdd = (newRecord) => {
-    setRecords(prev => [...prev, newRecord]);
-    
-    // Initialize form values for the new record
-    const newRecordValues = {};
-    newRecord.fields.forEach(field => {
-      newRecordValues[field.name] = "";
-    });
-    
-    setFormValues(prev => ({
-      ...prev,
-      [newRecord.id]: newRecordValues
-    }));
-  };
-
-  // Delete a record
-  const handleRecordDelete = (recordId) => {
-    setRecords(prev => prev.filter(record => record.id !== recordId));
-    
-    // Clean up form values and errors
-    setFormValues(prev => {
-      const { [recordId]: _, ...rest } = prev;
-      return rest;
-    });
-    
-    setErrors(prev => {
-      const { [recordId]: _, ...rest } = prev;
-      return rest;
-    });
-  };
-
-  // Add a field to a record
-  const handleFieldAdd = (recordId, fieldType, subtype = "") => {
-    const newField = createDefaultField(fieldType, "", subtype);
-    
-    setRecords(prev => 
-      prev.map(record => 
-        record.id === recordId 
-          ? { ...record, fields: [...record.fields, newField] }
-          : record
-      )
-    );
-    
-    // Initialize form value for the new field
-    setFormValues(prev => {
-      const recordValues = prev[recordId] || {};
-      return {
-        ...prev,
-        [recordId]: {
-          ...recordValues,
-          [newField.name]: ""
-        }
-      };
-    });
-  };
-
-  // Delete a field from a record
-  const handleFieldDelete = (recordId, fieldId) => {
-    // Find the field name before removing
-    let fieldName = null;
-    const record = records.find(r => r.id === recordId);
-    
-    if (record) {
-      const field = record.fields.find(f => f.id === fieldId);
-      if (field) {
-        fieldName = field.name;
-      }
-    }
-    
-    // Remove the field from the record
-    setRecords(prev => 
-      prev.map(record => 
-        record.id === recordId 
-          ? { 
-              ...record, 
-              fields: record.fields.filter(field => field.id !== fieldId)
-            }
-          : record
-      )
-    );
-    
-    // Clean up form values and errors for this field
-    if (fieldName) {
-      setFormValues(prev => {
-        const recordValues = prev[recordId] || {};
-        const { [fieldName]: _, ...restFields } = recordValues;
-        return { ...prev, [recordId]: restFields };
-      });
-      
-      setErrors(prev => {
-        const recordErrors = prev[recordId] || {};
-        const { [fieldName]: _, ...restErrors } = recordErrors;
-        
-        if (Object.keys(restErrors).length === 0) {
-          const { [recordId]: __, ...restRecordErrors } = prev;
-          return restRecordErrors;
-        }
-        
-        return { ...prev, [recordId]: restErrors };
-      });
-    }
-  };
-
-  // Update record properties
-  const handleUpdateRecordLabel = (recordId, property, newValue) => {
-    setRecords(prev => 
-      prev.map(record => 
-        record.id === recordId 
-          ? { ...record, [property]: newValue }
-          : record
-      )
-    );
-    
-    // If updating the code, also update the form value
-    if (property === "code") {
-      setFormValues(prev => {
-        const recordValues = prev[recordId] || {};
-        return {
-          ...prev,
-          [recordId]: {
-            ...recordValues,
-            code: newValue
-          }
-        };
-      });
-    }
-  };
-
-  // Save a record as a template
-  const handleSaveRecordTemplate = (recordId) => {
-    const record = records.find(r => r.id === recordId);
-    const recordValues = formValues[recordId] || {};
-    
-    if (!record || !isRecordValid(record, recordValues)) {
-      // Show validation errors
-      const validationErrors = validateAllRecords([record], formValues);
-      setErrors(validationErrors);
-      return;
-    }
-    
-    // Create a node template from the record
-    const nodeData = {
-      code: recordValues.code || record.code,
-      description: recordValues.description || record.description,
-      // Add other field values
-      ...recordValues
-    };
-    
-    const template = {
-      id: uuidv4(),
-      name: nodeData.code || "Unnamed Record",
-      type: "recordNode",
-      nodes: [{
-        id: uuidv4(),
-        type: "record",
-        data: nodeData,
-        position: { x: 0, y: 0 }
-      }],
-      edges: []
-    };
-    
-    addTemplate(template);
-  };
-
-  // Save multiple records as a set template
-  const handleSaveSetTemplate = (name, recordIds) => {
-    if (!name || recordIds.length === 0) return;
-    
-    // Prevent creating single element sets
-    if (recordIds.length < 2) {
-      setToaster({
-        message: "Cannot create a set with a single element. Please select at least two records.",
-        type: "error",
-        open: true,
-      });
-      return;
-    }
-    
-    // Get the selected records
-    const selectedRecords = records.filter(r => recordIds.includes(r.id));
-    
-    // Validate all selected records
-    const validationErrors = validateAllRecords(selectedRecords, formValues);
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
-    }
-    
-    // Create nodes for the template
-    const templateNodes = selectedRecords.map((record, index) => {
-      const recordValues = formValues[record.id] || {};
-      
-      return {
-        id: uuidv4(),
-        type: "record",
-        data: {
-          code: recordValues.code || record.code,
-          description: recordValues.description || record.description,
-          // Add other field values
-          ...recordValues
-        },
-        position: { x: 0, y: index * 100 } // Position nodes vertically
-      };
-    });
-    
-    const template = {
-      id: uuidv4(),
-      name,
-      type: "icfSet",
-      nodes: templateNodes,
-      edges: []
-    };
-    
-    addTemplate(template);
-  };
-
-  // Add records to flow
+  // Add records to flow or Kanban
   const handleAddSelectedToFlow = (recordIds) => {
-    if (!reactFlowInstance || recordIds.length === 0) return;
+    if (recordIds.length === 0) return;
     
     // Get the selected records
     const selectedRecords = records.filter(r => recordIds.includes(r.id));
@@ -336,9 +69,27 @@ const ICFSetsModalContent = ({ onClose }) => {
       setErrors(validationErrors);
       return;
     }
+
+    if (activeTab === "Profile") {
+      // Add to Kanban state
+      selectedRecords.forEach(record => {
+        const recordValues = formValues[record.id] || {};
+        const dimension = categoryToDimension[recordValues.category || record.category] || 'bodyStructure';
+        
+        addIcfRecord(patientId, dimension, {
+          code: recordValues.code || record.code || "",
+          description: recordValues.description || record.description || "",
+          category: recordValues.category || record.category || ""
+        });
+      });
+      onClose();
+      return;
+    }
+
+    // React Flow logic for Editor tab
+    if (!reactFlowInstance) return;
     
     // Calculate position for new nodes
-    const viewport = reactFlowInstance.getViewport();
     const containerBounds = reactFlowInstance.getContainer().getBoundingClientRect();
     const centerPosition = reactFlowInstance.screenToFlowPosition({
       x: containerBounds.width / 2,

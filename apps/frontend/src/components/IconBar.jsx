@@ -3,7 +3,7 @@ import {
   HiUsers, 
   HiMagnifyingGlass,
   HiOutlineCircleStack,
-  HiOutlineCog6Tooth 
+  HiOutlineCog6Tooth
 } from "react-icons/hi2";
 
 const IconBar = ({ activeContext, onContextChange, isSidebarCollapsed, onSettingsClick }) => {

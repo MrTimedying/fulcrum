@@ -1,49 +1,59 @@
 import React, { useMemo } from 'react';
 import { format } from 'date-fns';
-import { formatDateForPicker, standardizeDate } from '../utils/dateUtils';
-import { getOrderedNodes, isSessionNode } from '../utils/nodeDateCalculator';
+import { standardizeDate } from '../utils/dateUtils';
+import { getOrderedNodes, getOrderedSessions } from '../utils/nodeDateCalculator';
 
 /**
- * Timeline visualization for ordered Session nodes with dates
+ * Timeline visualization for ordered Session nodes or session objects
  */
-const DateTimeline = ({ nodes, selectedNodeId, onNodeClick }) => {
-  // Filter and sort Session nodes with order - memoized to prevent recalculation
-  const orderedNodes = useMemo(() => getOrderedNodes(nodes), [nodes]);
+const DateTimeline = ({ nodes, sessions, interventionId, selectedId, onNodeClick }) => {
+  // Support both legacy node array or new session map
+  const items = useMemo(() => {
+    if (sessions && interventionId) {
+      return getOrderedSessions(sessions, interventionId);
+    }
+    return getOrderedNodes(nodes);
+  }, [nodes, sessions, interventionId]);
   
-  if (!orderedNodes.length) {
+  if (!items.length) {
     return (
-      <div className="p-4 text-gray-400 text-center">
-        No ordered Session nodes found. Add order numbers to Session nodes to visualize timeline.
+      <div className="p-4 text-zinc-600 text-center text-xs italic">
+        No ordered sessions found.
       </div>
     );
   }
 
   return (
-    <div className="w-full overflow-x-auto overflow-y-hidden">
-      <div className="flex flex-col space-y-2 p-2 min-w-max">
-        <div className="text-xs text-gray-400 uppercase mb-1">Timeline (Order-Based)</div>
+    <div className="w-full overflow-x-auto overflow-y-hidden no-scrollbar bg-zinc-900/50 border-b border-zinc-800">
+      <div className="flex flex-col space-y-2 p-3 min-w-max">
         <div className="flex items-center space-x-2">
-          {orderedNodes.map((node) => {
-            const isSelected = node.id === selectedNodeId;
-            const hasDate = !!node.data?.date;
-            const date = standardizeDate(node.data?.date);
+          {items.map((item) => {
+            const isSelected = item.id === selectedId;
+            const dateVal = item.date || item.data?.date;
+            const order = item.order || item.data?.order;
+            const name = item.name || item.data?.name || item.data?.label || `Session ${order}`;
+            
+            const hasDate = !!dateVal;
+            const date = standardizeDate(dateVal);
             
             return (
               <div 
-                key={node.id} 
+                key={item.id} 
                 className={`
-                  flex flex-col items-center p-2 rounded cursor-pointer transition 
-                  ${isSelected ? 'bg-blue-600 text-white' : 'bg-zinc-800 hover:bg-zinc-700 text-gray-200'}
-                  ${!hasDate ? 'opacity-70' : ''}
+                  flex flex-col items-center p-2 rounded cursor-pointer transition-all border
+                  ${isSelected 
+                    ? 'bg-indigo-600/20 border-indigo-500 text-indigo-100' 
+                    : 'bg-zinc-800 border-zinc-700 hover:bg-zinc-700 text-zinc-400'}
+                  ${!hasDate ? 'opacity-50 border-dashed' : ''}
                 `}
-                onClick={() => onNodeClick(node.id)}
+                onClick={() => onNodeClick(item.id)}
               >
-                <div className="text-xs font-bold">#{node.data.order}</div>
-                <div className="text-xs">
-                  {hasDate ? format(date, 'MMM d') : '–'}
+                <div className="text-[10px] font-bold uppercase tracking-tighter mb-0.5">#{order}</div>
+                <div className="text-[9px] font-mono mb-1">
+                  {hasDate ? format(date, 'MMM d') : 'NO DATE'}
                 </div>
-                <div className="text-xs truncate max-w-[70px]">
-                  {node.data.name || node.data.label || `Session ${node.data.order}`}
+                <div className="text-[10px] truncate max-w-[80px] font-medium">
+                  {name}
                 </div>
               </div>
             );
@@ -51,15 +61,18 @@ const DateTimeline = ({ nodes, selectedNodeId, onNodeClick }) => {
         </div>
         
         {/* Timeline connector */}
-        <div className="flex items-center space-x-1 pl-3 pr-3">
-          {orderedNodes.map((node, index) => (
-            <React.Fragment key={`connector-${node.id}`}>
+        <div className="flex items-center px-4">
+          {items.map((item, index) => (
+            <React.Fragment key={`connector-${item.id}`}>
               <div className={`
-                h-1 flex-1 
-                ${node.data?.date ? 'bg-blue-500' : 'bg-zinc-700'}
+                h-0.5 flex-1 transition-colors duration-500
+                ${(item.date || item.data?.date) ? 'bg-indigo-500' : 'bg-zinc-700'}
               `} />
-              {index < orderedNodes.length - 1 && (
-                <div className="h-2 w-2 rounded-full bg-zinc-600" />
+              {index < items.length - 1 && (
+                <div className={`
+                  h-1.5 w-1.5 rounded-full transition-colors
+                  ${(item.date || item.data?.date) ? 'bg-indigo-400' : 'bg-zinc-600'}
+                `} />
               )}
             </React.Fragment>
           ))}

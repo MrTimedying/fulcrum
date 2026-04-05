@@ -1,28 +1,39 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { format, addDays } from 'date-fns';
 import { formatDateForPicker, standardizeDate } from '../utils/dateUtils';
-import { getOrderedNodes, validateDateOrder, isSessionNode } from '../utils/nodeDateCalculator';
+import { 
+  getOrderedNodes, 
+  validateDateOrder, 
+  getOrderedSessions, 
+  validateSessionDateOrder 
+} from '../utils/nodeDateCalculator';
 
 /**
- * Component for assigning dates to multiple nodes at once
+ * Component for assigning dates to multiple nodes or session objects at once
  */
-const BulkDateAssigner = ({ nodes, onAssign, onCancel }) => {
+const BulkDateAssigner = ({ nodes, sessions, interventionId, onAssign, onCancel }) => {
   const [startDate, setStartDate] = useState('');
   const [interval, setInterval] = useState(1);
   const [skipWeekends, setSkipWeekends] = useState(true);
-  const [selectedNodes, setSelectedNodes] = useState([]);
+  const [selectedIds, setSelectedIds] = useState([]);
   const [preview, setPreview] = useState([]);
   const [validations, setValidations] = useState([]);
   
-  // Get all ordered Session nodes - memoized to prevent recalculation on every render
-  const orderedNodes = useMemo(() => getOrderedNodes(nodes), [nodes]);
+  // Support both modes
+  const isSessionMode = !!(sessions && interventionId);
+
+  // Get all ordered items
+  const orderedItems = useMemo(() => {
+    if (isSessionMode) return getOrderedSessions(sessions, interventionId);
+    return getOrderedNodes(nodes);
+  }, [nodes, sessions, interventionId, isSessionMode]);
   
-  // Initialize with all ordered nodes selected - only run once when orderedNodes changes
+  // Initialize with all ordered items selected
   useEffect(() => {
-    setSelectedNodes(orderedNodes.map(node => node.id));
-  }, [orderedNodes]);
+    setSelectedIds(orderedItems.map(item => item.id));
+  }, [orderedItems]);
   
-  // Generate preview whenever parameters change - memoized to prevent infinite loops
+  // Generate preview whenever parameters change
   const generatePreview = useCallback(() => {
     if (!startDate) {
       return { newPreview: [], newValidations: [] };
@@ -31,43 +42,41 @@ const BulkDateAssigner = ({ nodes, onAssign, onCancel }) => {
     const start = standardizeDate(startDate);
     if (!start) return { newPreview: [], newValidations: [] };
     
-    const nodesToAssign = orderedNodes.filter(node => 
-      selectedNodes.includes(node.id)
-    ).sort((a, b) => a.data.order - b.data.order);
+    const itemsToAssign = orderedItems
+      .filter(item => selectedIds.includes(item.id))
+      .sort((a, b) => (a.order || a.data?.order) - (b.order || b.data?.order));
     
     const newPreview = [];
     const newValidations = [];
     
     let currentDate = new Date(start);
     
-    nodesToAssign.forEach(node => {
-      // Assign date to this node
-      const dateForNode = new Date(currentDate);
-      
-      // Generate a user-friendly node name
-      const sessionNumber = node.data.order || 'Unknown';
-      const nodeName = node.data.name || node.data.label || `Session ${sessionNumber}`;
+    itemsToAssign.forEach(item => {
+      const dateForItem = new Date(currentDate);
+      const order = item.order || item.data?.order || 'Unknown';
+      const name = item.name || item.data?.name || item.data?.label || `Session ${order}`;
       
       newPreview.push({
-        nodeId: node.id,
-        order: node.data.order,
-        nodeName: nodeName,
-        date: dateForNode,
-        formattedDate: formatDateForPicker(dateForNode)
+        id: item.id,
+        order: order,
+        name: name,
+        date: dateForItem,
+        formattedDate: formatDateForPicker(dateForItem)
       });
       
       // Validate against order
-      const validation = validateDateOrder(node, dateForNode, nodes);
+      const validation = isSessionMode 
+        ? validateSessionDateOrder(item, dateForItem, sessions)
+        : validateDateOrder(item, dateForItem, nodes);
+
       newValidations.push({
-        nodeId: node.id,
+        id: item.id,
         ...validation
       });
       
       // Move to next date based on interval
       for (let i = 0; i < interval; i++) {
         currentDate = addDays(currentDate, 1);
-        
-        // Skip weekends if enabled
         if (skipWeekends) {
           const day = currentDate.getDay();
           if (day === 0) currentDate = addDays(currentDate, 1); // Sunday
@@ -77,7 +86,7 @@ const BulkDateAssigner = ({ nodes, onAssign, onCancel }) => {
     });
     
     return { newPreview, newValidations };
-  }, [startDate, interval, skipWeekends, selectedNodes, orderedNodes, nodes]);
+  }, [startDate, interval, skipWeekends, selectedIds, orderedItems, nodes, sessions, isSessionMode]);
   
   // Update preview and validations when parameters change
   useEffect(() => {
@@ -86,43 +95,30 @@ const BulkDateAssigner = ({ nodes, onAssign, onCancel }) => {
     setValidations(newValidations);
   }, [generatePreview]);
   
-  // Toggle node selection
-  const toggleNodeSelection = (nodeId) => {
-    setSelectedNodes(prev => {
-      if (prev.includes(nodeId)) {
-        return prev.filter(id => id !== nodeId);
-      } else {
-        return [...prev, nodeId];
-      }
-    });
+  const toggleSelection = (id) => {
+    setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
   };
   
-  // Apply the bulk assignment
   const handleApply = () => {
     if (!preview.length) return;
-    
     const assignments = preview.map(item => ({
-      nodeId: item.nodeId,
+      id: item.id,
       date: item.formattedDate
     }));
-    
     onAssign(assignments);
   };
   
-  // Check if any validation errors exist
   const hasValidationErrors = validations.some(v => !v.valid);
   
   return (
-    <div className="bg-zinc-900 rounded-lg shadow-lg text-gray-100 p-4 flex flex-col">
-      <h3 className="text-lg font-semibold mb-4">Bulk Date Assignment</h3>
-      
+    <div className="bg-zinc-900 rounded-lg shadow-lg text-gray-100 flex flex-col">
       {/* Settings */}
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div>
-          <label className="block text-sm text-gray-400 mb-1">Start Date</label>
+          <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-1">Start Date</label>
           <input 
             type="date" 
-            className="w-full bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-sm"
+            className="w-full bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs text-zinc-200 outline-none focus:border-indigo-500"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
             min={format(new Date(), 'yyyy-MM-dd')}
@@ -130,10 +126,10 @@ const BulkDateAssigner = ({ nodes, onAssign, onCancel }) => {
         </div>
         
         <div>
-          <label className="block text-sm text-gray-400 mb-1">Days Between Nodes</label>
+          <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-1">Interval (Days)</label>
           <input 
             type="number" 
-            className="w-full bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-sm"
+            className="w-full bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs text-zinc-200 outline-none focus:border-indigo-500"
             value={interval}
             onChange={(e) => setInterval(Math.max(1, parseInt(e.target.value) || 1))}
             min="1"
@@ -142,34 +138,34 @@ const BulkDateAssigner = ({ nodes, onAssign, onCancel }) => {
       </div>
       
       <div className="mb-4">
-        <label className="flex items-center text-sm text-gray-300">
+        <label className="flex items-center text-xs text-zinc-400 hover:text-zinc-300 transition-colors cursor-pointer">
           <input 
             type="checkbox"
-            className="mr-2" 
+            className="mr-2 rounded border-zinc-700 bg-zinc-800 text-indigo-600 focus:ring-offset-zinc-900" 
             checked={skipWeekends}
             onChange={(e) => setSkipWeekends(e.target.checked)}
           />
-          Skip weekends (schedule only on weekdays)
+          Skip weekends (Weekdays only)
         </label>
       </div>
       
-      {/* Node selection */}
+      {/* Item selection */}
       <div className="mb-4">
-        <div className="text-sm text-gray-400 mb-2">Select Nodes to Assign</div>
-        <div className="max-h-48 overflow-y-auto bg-zinc-800 rounded p-2">
-          {orderedNodes.length === 0 ? (
-            <div className="text-gray-500 text-sm">No ordered nodes found</div>
+        <div className="text-[10px] font-bold text-zinc-500 uppercase mb-2">Target Selection</div>
+        <div className="max-h-40 overflow-y-auto bg-zinc-950/50 rounded border border-zinc-800/50 p-1 no-scrollbar">
+          {orderedItems.length === 0 ? (
+            <div className="text-zinc-600 text-[10px] italic p-2 text-center">No ordered sessions found</div>
           ) : (
-            orderedNodes.map(node => (
-              <div key={node.id} className="flex items-center py-1">
+            orderedItems.map(item => (
+              <div key={item.id} className="flex items-center py-1 px-2 hover:bg-zinc-800/50 rounded transition-colors">
                 <input 
                   type="checkbox"
-                  className="mr-2"
-                  checked={selectedNodes.includes(node.id)}
-                  onChange={() => toggleNodeSelection(node.id)}
+                  className="mr-3 rounded border-zinc-700 bg-zinc-800 text-indigo-600 focus:ring-offset-zinc-900"
+                  checked={selectedIds.includes(item.id)}
+                  onChange={() => toggleSelection(item.id)}
                 />
-                <span className="text-sm">
-                  #{node.data.order} - {node.data.name || node.data.label || `Session ${node.data.order || 'Unknown'}`}
+                <span className="text-[11px] text-zinc-300 font-medium">
+                  #{item.order || item.data?.order} - {item.name || item.data?.name || item.data?.label}
                 </span>
               </div>
             ))
@@ -180,17 +176,17 @@ const BulkDateAssigner = ({ nodes, onAssign, onCancel }) => {
       {/* Preview */}
       {preview.length > 0 && (
         <div className="mb-4">
-          <div className="text-sm text-gray-400 mb-2">Preview</div>
-          <div className="max-h-48 overflow-y-auto bg-zinc-800 rounded p-2">
-            {preview.map((item, index) => {
-              const validation = validations.find(v => v.nodeId === item.nodeId);
+          <div className="text-[10px] font-bold text-zinc-500 uppercase mb-2">Schedule Preview</div>
+          <div className="max-h-40 overflow-y-auto bg-zinc-950/50 rounded border border-zinc-800/50 p-1 no-scrollbar">
+            {preview.map((item) => {
+              const validation = validations.find(v => v.id === item.id);
               return (
                 <div 
-                  key={item.nodeId} 
-                  className={`flex justify-between py-1 text-sm ${!validation?.valid ? 'text-amber-300' : ''}`}
+                  key={item.id} 
+                  className={`flex justify-between py-1 px-2 text-[11px] border-b border-zinc-800/30 last:border-0 ${!validation?.valid ? 'bg-amber-500/10 text-amber-200' : 'text-zinc-400'}`}
                 >
-                  <span>#{item.order} - {item.nodeName}</span>
-                  <span>{item.formattedDate}</span>
+                  <span className="font-medium">#{item.order} - {item.name}</span>
+                  <span className="font-mono text-[10px] text-indigo-400">{item.formattedDate}</span>
                 </div>
               );
             })}
@@ -200,14 +196,16 @@ const BulkDateAssigner = ({ nodes, onAssign, onCancel }) => {
       
       {/* Validation messages */}
       {hasValidationErrors && (
-        <div className="mb-4">
-          <div className="text-amber-300 text-sm mb-1">⚠️ Validation Issues:</div>
-          <div className="max-h-32 overflow-y-auto bg-amber-900/30 rounded p-2">
+        <div className="mb-4 bg-amber-500/10 border border-amber-500/20 rounded p-2">
+          <div className="text-amber-500 text-[10px] font-bold uppercase mb-1 flex items-center gap-1">
+            ⚠️ Timeline Conflicts
+          </div>
+          <div className="max-h-24 overflow-y-auto no-scrollbar">
             {validations.filter(v => !v.valid).map(validation => {
-              const node = nodes.find(n => n.id === validation.nodeId);
+              const item = orderedItems.find(i => i.id === validation.id);
               return (
-                <div key={validation.nodeId} className="text-amber-200 text-xs py-1">
-                  • Node #{node?.data.order}: {validation.message}
+                <div key={validation.id} className="text-amber-200/70 text-[10px] py-0.5">
+                  • Session #{item?.order || item?.data?.order}: {validation.message}
                 </div>
               );
             })}
@@ -216,19 +214,19 @@ const BulkDateAssigner = ({ nodes, onAssign, onCancel }) => {
       )}
       
       {/* Action buttons */}
-      <div className="flex justify-end gap-3 mt-auto">
+      <div className="flex justify-end gap-2 mt-auto pt-2">
         <button
           onClick={onCancel}
-          className="px-3 py-1 bg-zinc-800 hover:bg-zinc-700 text-sm rounded"
+          className="px-3 py-1.5 text-[11px] font-medium text-zinc-400 hover:text-white transition-colors"
         >
           Cancel
         </button>
         <button
           onClick={handleApply}
           disabled={!preview.length || !startDate}
-          className={`px-3 py-1 ${!preview.length || !startDate ? 'bg-zinc-700 text-gray-400' : 'bg-blue-600 hover:bg-blue-700 text-white'} text-sm rounded flex items-center gap-1`}
+          className={`px-4 py-1.5 text-[11px] font-bold rounded transition-all ${!preview.length || !startDate ? 'bg-zinc-800 text-zinc-600 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20'}`}
         >
-          Apply to {preview.length} Node{preview.length !== 1 ? 's' : ''}
+          Schedule {preview.length} Session{preview.length !== 1 ? 's' : ''}
         </button>
       </div>
     </div>
