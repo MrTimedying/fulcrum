@@ -509,7 +509,7 @@ function InterventionNodeInspector({ node }) {
                       type="checkbox"
                       checked={showAllTags}
                       onChange={toggleShowAllTags}
-                      className="mr-2 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                      className="mr-2 h-4 w-4 rounded border-gray-300 text-zinc-600 focus:ring-zinc-500"
                     />
                     Show all tags
                   </label>
@@ -520,7 +520,7 @@ function InterventionNodeInspector({ node }) {
                       key={tag} 
                       className={`inline-flex items-center px-3 py-1 rounded-full text-xs cursor-pointer transition-colors ${
                         selectedTags.includes(tag) 
-                          ? 'bg-indigo-600 text-white' 
+                          ? 'bg-zinc-600 text-white' 
                           : 'bg-zinc-700 text-gray-300 hover:bg-zinc-600'
                       } ${showAllTags ? 'opacity-50 pointer-events-none' : ''}`}
                       onClick={() => !showAllTags && handleTagSelection(tag)}

@@ -10,14 +10,14 @@ const CustomAutocompleteSelect = ({ options, onSelect, onDelete }) => {
 
   // Theme colors (Tailwind CSS classes will be preferred where possible)
   const colors = {
-    primary: 'indigo-600',       // A nice primary color
-    secondary: 'indigo-200',     // A lighter shade for focus/hover
-    background: 'neutral-900',       // Light background for the page
-    cardBackground: 'white',     // Card background
-    textPrimary: 'gray-800',     // Primary text color
-    textSecondary: 'gray-500',   // Secondary text color
-    border: 'gray-300',          // Border color
-    focusRing: 'indigo-500',     // Focus ring color
+    primary: 'zinc-600',       // A nice primary color
+    secondary: 'zinc-800',     // A darker shade for focus/hover in dark theme
+    background: 'neutral-950',       // Dark background for the page
+    cardBackground: 'zinc-900',     // Card background
+    textPrimary: 'zinc-200',     // Primary text color
+    textSecondary: 'zinc-500',   // Secondary text color
+    border: 'zinc-800',          // Border color
+    focusRing: 'zinc-700',     // Focus ring color
   };
 
   useEffect(() => {

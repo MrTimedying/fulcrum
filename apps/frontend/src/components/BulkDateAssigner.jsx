@@ -118,7 +118,7 @@ const BulkDateAssigner = ({ nodes, sessions, interventionId, onAssign, onCancel 
           <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-1">Start Date</label>
           <input 
             type="date" 
-            className="w-full bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs text-zinc-200 outline-none focus:border-indigo-500"
+            className="w-full bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs text-zinc-200 outline-none focus:border-zinc-500"
             value={startDate}
             onChange={(e) => setStartDate(e.target.value)}
             min={format(new Date(), 'yyyy-MM-dd')}
@@ -129,7 +129,7 @@ const BulkDateAssigner = ({ nodes, sessions, interventionId, onAssign, onCancel 
           <label className="block text-[10px] font-bold text-zinc-500 uppercase mb-1">Interval (Days)</label>
           <input 
             type="number" 
-            className="w-full bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs text-zinc-200 outline-none focus:border-indigo-500"
+            className="w-full bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-xs text-zinc-200 outline-none focus:border-zinc-500"
             value={interval}
             onChange={(e) => setInterval(Math.max(1, parseInt(e.target.value) || 1))}
             min="1"
@@ -141,7 +141,7 @@ const BulkDateAssigner = ({ nodes, sessions, interventionId, onAssign, onCancel 
         <label className="flex items-center text-xs text-zinc-400 hover:text-zinc-300 transition-colors cursor-pointer">
           <input 
             type="checkbox"
-            className="mr-2 rounded border-zinc-700 bg-zinc-800 text-indigo-600 focus:ring-offset-zinc-900" 
+            className="mr-2 rounded border-zinc-700 bg-zinc-800 text-zinc-600 focus:ring-offset-zinc-900" 
             checked={skipWeekends}
             onChange={(e) => setSkipWeekends(e.target.checked)}
           />
@@ -160,7 +160,7 @@ const BulkDateAssigner = ({ nodes, sessions, interventionId, onAssign, onCancel 
               <div key={item.id} className="flex items-center py-1 px-2 hover:bg-zinc-800/50 rounded transition-colors">
                 <input 
                   type="checkbox"
-                  className="mr-3 rounded border-zinc-700 bg-zinc-800 text-indigo-600 focus:ring-offset-zinc-900"
+                  className="mr-3 rounded border-zinc-700 bg-zinc-800 text-zinc-600 focus:ring-offset-zinc-900"
                   checked={selectedIds.includes(item.id)}
                   onChange={() => toggleSelection(item.id)}
                 />
@@ -186,7 +186,7 @@ const BulkDateAssigner = ({ nodes, sessions, interventionId, onAssign, onCancel 
                   className={`flex justify-between py-1 px-2 text-[11px] border-b border-zinc-800/30 last:border-0 ${!validation?.valid ? 'bg-amber-500/10 text-amber-200' : 'text-zinc-400'}`}
                 >
                   <span className="font-medium">#{item.order} - {item.name}</span>
-                  <span className="font-mono text-[10px] text-indigo-400">{item.formattedDate}</span>
+                  <span className="font-mono text-[10px] text-zinc-400">{item.formattedDate}</span>
                 </div>
               );
             })}
@@ -224,7 +224,7 @@ const BulkDateAssigner = ({ nodes, sessions, interventionId, onAssign, onCancel 
         <button
           onClick={handleApply}
           disabled={!preview.length || !startDate}
-          className={`px-4 py-1.5 text-[11px] font-bold rounded transition-all ${!preview.length || !startDate ? 'bg-zinc-800 text-zinc-600 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20'}`}
+          className={`px-4 py-1.5 text-[11px] font-bold rounded transition-all ${!preview.length || !startDate ? 'bg-zinc-800 text-zinc-600 cursor-not-allowed' : 'bg-zinc-600 hover:bg-zinc-500 text-white shadow-lg shadow-zinc-800/50'}`}
         >
           Schedule {preview.length} Session{preview.length !== 1 ? 's' : ''}
         </button>

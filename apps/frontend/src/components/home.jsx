@@ -47,7 +47,7 @@ function Home() {
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef(null);
   const { patients } = usePatientStore();
-  const { patientId, setActiveTab } = useNavigationStore();
+  const { patientId, setPatientId, setActiveTab } = useNavigationStore();
   const { setToaster } = useUIStore();
   const { setSelectedInterventionId, setSelectedSessionId } = useInterventionStore();
   
@@ -73,19 +73,16 @@ function Home() {
   const handleEditPatient = useCallback((node) => {
     if (node && node.type === 'profile') {
       const nodePatientId = node.data.PatientId || patientId;
-      if (nodePatientId && patients[nodePatientId]) {
-        setPatientFormData({ ...patients[nodePatientId], PatientId: nodePatientId });
-        setIsEditing(true);
-        setIsPatientEditModalOpen(true);
+      if (nodePatientId) {
+        setPatientId(nodePatientId);
+        setActiveTab('Profile');
         return;
       }
     }
-    if (patientId && patients[patientId]) {
-      setPatientFormData({ ...patients[patientId], PatientId: patientId });
-      setIsEditing(true);
-      setIsPatientEditModalOpen(true);
+    if (patientId) {
+      setActiveTab('Profile');
     }
-  }, [patientId, patients]);
+  }, [patientId, setPatientId, setActiveTab]);
 
   const closePatientEditModal = useCallback(() => {
     setIsPatientEditModalOpen(false);

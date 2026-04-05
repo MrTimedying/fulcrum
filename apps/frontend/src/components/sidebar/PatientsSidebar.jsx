@@ -86,7 +86,7 @@ const PatientsSidebar = ({ handleEditPatient }) => {
                 onClick={() => handleSelection(key)}
               >
                 <Link to={patientId === key ? "/" : `/patients/${key}`}>
-                  {value.details?.name} {value.details?.surname}
+                  { (value.details?.name || value.details?.surname) ? `${value.details?.name} ${value.details?.surname}` : 'New Patient' }
                 </Link>
               </li>
             )

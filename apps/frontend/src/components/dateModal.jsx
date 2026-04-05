@@ -100,7 +100,7 @@ const DatepickerModal = ({ isOpen, onClose }) => {
         <div className="bg-zinc-900 rounded-lg shadow-lg text-gray-100 h-full flex flex-col min-h-[380px] border border-zinc-800">
           <div className="flex justify-between items-center p-3 bg-zinc-900 date-modal-drag cursor-move rounded-t-lg border-b border-zinc-800">
             <div className="flex items-center gap-2">
-              <AssistantDirection className="text-indigo-400" />
+              <AssistantDirection className="text-zinc-400" />
               <span className="font-light text-lg tracking-tight">Timeline Management</span>
             </div>
             <button onClick={onClose} className="text-zinc-500 hover:text-white transition duration-150"><Close /></button>
@@ -112,7 +112,7 @@ const DatepickerModal = ({ isOpen, onClose }) => {
             </div>
             <button 
               onClick={() => setBulkMode(!bulkMode)}
-              className="text-[10px] font-bold uppercase flex items-center gap-1.5 px-2 py-1 bg-zinc-800 hover:bg-zinc-700 rounded text-indigo-400 transition-all border border-zinc-700"
+              className="text-[10px] font-bold uppercase flex items-center gap-1.5 px-2 py-1 bg-zinc-800 hover:bg-zinc-700 rounded text-zinc-400 transition-all border border-zinc-700"
             >
               <DateRange size={12} />
               {bulkMode ? "Single Session" : "Bulk Scheduler"}
@@ -141,7 +141,7 @@ const DatepickerModal = ({ isOpen, onClose }) => {
                       return { disabled: true, style: { color: "#ef4444", textDecoration: "line-through", opacity: 0.3 } };
                     }
                     if (curr === selectedDate) {
-                      return { style: { backgroundColor: "#4f46e5", color: "#fff", borderRadius: "0.5rem", fontWeight: "bold" } };
+                      return { style: { backgroundColor: "#52525b", color: "#fff", borderRadius: "0.5rem", fontWeight: "bold" } };
                     }
                   }}
                   className="custom-calendar"
@@ -155,7 +155,7 @@ const DatepickerModal = ({ isOpen, onClose }) => {
             {!bulkMode && (
               <button
                 onClick={handleSaveDate}
-                className={`flex items-center justify-center gap-2 px-6 py-2 rounded text-xs font-bold transition-all ${saving ? "opacity-50 cursor-wait" : "bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/20"}`}
+                className={`flex items-center justify-center gap-2 px-6 py-2 rounded text-xs font-bold transition-all ${saving ? "opacity-50 cursor-wait" : "bg-zinc-600 hover:bg-zinc-500 text-white shadow-lg shadow-zinc-800/50"}`}
                 disabled={saving || !selectedDate || unavailableDates.includes(selectedDate) || !selectedSessionId}
               >
                 <Save fontSize="small" /> 

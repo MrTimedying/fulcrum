@@ -33,7 +33,7 @@ const DateTimeline = ({ items = [], selectedId, onNodeClick }) => {
                 className={`
                   flex flex-col items-center p-2 rounded cursor-pointer transition-all border
                   ${isSelected 
-                    ? 'bg-indigo-600/20 border-indigo-500 text-indigo-100' 
+                    ? 'bg-zinc-800/50 border-zinc-500 text-zinc-100' 
                     : 'bg-zinc-800 border-zinc-700 hover:bg-zinc-700 text-zinc-400'}
                   ${!hasDate ? 'opacity-50 border-dashed' : ''}
                 `}
@@ -57,12 +57,12 @@ const DateTimeline = ({ items = [], selectedId, onNodeClick }) => {
             <React.Fragment key={`connector-${item.id}`}>
               <div className={`
                 h-0.5 flex-1 transition-colors duration-500
-                ${item.date ? 'bg-indigo-500' : 'bg-zinc-700'}
+                ${item.date ? 'bg-zinc-500' : 'bg-zinc-700'}
               `} />
               {index < items.length - 1 && (
                 <div className={`
                   h-1.5 w-1.5 rounded-full transition-colors
-                  ${item.date ? 'bg-indigo-400' : 'bg-zinc-600'}
+                  ${item.date ? 'bg-zinc-400' : 'bg-zinc-600'}
                 `} />
               )}
             </React.Fragment>

@@ -6,41 +6,39 @@ import NpForm from './npform';
 import { useNavigationStore } from '../state/core/useNavigationStore';
 import { usePatientStore } from '../state/core/usePatientStore';
 
+import { v4 as uuidv4 } from 'uuid';
+
 export default function MyDropdown({ formData, setFormData, setFetchingSwitch, handleEditPatient }) {
   const [isNpFormModalOpen, setIsNpFormModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const navigate = useNavigate();
-  const { patientId, setPatientId } = useNavigationStore();
-  const { removePatient } = usePatientStore();
+  const { patientId, setPatientId, setActiveTab } = useNavigationStore();
+  const { removePatient, addPatient } = usePatientStore();
 
   const closeNpFormModal = () => {
     setIsNpFormModalOpen(false);
-    setFormData({
-      name: "",
-      surname: "",
-      age: "",
-      gender: "",
-      bmi: "",
-      height: "",
-      weight: "",
-      status: "",
-    });
   };
 
   const handlePatientCreation = () => {
-    setIsNpFormModalOpen(true);
-    setIsEditing(false);
-    // Reset form data
-    setFormData({
+    const newId = uuidv4();
+    const newPatientDetails = {
       name: "",
       surname: "",
       age: "",
       gender: "",
-      bmi: "",
       height: "",
       weight: "",
-      status: "",
-    });
+      status: "Rehabilitation",
+      bmi: ""
+    };
+    
+    addPatient(newId, newPatientDetails);
+    setPatientId(newId);
+    setActiveTab("Profile");
+    
+    // Reset any local editing state
+    setIsEditing(false);
+    setIsNpFormModalOpen(false);
   }
 
   const handlePatientDelete = (patientId) => {

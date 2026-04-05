@@ -338,12 +338,12 @@ const SessionEditor = () => {
             <InlineEdit
               value={selectedSession.name || ""}
               onSave={(newName) => updateSession(selectedSession.id, { name: newName })}
-              displayClassName="text-[10px] text-indigo-400 uppercase font-bold tracking-widest hover:text-indigo-300 transition-colors"
-              inputClassName="text-[10px] bg-zinc-800 text-white border border-indigo-500 rounded px-1 outline-none"
+              displayClassName="text-[10px] text-zinc-400 uppercase font-bold tracking-widest hover:text-zinc-300 transition-colors"
+              inputClassName="text-[10px] bg-zinc-800 text-white border border-zinc-500 rounded px-1 outline-none"
             />
             <button 
               onClick={() => setIsDatePickerOpen(true)}
-              className="flex items-center space-x-1.5 text-zinc-500 hover:text-indigo-400 transition-colors group"
+              className="flex items-center space-x-1.5 text-zinc-500 hover:text-zinc-400 transition-colors group"
             >
               <HiOutlineCalendarDays size={14} className="group-hover:scale-110 transition-transform" />
               <span className="text-[10px] font-mono">

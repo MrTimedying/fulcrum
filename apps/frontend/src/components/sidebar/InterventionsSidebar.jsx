@@ -29,7 +29,7 @@ const NodeRenderer = ({ node, style, dragHandle }) => {
   }, [node.data.type]);
 
   const textColorClass = useMemo(() => {
-    if (node.data.type === 'folder') return 'text-indigo-300 font-medium';
+    if (node.data.type === 'folder') return 'text-zinc-300 font-medium';
     if (node.data.type === 'session') return 'text-zinc-300';
     if (node.data.type === 'exercise') return 'text-zinc-500 italic';
     return 'text-zinc-400';
@@ -50,7 +50,7 @@ const NodeRenderer = ({ node, style, dragHandle }) => {
   return (
     <div 
       style={style} 
-      className={`flex items-center space-x-1.5 py-0.5 cursor-pointer group hover:bg-zinc-800/50 rounded px-1 transition-colors ${node.isSelected ? 'bg-indigo-500/20' : ''}`}
+      className={`flex items-center space-x-1.5 py-0.5 cursor-pointer group hover:bg-zinc-800/50 rounded px-1 transition-colors ${node.isSelected ? 'bg-zinc-800/50' : ''}`}
       onClick={() => node.isInternal ? node.toggle() : node.select()}
       ref={dragHandle}
     >
@@ -63,7 +63,7 @@ const NodeRenderer = ({ node, style, dragHandle }) => {
           )}
         </div>
         
-        <Icon size={14} className={`flex-shrink-0 mr-1.5 ${node.data.type === 'folder' ? 'text-indigo-500' : 'text-zinc-500 group-hover:text-zinc-300 transition-colors'}`} />
+        <Icon size={14} className={`flex-shrink-0 mr-1.5 ${node.data.type === 'folder' ? 'text-zinc-500' : 'text-zinc-500 group-hover:text-zinc-300 transition-colors'}`} />
         
         <div className="flex flex-col min-w-0 flex-1">
           <span className={`text-[11px] truncate leading-tight ${textColorClass}`}>
@@ -94,9 +94,11 @@ const InterventionsSidebar = () => {
   
   const { patientId } = useNavigationStore();
   
-  const [groupingKeys] = useState(['Phase', 'Micro']);
+  const [groupingKeys] = useState([]); // FLATTENED: No more Phase/Micro grouping
   const [pendingMove, setPendingMove] = useState(null);
   const [showConflictModal, setShowConflictModal] = useState(false);
+  const [isAddingIntervention, setIsAddingIntervention] = useState(false);
+  const [newInterventionName, setNewInterventionName] = useState("");
 
   const activeInterventions = useMemo(() => {
     return Object.values(interventions).filter(i => i.patientId === patientId);
@@ -168,10 +170,11 @@ const InterventionsSidebar = () => {
   };
 
   const handleAddIntervention = () => {
-    const name = prompt("Enter intervention name:");
-    if (name) {
-      const id = addIntervention(patientId, name);
+    if (newInterventionName.trim()) {
+      const id = addIntervention(patientId, newInterventionName);
       setSelectedInterventionId(id);
+      setNewInterventionName("");
+      setIsAddingIntervention(false);
     }
   };
 
@@ -185,16 +188,38 @@ const InterventionsSidebar = () => {
     <div className="h-full w-full bg-zinc-900 flex flex-col overflow-hidden">
       <div className="px-4 py-3 border-b border-zinc-800/50 flex flex-col space-y-2">
         <div className="flex items-center justify-between">
-          <h2 className="text-[10px] font-bold uppercase tracking-widest text-indigo-400">Interventions</h2>
+          <h2 className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">Interventions</h2>
           <div className="flex items-center space-x-2">
-            <button onClick={handleAddIntervention} className="text-zinc-500 hover:text-indigo-400 transition-colors">
+            <button onClick={() => setIsAddingIntervention(!isAddingIntervention)} className="text-zinc-500 hover:text-zinc-300 transition-colors">
               <HiPlus size={14} />
             </button>
           </div>
         </div>
         
+        {isAddingIntervention && (
+          <div className="flex items-center space-x-2 animate-in fade-in slide-in-from-top-1 duration-200">
+            <input
+              autoFocus
+              className="flex-1 bg-zinc-800 border border-zinc-700 text-zinc-200 text-[11px] rounded px-2 py-1 outline-none focus:border-zinc-500"
+              placeholder="Intervention Name..."
+              value={newInterventionName}
+              onChange={(e) => setNewInterventionName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleAddIntervention();
+                if (e.key === 'Escape') setIsAddingIntervention(false);
+              }}
+            />
+            <button 
+              onClick={handleAddIntervention}
+              className="text-[10px] bg-zinc-700 hover:bg-zinc-600 text-zinc-200 px-2 py-1 rounded transition-colors"
+            >
+              Add
+            </button>
+          </div>
+        )}
+
         <select 
-          className="w-full bg-zinc-800 border border-zinc-700 text-zinc-300 text-[11px] rounded px-2 py-1 outline-none"
+          className="w-full bg-zinc-800 border border-zinc-700 text-zinc-300 text-[11px] rounded px-2 py-1 outline-none focus:border-zinc-500"
           value={selectedInterventionId || ""}
           onChange={(e) => setSelectedInterventionId(e.target.value)}
         >
@@ -274,7 +299,7 @@ const InterventionsSidebar = () => {
                   <div className="bg-zinc-950/50 p-2 rounded border border-zinc-800">
                     <span className="text-[9px] font-bold text-zinc-500 uppercase block mb-1">Taxonomic Conflict</span>
                     <p className="text-[10px] text-zinc-300">
-                      Target requires: <span className="text-indigo-400">{pendingMove.targetFolder.tagValue}</span>
+                      Target requires: <span className="text-zinc-400">{pendingMove.targetFolder.tagValue}</span>
                     </p>
                   </div>
                 )}
@@ -282,7 +307,7 @@ const InterventionsSidebar = () => {
 
               <div className="p-2 bg-zinc-950/50 flex flex-col space-y-1">
                 <button 
-                  className="w-full py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-medium rounded transition-colors"
+                  className="w-full py-1.5 bg-zinc-600 hover:bg-zinc-500 text-white text-[10px] font-medium rounded transition-colors"
                   onClick={() => {
                     applyMove(pendingMove.nodeId, pendingMove.targetFolder, pendingMove.nCheck.suggestedDate);
                     setShowConflictModal(false);

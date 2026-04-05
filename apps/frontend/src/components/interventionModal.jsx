@@ -137,7 +137,7 @@ const InterventionModal = ({ isOpen, onClose }) => {
                 className={({ selected }) =>
                   `py-3 px-4 text-sm font-medium transition-colors focus:outline-none ${
                     selected
-                      ? "border-b-2 border-indigo-500 text-white"
+                      ? "border-b-2 border-zinc-500 text-white"
                       : "text-gray-400 hover:text-gray-200"
                   }`
                 }
@@ -148,7 +148,7 @@ const InterventionModal = ({ isOpen, onClose }) => {
                 className={({ selected }) =>
                   `py-3 px-4 text-sm font-medium transition-colors focus:outline-none ${
                     selected
-                      ? "border-b-2 border-indigo-500 text-white"
+                      ? "border-b-2 border-zinc-500 text-white"
                       : "text-gray-400 hover:text-gray-200"
                   }`
                 }
@@ -169,7 +169,7 @@ const InterventionModal = ({ isOpen, onClose }) => {
                     id="interventionName"
                     value={newInterventionName}
                     onChange={(e) => setNewInterventionName(e.target.value)}
-                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-zinc-500"
                     placeholder="Enter a name for this intervention"
                   />
                 </div>
@@ -196,7 +196,7 @@ const InterventionModal = ({ isOpen, onClose }) => {
                 <div className="flex justify-end">
                   <button
                     onClick={handleSaveIntervention}
-                    className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 rounded-md font-medium transition duration-150"
+                    className="flex items-center gap-2 px-4 py-2 bg-zinc-600 hover:bg-zinc-700 rounded-md font-medium transition duration-150"
                     disabled={!newInterventionName.trim() || nodes.length === 0}
                   >
                     <Save fontSize="small" />
@@ -212,7 +212,7 @@ const InterventionModal = ({ isOpen, onClose }) => {
                   <div className="relative">
                     <input
                       type="text"
-                      className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-zinc-500"
                       placeholder="Search interventions..."
                     />
                   </div>
@@ -231,7 +231,7 @@ const InterventionModal = ({ isOpen, onClose }) => {
                             <h4 className="font-medium text-white">{intervention.name}</h4>
                             <p className="text-xs text-gray-400">Saved on {intervention.date}</p>
                           </div>
-                          <button className="text-indigo-400 hover:text-indigo-300 px-3 py-1 rounded-md text-sm">
+                          <button className="text-zinc-400 hover:text-zinc-300 px-3 py-1 rounded-md text-sm">
                             Load
                           </button>
                         </div>

@@ -46,7 +46,7 @@ const IconBar = ({ activeContext, onContextChange, isSidebarCollapsed, onSetting
               title={label}
             >
               {/* Active Indicator Line */}
-              <div className={`absolute left-0 w-0.5 h-7 bg-indigo-500 transition-all duration-200 ${isActive ? 'scale-y-100' : 'scale-y-0'}`} />
+              <div className={`absolute left-0 w-0.5 h-7 bg-zinc-500 transition-all duration-200 ${isActive ? 'scale-y-100' : 'scale-y-0'}`} />
               
               <Icon 
                 size={24} 
