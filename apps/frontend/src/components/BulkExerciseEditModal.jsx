@@ -2,8 +2,8 @@ import React, { useState, useEffect, useMemo } from "react";
 import Modal from "react-modal";
 import { Rnd } from "react-rnd";
 import { FiX, FiCheck } from "react-icons/fi";
-import useFlowStore from "../state/flowState";
-import useTransientStore from "../state/transientState";
+import { useFlowDiagramStore } from "../state/flow/useFlowDiagramStore";
+import useUIStore from "../state/core/useUIStore";
 import { getExerciseContainerDisplayName } from "../utils/exerciseUtils"; // Assuming these helpers exist or will be created
 import { v4 as uuidv4 } from 'uuid';
 
@@ -36,8 +36,8 @@ function BulkExerciseEditModal({ isOpen, onClose, targetSessionNodes }) {
   const [pendingChanges, setPendingChanges] = useState({}); // { fieldLabel: { value: "new value", operation: "replace" } }
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { batchUpdateNodesExerciseData } = useFlowStore(); // Will add this action
-  const { setToaster } = useTransientStore();
+  const { batchUpdateNodesExerciseData } = useFlowDiagramStore(); // Will add this action
+  const { setToaster } = useUIStore();
 
   // --- Effect to Aggregate Data from targetSessionNodes ---
   useEffect(() => {

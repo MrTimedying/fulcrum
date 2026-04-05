@@ -2,7 +2,8 @@ import React, { useState, useRef, useEffect, useMemo } from "react";
 import Modal from "react-modal";
 import { Rnd } from "react-rnd";
 import { FiCheck, FiX, FiTrash2 } from "react-icons/fi";
-import useFlowStore from "../../../state/flowState";
+import { useFlowDiagramStore } from "../../../state/flow/useFlowDiagramStore";
+import { useInterventionStore } from "../../../state/core/useInterventionStore";
 import {
   createDefaultField,
   createDefaultContainer,
@@ -13,7 +14,7 @@ import { InlineEdit } from "./InlineEdit";
 import { createValidationSchema } from "./validationSchema";
 import Field  from "./Field";
 import { FieldTypeButtons } from "./FieldsButtons";
-import useTransientStore from "../../../state/transientState";
+import useUIStore from "../../../state/core/useUIStore";
 import CustomAutocompleteSelect from "./CustomAutocompleteSelect";
 import { MdOutlineDataSaverOn } from "react-icons/md";
 import { v4 as uuidv4 } from 'uuid';
@@ -39,8 +40,9 @@ function ExerciseModal({ isOpen, onClose }) {
   const [bulkEditValue, setBulkEditValue] = useState("");
   const [bulkEditOperation, setBulkEditOperation] = useState('replace'); // 'replace' or 'append'
 
-  const { nodes, updateNodeExerciseData, exercises, saveExercise, deleteExercise } = useFlowStore();
-  const {setToaster} = useTransientStore();
+  const { nodes, updateNodeExerciseData } = useFlowDiagramStore();
+  const { exercises, saveExercise, deleteExercise } = useInterventionStore();
+  const {setToaster} = useUIStore();
   const nodeSelected = useMemo(
     () => nodes.find((node) => node.selected),
     [nodes]
@@ -883,3 +885,4 @@ function ExerciseModal({ isOpen, onClose }) {
 }
 
 export default ExerciseModal;
+

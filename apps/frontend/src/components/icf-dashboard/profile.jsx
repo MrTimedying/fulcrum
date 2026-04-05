@@ -1,14 +1,9 @@
 import React from "react";
-import { useShallow } from "zustand/react/shallow";
-import useFlowStore from "../../state/flowState";
+import { useNavigationStore } from "../../state/core/useNavigationStore";
 import KanbanBoard from "../kanban/KanbanBoard";
 
-const selector = (state) => ({
-  patientId: state.patientId,
-});
-
 function Profile() {
-  const { patientId } = useFlowStore(useShallow(selector));
+  const { patientId } = useNavigationStore();
 
   return (
     <div

@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { Tree } from "react-arborist";
-import useFlowStore from "../../state/flowState.js";
+import { useInterventionStore } from "../../state/core/useInterventionStore";
+import { useNavigationStore } from "../../state/core/useNavigationStore";
 import { 
   getDynamicTagTree, 
   validateNConsistency, 
@@ -83,14 +84,15 @@ const InterventionsSidebar = () => {
   const { 
     sessions, 
     interventions, 
-    patientId, 
     updateSession, 
     addSession, 
     addIntervention,
     selectedInterventionId,
     setSelectedInterventionId,
     setSelectedSessionId
-  } = useFlowStore();
+  } = useInterventionStore();
+  
+  const { patientId } = useNavigationStore();
   
   const [groupingKeys] = useState(['Phase', 'Micro']);
   const [pendingMove, setPendingMove] = useState(null);

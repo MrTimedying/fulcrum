@@ -2,10 +2,13 @@ import React, { Fragment, useState, useEffect, useCallback } from "react";
 import Modal from "react-modal";
 import { Tab } from "@headlessui/react";
 import { ReactFlowProvider } from "@xyflow/react";
-import useFlowStore from "../state/flowState";
+import { usePatientStore } from "../state/core/usePatientStore";
+import { useNavigationStore } from "../state/core/useNavigationStore";
+import { useFlowDiagramStore } from "../state/flow/useFlowDiagramStore";
 import Profile from "./icf-dashboard/profile";
 import SessionEditor from "./editor/SessionEditor";
-import useTransientStore from "../state/transientState";
+import { useInterventionStore } from "../state/core/useInterventionStore";
+import useUIStore from "../state/core/useUIStore";
 import BulkExerciseEditModal from "./BulkExerciseEditModal";
 import ICFSetsModal from "./icf-dashboard/ICFSetsModal";
 
@@ -13,12 +16,29 @@ import ICFSetsModal from "./icf-dashboard/ICFSetsModal";
 Modal.setAppElement("#root");
 
 function MainBody({ handleEditPatient }) {
-  const { patientId, activeTab, nodes, setNodes, patients } = useFlowStore();
-  const { setToaster } = useTransientStore();
+  const { patients } = usePatientStore();
+  const { patientId, activeTab } = useNavigationStore();
+  const { nodes, setNodes } = useFlowDiagramStore();
+  const { setToaster } = useUIStore();
   const [isICFSetsModalOpen, setIsICFSetsModalOpen] = useState(false);
 
   // State for Bulk Exercise Edit Modal
   const [isBulkEditModalOpen, setIsBulkEditModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (activeTab === "Editor" && patientId) {
+      // Find the intervention for this patient (e.g. starting with "default-" + patientId)
+      const interventions = useInterventionStore.getState().interventions;
+      const interventionId = Object.keys(interventions).find(
+        (id) => interventions[id].patientId === patientId && id.startsWith("default-")
+      ) || `default-${patientId}`;
+
+      useInterventionStore.getState().loadIntervention(patientId, interventionId);
+    } else if (activeTab === "Profile") {
+      // Clear the diagram or just leave it. (The Kanban view doesn't use it).
+      // For now, we just ensure selectedInterventionId is null or leave as is.
+    }
+  }, [patientId, activeTab]);
 
   const handleCloseBulkEditModal = useCallback(() => {
       setIsBulkEditModalOpen(false);

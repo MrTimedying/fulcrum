@@ -1,5 +1,5 @@
 
-import EditableCell from "./editor/EditableCell";
+import { InlineEdit } from "./editor/exercise_modal/InlineEdit";
 
 // Factory function for Profile templates
 export const getProfileComposerTemplates = (updateDataFunction) => ({
@@ -10,15 +10,10 @@ export const getProfileComposerTemplates = (updateDataFunction) => ({
       header: "Name",
       size: 150,
       cell: (info) => (
-        <EditableCell
-          initialValue={info.getValue()}
-          rowId={info.row.original.id}
-          columnId={info.column.id}
-          updateDataFunction={updateDataFunction}
-          dataType="node"
-          displayFormatter={(value) => String(value ?? '')}
-          inputType="text"
-          valueParser={(value) => value} // Keep as string
+        <InlineEdit
+          value={info.getValue()}
+          onSave={(value) => updateDataFunction("name", value, info.row.original.id)}
+          displayClassName="text-[11px]"
         />
       ),
     },
@@ -28,15 +23,10 @@ export const getProfileComposerTemplates = (updateDataFunction) => ({
       header: "Surname",
       size: 150,
       cell: (info) => (
-        <EditableCell
-          initialValue={info.getValue()}
-          rowId={info.row.original.id}
-          columnId={info.column.id}
-          updateDataFunction={updateDataFunction}
-          dataType="node"
-          displayFormatter={(value) => String(value ?? '')}
-          inputType="text"
-          valueParser={(value) => value} // Keep as string
+        <InlineEdit
+          value={info.getValue()}
+          onSave={(value) => updateDataFunction("surname", value, info.row.original.id)}
+          displayClassName="text-[11px]"
         />
       ),
     },
@@ -46,15 +36,10 @@ export const getProfileComposerTemplates = (updateDataFunction) => ({
       header: "Age",
       size: 100,
       cell: (info) => (
-        <EditableCell
-          initialValue={info.getValue()}
-          rowId={info.row.original.id}
-          columnId={info.column.id}
-          updateDataFunction={updateDataFunction}
-          dataType="node"
-          displayFormatter={(value) => String(value ?? '')}
-          inputType="number"
-          valueParser={(value) => parseInt(value, 10) || 0} // Parse to integer
+        <InlineEdit
+          value={info.getValue()}
+          onSave={(value) => updateDataFunction("age", parseInt(value, 10) || 0, info.row.original.id)}
+          displayClassName="text-[11px]"
         />
       ),
     },
@@ -64,15 +49,10 @@ export const getProfileComposerTemplates = (updateDataFunction) => ({
       header: "Gender",
       size: 100,
       cell: (info) => (
-        <EditableCell
-          initialValue={info.getValue()}
-          rowId={info.row.original.id}
-          columnId={info.column.id}
-          updateDataFunction={updateDataFunction}
-          dataType="node"
-          displayFormatter={(value) => String(value ?? '')}
-          inputType="text"
-          valueParser={(value) => value} // Keep as string
+        <InlineEdit
+          value={info.getValue()}
+          onSave={(value) => updateDataFunction("gender", value, info.row.original.id)}
+          displayClassName="text-[11px]"
         />
       ),
     },
@@ -82,15 +62,10 @@ export const getProfileComposerTemplates = (updateDataFunction) => ({
       header: "Height",
       size: 100,
       cell: (info) => (
-        <EditableCell
-          initialValue={info.getValue()}
-          rowId={info.row.original.id}
-          columnId={info.column.id}
-          updateDataFunction={updateDataFunction}
-          dataType="node"
-          displayFormatter={(value) => String(value ?? '')}
-          inputType="number"
-          valueParser={(value) => parseFloat(value) || 0} // Parse to float
+        <InlineEdit
+          value={info.getValue()}
+          onSave={(value) => updateDataFunction("height", parseFloat(value) || 0, info.row.original.id)}
+          displayClassName="text-[11px]"
         />
       ),
     },
@@ -100,15 +75,10 @@ export const getProfileComposerTemplates = (updateDataFunction) => ({
       header: "Weight",
       size: 100,
       cell: (info) => (
-        <EditableCell
-          initialValue={info.getValue()}
-          rowId={info.row.original.id}
-          columnId={info.column.id}
-          updateDataFunction={updateDataFunction}
-          dataType="node"
-          displayFormatter={(value) => String(value ?? '')}
-          inputType="number"
-          valueParser={(value) => parseFloat(value) || 0} // Parse to float
+        <InlineEdit
+          value={info.getValue()}
+          onSave={(value) => updateDataFunction("weight", parseFloat(value) || 0, info.row.original.id)}
+          displayClassName="text-[11px]"
         />
       ),
     },
@@ -120,15 +90,10 @@ export const getProfileComposerTemplates = (updateDataFunction) => ({
       header: "Type",
       size: 100,
       cell: (info) => (
-        <EditableCell
-          initialValue={info.getValue()}
-          rowId={info.row.original.id}
-          columnId={info.column.id}
-          updateDataFunction={updateDataFunction}
-          dataType="node"
-          displayFormatter={(value) => String(value ?? '')}
-          inputType="text"
-          valueParser={(value) => value} // Keep as string
+        <InlineEdit
+          value={info.getValue()}
+          onSave={(value) => updateDataFunction("type", value, info.row.original.id)}
+          displayClassName="text-[11px]"
         />
       ),
     },
@@ -138,15 +103,10 @@ export const getProfileComposerTemplates = (updateDataFunction) => ({
       header: "Code",
       size: 100,
       cell: (info) => (
-        <EditableCell
-          initialValue={info.getValue()}
-          rowId={info.row.original.id}
-          columnId={info.column.id}
-          updateDataFunction={updateDataFunction}
-          dataType="node"
-          displayFormatter={(value) => String(value ?? '')}
-          inputType="text"
-          valueParser={(value) => value} // Keep as string
+        <InlineEdit
+          value={info.getValue()}
+          onSave={(value) => updateDataFunction("code", value, info.row.original.id)}
+          displayClassName="text-[11px]"
         />
       ),
     },
@@ -156,15 +116,10 @@ export const getProfileComposerTemplates = (updateDataFunction) => ({
       header: "Description",
       size: 200,
       cell: (info) => (
-        <EditableCell
-          initialValue={info.getValue()}
-          rowId={info.row.original.id}
-          columnId={info.column.id}
-          updateDataFunction={updateDataFunction}
-          dataType="node"
-          displayFormatter={(value) => String(value ?? '')}
-          inputType="text"
-          valueParser={(value) => value} // Keep as string
+        <InlineEdit
+          value={info.getValue()}
+          onSave={(value) => updateDataFunction("description", value, info.row.original.id)}
+          displayClassName="text-[11px]"
         />
       ),
     },
@@ -180,15 +135,10 @@ export const getEditorComposerTemplates = (updateDataFunction) => ({
       header: "Name",
       size: 150,
       cell: (info) => (
-        <EditableCell
-          initialValue={info.getValue()}
-          rowId={info.row.original.id}
-          columnId={info.column.id}
-          updateDataFunction={updateDataFunction}
-          dataType="node"
-          displayFormatter={(value) => String(value ?? '')}
-          inputType="text"
-          valueParser={(value) => value} // Keep as string
+        <InlineEdit
+          value={info.getValue()}
+          onSave={(value) => updateDataFunction("name", value, info.row.original.id)}
+          displayClassName="text-[11px]"
         />
       ),
     },
@@ -198,15 +148,10 @@ export const getEditorComposerTemplates = (updateDataFunction) => ({
       header: "Type",
       size: 150,
       cell: (info) => (
-        <EditableCell
-          initialValue={info.getValue()}
-          rowId={info.row.original.id}
-          columnId={info.column.id}
-          updateDataFunction={updateDataFunction}
-          dataType="node"
-          displayFormatter={(value) => String(value ?? '')}
-          inputType="text"
-          valueParser={(value) => value} // Keep as string
+        <InlineEdit
+          value={info.getValue()}
+          onSave={(value) => updateDataFunction("type", value, info.row.original.id)}
+          displayClassName="text-[11px]"
         />
       ),
     },
@@ -216,15 +161,10 @@ export const getEditorComposerTemplates = (updateDataFunction) => ({
       header: "Description",
       size: 200,
       cell: (info) => (
-        <EditableCell
-          initialValue={info.getValue()}
-          rowId={info.row.original.id}
-          columnId={info.column.id}
-          updateDataFunction={updateDataFunction}
-          dataType="node"
-          displayFormatter={(value) => String(value ?? '')}
-          inputType="text"
-          valueParser={(value) => value} // Keep as string
+        <InlineEdit
+          value={info.getValue()}
+          onSave={(value) => updateDataFunction("description", value, info.row.original.id)}
+          displayClassName="text-[11px]"
         />
       ),
     },
@@ -234,15 +174,10 @@ export const getEditorComposerTemplates = (updateDataFunction) => ({
       header: "Global",
       size: 100,
       cell: (info) => (
-        <EditableCell
-          initialValue={info.getValue()}
-          rowId={info.row.original.id}
-          columnId={info.column.id}
-          updateDataFunction={updateDataFunction}
-          dataType="node"
-          displayFormatter={(value) => String(value ?? '')}
-          inputType="text"
-          valueParser={(value) => value} // Keep as string
+        <InlineEdit
+          value={info.getValue()}
+          onSave={(value) => updateDataFunction("global", value, info.row.original.id)}
+          displayClassName="text-[11px]"
         />
       ),
     },
@@ -252,15 +187,10 @@ export const getEditorComposerTemplates = (updateDataFunction) => ({
       header: "Service",
       size: 100,
       cell: (info) => (
-        <EditableCell
-          initialValue={info.getValue()}
-          rowId={info.row.original.id}
-          columnId={info.column.id}
-          updateDataFunction={updateDataFunction}
-          dataType="node"
-          displayFormatter={(value) => String(value ?? '')}
-          inputType="text"
-          valueParser={(value) => value} // Keep as string
+        <InlineEdit
+          value={info.getValue()}
+          onSave={(value) => updateDataFunction("service", value, info.row.original.id)}
+          displayClassName="text-[11px]"
         />
       ),
     },
@@ -272,15 +202,10 @@ export const getEditorComposerTemplates = (updateDataFunction) => ({
       header: "Scope",
       size: 150,
       cell: (info) => (
-        <EditableCell
-          initialValue={info.getValue()}
-          rowId={info.row.original.id}
-          columnId={info.column.id}
-          updateDataFunction={updateDataFunction}
-          dataType="node"
-          displayFormatter={(value) => String(value ?? '')}
-          inputType="text"
-          valueParser={(value) => value} // Keep as string
+        <InlineEdit
+          value={info.getValue()}
+          onSave={(value) => updateDataFunction("scope", value, info.row.original.id)}
+          displayClassName="text-[11px]"
         />
       ),
     },
@@ -290,15 +215,10 @@ export const getEditorComposerTemplates = (updateDataFunction) => ({
       header: "Description",
       size: 150,
       cell: (info) => (
-        <EditableCell
-          initialValue={info.getValue()}
-          rowId={info.row.original.id}
-          columnId={info.column.id}
-          updateDataFunction={updateDataFunction}
-          dataType="node"
-          displayFormatter={(value) => String(value ?? '')}
-          inputType="text"
-          valueParser={(value) => value} // Keep as string
+        <InlineEdit
+          value={info.getValue()}
+          onSave={(value) => updateDataFunction("description", value, info.row.original.id)}
+          displayClassName="text-[11px]"
         />
       ),
     },
@@ -310,15 +230,10 @@ export const getEditorComposerTemplates = (updateDataFunction) => ({
       header: "Scope",
       size: 150,
       cell: (info) => (
-        <EditableCell
-          initialValue={info.getValue()}
-          rowId={info.row.original.id}
-          columnId={info.column.id}
-          updateDataFunction={updateDataFunction}
-          dataType="node"
-          displayFormatter={(value) => String(value ?? '')}
-          inputType="text"
-          valueParser={(value) => value} // Keep as string
+        <InlineEdit
+          value={info.getValue()}
+          onSave={(value) => updateDataFunction("scope", value, info.row.original.id)}
+          displayClassName="text-[11px]"
         />
       ),
     },
@@ -328,15 +243,10 @@ export const getEditorComposerTemplates = (updateDataFunction) => ({
       header: "Description",
       size: 150,
       cell: (info) => (
-        <EditableCell
-          initialValue={info.getValue()}
-          rowId={info.row.original.id}
-          columnId={info.column.id}
-          updateDataFunction={updateDataFunction}
-          dataType="node"
-          displayFormatter={(value) => String(value ?? '')}
-          inputType="text"
-          valueParser={(value) => value} // Keep as string
+        <InlineEdit
+          value={info.getValue()}
+          onSave={(value) => updateDataFunction("description", value, info.row.original.id)}
+          displayClassName="text-[11px]"
         />
       ),
     },
@@ -348,15 +258,10 @@ export const getEditorComposerTemplates = (updateDataFunction) => ({
       header: "Scope",
       size: 150,
       cell: (info) => (
-        <EditableCell
-          initialValue={info.getValue()}
-          rowId={info.row.original.id}
-          columnId={info.column.id}
-          updateDataFunction={updateDataFunction}
-          dataType="node"
-          displayFormatter={(value) => String(value ?? '')}
-          inputType="text"
-          valueParser={(value) => value} // Keep as string
+        <InlineEdit
+          value={info.getValue()}
+          onSave={(value) => updateDataFunction("scope", value, info.row.original.id)}
+          displayClassName="text-[11px]"
         />
       ),
     },
@@ -366,15 +271,10 @@ export const getEditorComposerTemplates = (updateDataFunction) => ({
       header: "Description",
       size: 150,
       cell: (info) => (
-        <EditableCell
-          initialValue={info.getValue()}
-          rowId={info.row.original.id}
-          columnId={info.column.id}
-          updateDataFunction={updateDataFunction}
-          dataType="node"
-          displayFormatter={(value) => String(value ?? '')}
-          inputType="text"
-          valueParser={(value) => value} // Keep as string
+        <InlineEdit
+          value={info.getValue()}
+          onSave={(value) => updateDataFunction("description", value, info.row.original.id)}
+          displayClassName="text-[11px]"
         />
       ),
     },

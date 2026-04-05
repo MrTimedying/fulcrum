@@ -4,8 +4,8 @@ import { Calendar } from "react-multi-date-picker";
 import { Rnd } from "react-rnd";
 import { Close, Save, AssistantDirection, DateRange } from "@mui/icons-material";
 import "./calendar.css";
-import useFlowStore from "../state/flowState";
-import useTransientStore from "../state/transientState";
+import { useInterventionStore } from "../state/core/useInterventionStore";
+import useUIStore from "../state/core/useUIStore";
 import BulkDateAssigner from "./BulkDateAssigner";
 import { formatDateForPicker } from "../utils/dateUtils";
 import { getUnavailableSessionDatesExcept } from "../utils/nodeDateCalculator";
@@ -17,9 +17,9 @@ const DatepickerModal = ({ isOpen, onClose }) => {
     selectedInterventionId,
     updateSession,
     updateMultipleSessions
-  } = useFlowStore();
+  } = useInterventionStore();
 
-  const { setToaster } = useTransientStore();
+  const { setToaster } = useUIStore();
   const selectedSession = sessions[selectedSessionId];
 
   const defaultModalConfig = {

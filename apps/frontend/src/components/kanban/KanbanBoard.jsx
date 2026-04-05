@@ -15,7 +15,7 @@ import {
 } from '@dnd-kit/sortable';
 import KanbanColumn from './KanbanColumn';
 import KanbanCard from './KanbanCard';
-import useFlowStore from '../../state/flowState';
+import { usePatientStore } from '../../state/core/usePatientStore';
 
 const DIMENSIONS = [
   { id: 'bodyStructure', title: 'Body Functions & Structures' },
@@ -32,7 +32,7 @@ const KanbanBoard = ({ patientId }) => {
     addIcfRecord, 
     deleteIcfRecord, 
     moveIcfRecord 
-  } = useFlowStore();
+  } = usePatientStore();
   
   const patient = patients[patientId];
   const [activeId, setActiveId] = useState(null);

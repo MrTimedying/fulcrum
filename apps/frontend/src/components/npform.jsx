@@ -3,12 +3,11 @@ import { Dialog, Transition } from "@headlessui/react";
 import { v4 as uuidv4 } from 'uuid';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
-import useFlowStore from "../state/flowState";
-import useTransientStore from "../state/transientState";
+import { usePatientStore } from "../state/core/usePatientStore";
+import useUIStore from "../state/core/useUIStore";
 
 function NpForm({ isOpen, closeModal, formData, setFormData, setFetchingSwitch, isEditing, setIsEditing }) {
-  const { setNewEditor, setNewProfile } = useFlowStore();
-  const setToaster = useTransientStore((state) => state.setToaster);
+  const setToaster = useUIStore((state) => state.setToaster);
 
   // Validation schema using Yup
   const validationSchema = Yup.object({
@@ -56,9 +55,7 @@ function NpForm({ isOpen, closeModal, formData, setFormData, setFetchingSwitch, 
         const formDataWithBMI = { ...values, bmi: bmi };
         
         // Add patient to store
-        useFlowStore.getState().addPatient(patientId, formDataWithBMI);
-        setNewEditor(patientId);
-        setNewProfile(patientId);
+        usePatientStore.getState().addPatient(patientId, formDataWithBMI);
         
         // Show success toast
         setToaster({

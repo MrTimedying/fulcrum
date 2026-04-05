@@ -1,15 +1,11 @@
 import React from 'react';
 import "../../App.css"
-import useFlowStore from '../../state/flowState';
+import { useNavigationStore } from '../../state/core/useNavigationStore';
 import { tauriAPI } from '../../utils/tauri-api';
 
 const WindowControls = () => {
 
-  const store = useFlowStore();
-  const patientId = store?.patientId;
-  const activeTab = store?.activeTab;
-  const setEditorState = store?.setEditorState;
-  const setProfileState = store?.setProfileState;
+  const { patientId, activeTab } = useNavigationStore();
 
   const minimizeWindow = async () => {
     try {
@@ -29,15 +25,6 @@ const WindowControls = () => {
 
   const closeWindow = async () => {
     try {
-      // Perform state saving only if we are in the main window (activeTab exists)
-      if (activeTab) {
-        if (activeTab === 'Profile') {
-          setProfileState(patientId);
-        } else if (activeTab === 'Editor') {
-          setEditorState(patientId);
-        }
-      }
-      
       // Always attempt to close the current window
       await tauriAPI.window.close();
     } catch (error) {

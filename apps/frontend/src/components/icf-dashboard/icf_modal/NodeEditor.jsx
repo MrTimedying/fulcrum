@@ -3,7 +3,7 @@ import RecordEditor from "./RecordEditor";
 import FieldButtons from "./FieldButtons";
 import { createDefaultICFRecord, createDefaultField } from "./helpers";
 import { FiSearch, FiPlusCircle, FiPlus, FiAlertTriangle } from "react-icons/fi";
-import useTransientStore from "../../../state/transientState";
+import useUIStore from "../../../state/core/useUIStore";
 
 // NodeEditor component for editing and managing individual ICF record nodes
 const NodeEditor = ({
@@ -26,7 +26,7 @@ const NodeEditor = ({
   newSetName,
   setNewSetName,
 }) => {
-  const { setToaster } = useTransientStore();
+  const { setToaster } = useUIStore();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedRecord, setSelectedRecord] = useState(null);
 

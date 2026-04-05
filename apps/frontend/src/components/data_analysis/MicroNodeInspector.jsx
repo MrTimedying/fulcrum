@@ -3,11 +3,11 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   BarChart, Bar, ComposedChart, Area, PieChart, Pie, Cell
 } from 'recharts';
-import useFlowStore from '../../state/flowState';
+import { useFlowDiagramStore } from '../../state/flow/useFlowDiagramStore';
 import { getExerciseContainerDisplayName } from '../../utils/exerciseUtils';
 
 function MicroNodeInspector({ node }) {
-  const { nodes, edges } = useFlowStore();
+  const { nodes, edges } = useFlowDiagramStore();
   const [selectedTags, setSelectedTags] = useState([]);
   const [showAllTags, setShowAllTags] = useState(true);
   

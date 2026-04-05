@@ -9,8 +9,9 @@ import UpdateManager from './UpdateManager';
 import SplitPane, { Pane } from 'split-pane-react';
 import 'split-pane-react/esm/themes/default.css';
 import './splitpane.css';
-import useFlowStore from '../state/flowState';
-import useTransientStore from '../state/transientState';
+import { usePatientStore } from '../state/core/usePatientStore';
+import { useNavigationStore } from '../state/core/useNavigationStore';
+import useUIStore from '../state/core/useUIStore';
 import NpForm from './npform';
 import OptionsModal from './OptionsModal';
 
@@ -44,8 +45,9 @@ function Home() {
   const [sizes, setSizes] = useState(['250px', 'auto']);
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef(null);
-  const { patients, patientId, setActiveTab } = useFlowStore();
-  const { setToaster } = useTransientStore();
+  const { patients } = usePatientStore();
+  const { patientId, setActiveTab } = useNavigationStore();
+  const { setToaster } = useUIStore();
   
   // Layout state
   const [activeSidebarContext, setActiveSidebarContext] = useState('patients');

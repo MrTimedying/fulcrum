@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { FiCheck, FiX, FiTrash2 } from "react-icons/fi";
-import useFlowStore from "../../state/flowState";
+import { useInterventionStore } from "../../state/core/useInterventionStore";
 import {
   createDefaultField,
   createDefaultContainer,
@@ -11,7 +11,7 @@ import { InlineEdit } from "./exercise_modal/InlineEdit";
 import { createValidationSchema } from "./exercise_modal/validationSchema";
 import Field from "./exercise_modal/Field";
 import { FieldTypeButtons } from "./exercise_modal/FieldsButtons";
-import useTransientStore from "../../state/transientState";
+import useUIStore from "../../state/core/useUIStore";
 import CustomAutocompleteSelect from "./exercise_modal/CustomAutocompleteSelect";
 import { MdOutlineDataSaverOn } from "react-icons/md";
 import { v4 as uuidv4 } from 'uuid';
@@ -43,8 +43,8 @@ const SessionEditor = () => {
     saveExercise, 
     deleteExercise,
     setSelectedSessionId
-  } = useFlowStore();
-  const { setToaster } = useTransientStore();
+  } = useInterventionStore();
+  const { setToaster } = useUIStore();
 
   const selectedSession = useMemo(
     () => selectedSessionId ? sessions[selectedSessionId] : null,
@@ -539,3 +539,4 @@ const SessionEditor = () => {
 };
 
 export default SessionEditor;
+

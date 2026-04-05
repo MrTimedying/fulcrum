@@ -2,16 +2,25 @@ import React, { useState } from "react";
 import Modal from "react-modal";
 import { Rnd } from "react-rnd";
 import { Tab } from "@headlessui/react";
-import useFlowStore from "../state/flowState";
-import useTransientStore from "../state/transientState";
+import { useFlowDiagramStore } from "../state/flow/useFlowDiagramStore";
+import { useNavigationStore } from "../state/core/useNavigationStore";
+import { useInterventionStore } from "../state/core/useInterventionStore";
+import useUIStore from "../state/core/useUIStore";
 import { Close, Save } from "@mui/icons-material";
 import { v4 as uuidv4 } from "uuid";
 
 const InterventionModal = ({ isOpen, onClose }) => {
-  const { nodes, edges, patientId, interventions, addIntervention, loadIntervention, removeIntervention } = useFlowStore();
-  const { setToaster } = useTransientStore();
+  const { nodes, edges } = useFlowDiagramStore();
+  const { patientId } = useNavigationStore();
+  const { interventions, addIntervention, loadIntervention, removeIntervention } = useInterventionStore();
+  const { setToaster } = useUIStore();
   const [newInterventionName, setNewInterventionName] = useState("");
   const [activeTabIndex, setActiveTabIndex] = useState(0);
+
+  const patientInterventions = React.useMemo(() => 
+    Object.values(interventions).filter(i => i.patientId === patientId),
+    [interventions, patientId]
+  );
 
   const defaultModalConfig = {
     width: 800,
@@ -31,8 +40,7 @@ const InterventionModal = ({ isOpen, onClose }) => {
     }
 
     // Check for duplicate names
-    const existingInterventions = interventions[patientId] || [];
-    if (existingInterventions.some((i) => i.name === newInterventionName)) {
+    if (patientInterventions.some((i) => i.name === newInterventionName)) {
       setToaster({
         type: "error",
         message: "An intervention with this name already exists",
@@ -60,11 +68,9 @@ const InterventionModal = ({ isOpen, onClose }) => {
   }
 
   function handleLoadIntervention(patientId, interventionId) {
-    const intervention = interventions[patientId]?.find(
-      (i) => i.id === interventionId
-    );
+    const intervention = interventions[interventionId];
   
-    if (!intervention) {
+    if (!intervention || intervention.patientId !== patientId) {
       setToaster({
         type: "error",
         message: "Intervention not found.",
@@ -213,9 +219,9 @@ const InterventionModal = ({ isOpen, onClose }) => {
                 </div>
 
                 <div className="flex-1 overflow-auto">
-                  {(interventions[patientId] || []).length > 0 ?  (
+                  {patientInterventions.length > 0 ?  (
                     <div className="space-y-3">
-                      {interventions[patientId].map((intervention) => (
+                      {patientInterventions.map((intervention) => (
                         <div
                           key={intervention.id}
                           className="p-4 bg-gray-700 rounded-md hover:bg-gray-600 transition duration-150 cursor-pointer flex justify-between items-center"
@@ -247,3 +253,4 @@ const InterventionModal = ({ isOpen, onClose }) => {
 };
 
 export default InterventionModal;
+

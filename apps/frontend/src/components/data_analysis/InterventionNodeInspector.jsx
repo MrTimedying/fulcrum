@@ -3,11 +3,11 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   BarChart, Bar, ComposedChart, Area, AreaChart, PieChart, Pie, Cell
 } from 'recharts';
-import useFlowStore from '../../state/flowState';
+import { useFlowDiagramStore } from '../../state/flow/useFlowDiagramStore';
 import { getExerciseContainerDisplayName } from '../../utils/exerciseUtils';
 
 function InterventionNodeInspector({ node }) {
-  const { nodes, edges } = useFlowStore();
+  const { nodes, edges } = useFlowDiagramStore();
   const [selectedExercise, setSelectedExercise] = useState(null);
   const [selectedTags, setSelectedTags] = useState([]);
   const [showAllTags, setShowAllTags] = useState(true);

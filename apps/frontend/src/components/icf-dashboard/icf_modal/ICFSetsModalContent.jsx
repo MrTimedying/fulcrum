@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useReactFlow } from "@xyflow/react";
 import { v4 as uuidv4 } from "uuid";
-import useFlowStore from "../../../state/flowState";
-import useTransientStore from "../../../state/transientState";
+import { useNavigationStore } from "../../../state/core/useNavigationStore";
+import { usePatientStore } from "../../../state/core/usePatientStore";
+import { useInterventionStore } from "../../../state/core/useInterventionStore";
+import { useFlowDiagramStore } from "../../../state/flow/useFlowDiagramStore";
+import useUIStore from "../../../state/core/useUIStore";
 import Sidebar from "./Sidebar";
 import NodeEditor from "./NodeEditor";
 import Templater from "./Templater";
@@ -19,7 +22,7 @@ import { FiPlus } from "react-icons/fi";
 const ICFSetsModalContent = ({ onClose }) => {
   // Get access to route information to check if we're in editor view
   const isEditorView = window.location.pathname.includes('/editor');
-  const { setToaster } = useTransientStore();
+  const { setToaster } = useUIStore();
   // State
   const [activeView, setActiveView] = useState("nodeEditor");
   const [records, setRecords] = useState([]);
@@ -30,18 +33,11 @@ const ICFSetsModalContent = ({ onClose }) => {
   const [showSaveSetForm, setShowSaveSetForm] = useState(false);
   const [newSetName, setNewSetName] = useState("");
 
-  // Access flow store
-  const { 
-    addTemplate, 
-    loadTemplate, 
-    removeTemplate, 
-    templates, 
-    setNodes, 
-    setEdges,
-    activeTab,
-    patientId,
-    addIcfRecord
-  } = useFlowStore();
+  // Access granular stores
+  const { activeTab, patientId } = useNavigationStore();
+  const { addIcfRecord } = usePatientStore();
+  const { addTemplate, loadTemplate, removeTemplate, templates } = useInterventionStore();
+  const { setNodes, setEdges } = useFlowDiagramStore();
   const reactFlowInstance = useReactFlow();
 
   // ... (setup useEffects unchanged)

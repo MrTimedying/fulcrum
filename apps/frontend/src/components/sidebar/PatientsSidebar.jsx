@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import MyDropdown from "../menu";
-import useFlowStore from "../../state/flowState.js";
+import { usePatientStore } from "../../state/core/usePatientStore";
+import { useNavigationStore } from "../../state/core/useNavigationStore";
 
 const PatientsSidebar = ({ handleEditPatient }) => {
   const [filteredClientList, setFilteredClientList] = useState([]);
@@ -18,8 +19,8 @@ const PatientsSidebar = ({ handleEditPatient }) => {
     status: "",
   });
 
-  const clientList = useFlowStore((state) => state.patients);
-  const { patientId, setPatientId } = useFlowStore();
+  const clientList = usePatientStore((state) => state.patients);
+  const { patientId, setPatientId } = useNavigationStore();
 
   const handleListParsing = (event) => {
     const inputValue = event.target.value;

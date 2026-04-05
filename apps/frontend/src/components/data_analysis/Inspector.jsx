@@ -2,7 +2,7 @@ import React from "react";
 import Modal from "react-modal";
 import { Rnd } from "react-rnd";
 import { IoClose } from "react-icons/io5";
-import useFlowStore from "../../state/flowState";
+import { useFlowDiagramStore } from "../../state/flow/useFlowDiagramStore";
 import SessionNodeInspector from "./SessionNodeInspector";
 import MicroNodeInspector from "./MicroNodeInspector";
 import PhaseNodeInspector from "./PhaseNodeInspector";
@@ -10,7 +10,7 @@ import InterventionNodeInspector from "./InterventionNodeInspector";
 import NoDateWarning from "./NoDateWarning";
 
 function Inspector({ isOpen, onClose, multiple }) {
-  const { nodes, setNodes } = useFlowStore();
+  const { nodes, setNodes } = useFlowDiagramStore();
   const selectedNodes = Array.isArray(nodes) ? nodes.filter(node => node.selected) : [];
   const selectedNode = selectedNodes[0]; // We'll focus on the first selected node
 

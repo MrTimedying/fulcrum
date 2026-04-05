@@ -6,8 +6,10 @@ import { Close, Save, Delete, FolderOpen } from "@mui/icons-material";
 import { v4 as uuidv4 } from "uuid";
 
 // Zustand state management hooks (based on your InterventionModal pattern)
-import useFlowStore from "../state/flowState";
-import useTransientStore from "../state/transientState";
+import { useFlowDiagramStore } from "../state/flow/useFlowDiagramStore";
+import { useNavigationStore } from "../state/core/useNavigationStore";
+import { useInterventionStore } from "../state/core/useInterventionStore";
+import useUIStore from "../state/core/useUIStore";
 
 // Helper: Gather descendants and their edges given a parent nodeId
 function getAllDescendants(parentNodeId, nodes, edges) {
@@ -38,17 +40,16 @@ function getAllDescendants(parentNodeId, nodes, edges) {
 
 const TemplateModal = ({ isOpen, onClose }) => {
   // Zustand stores (pattern from InterventionModal)
+  const { nodes, edges } = useFlowDiagramStore();
+  const { patientId } = useNavigationStore();
   const {
-    nodes,
-    edges,
-    patientId, // Assuming analogous to patientId, otherwise adjust as needed
     templates,
     addTemplate,
     loadTemplate,
     removeTemplate,
-  } = useFlowStore();
+  } = useInterventionStore();
 
-  const { setToaster } = useTransientStore();
+  const { setToaster } = useUIStore();
   const nodeSelected = nodes.find((node) => node.selected);
   const selectedNodeId = nodeSelected?.id;
   const [newTemplateName, setNewTemplateName] = useState("");
