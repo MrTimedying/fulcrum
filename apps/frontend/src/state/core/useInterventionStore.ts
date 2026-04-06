@@ -119,6 +119,8 @@ export const useInterventionStore = create<InterventionState>()(
       templates: [],
       selectedInterventionId: null,
       selectedSessionId: null,
+      selectedStructuralNodeId: null,
+      selectedStructuralNodeType: null,
 
       clearInterventions: () => set({ 
         interventions: {}, 
@@ -127,11 +129,22 @@ export const useInterventionStore = create<InterventionState>()(
         sessions: {}, 
         exercises: [], 
         selectedInterventionId: null, 
-        selectedSessionId: null 
+        selectedSessionId: null,
+        selectedStructuralNodeId: null,
+        selectedStructuralNodeType: null
       }),
 
       setSelectedInterventionId: (id) => set({ selectedInterventionId: id }),
-      setSelectedSessionId: (id) => set({ selectedSessionId: id }),
+      setSelectedSessionId: (id) => set({ selectedSessionId: id, selectedStructuralNodeId: null, selectedStructuralNodeType: null }),
+      setSelectedNode: (id, type) => set((state) => {
+        if (type === 'Session') {
+          return { selectedSessionId: id, selectedStructuralNodeId: null, selectedStructuralNodeType: null };
+        } else if (type === 'Phase' || type === 'Micro') {
+          return { selectedSessionId: null, selectedStructuralNodeId: id, selectedStructuralNodeType: type };
+        } else {
+          return { selectedSessionId: null, selectedStructuralNodeId: null, selectedStructuralNodeType: null };
+        }
+      }),
 
       addIntervention: (patientId, data) => {
         let intervention: Intervention;

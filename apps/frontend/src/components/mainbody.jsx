@@ -7,6 +7,8 @@ import { useNavigationStore } from "../state/core/useNavigationStore";
 import { useFlowDiagramStore } from "../state/flow/useFlowDiagramStore";
 import Profile from "./icf-dashboard/profile";
 import SessionEditor from "./editor/SessionEditor";
+import PhasePanel from "./editor/PhasePanel";
+import MicroPanel from "./editor/MicroPanel";
 import { useInterventionStore } from "../state/core/useInterventionStore";
 import useUIStore from "../state/core/useUIStore";
 import BulkExerciseEditModal from "./BulkExerciseEditModal";
@@ -21,6 +23,7 @@ function MainBody({ handleEditPatient }) {
   const { patientId, activeTab } = useNavigationStore();
   const { nodes, setNodes } = useFlowDiagramStore();
   const { setToaster } = useUIStore();
+  const { selectedInterventionId, selectedSessionId, selectedStructuralNodeType } = useInterventionStore();
   const [isICFSetsModalOpen, setIsICFSetsModalOpen] = useState(false);
 
   // State for Bulk Exercise Edit Modal
@@ -46,6 +49,18 @@ function MainBody({ handleEditPatient }) {
   }, []);
 
   function TabStructure() {
+    let editorContent = null;
+    if (selectedStructuralNodeType === 'Phase') {
+      editorContent = <PhasePanel />;
+    } else if (selectedStructuralNodeType === 'Micro') {
+      editorContent = <MicroPanel />;
+    } else if (selectedSessionId) {
+      editorContent = <SessionEditor />;
+    } else {
+      const activeStep = !patientId ? 0 : !selectedInterventionId ? 1 : 2;
+      editorContent = <InterventionWorkflowPlaceholder activeStep={activeStep} />;
+    }
+
     return (
       <div className="flex flex-col h-full w-full">
         {activeTab === "Profile" ? (
@@ -60,7 +75,7 @@ function MainBody({ handleEditPatient }) {
           </div>
         ) : (
           <div key="interventionEditor" className="h-full overflow-hidden">
-            <SessionEditor />
+            {editorContent}
           </div>
         )}
       </div>

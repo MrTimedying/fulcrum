@@ -17,8 +17,6 @@ import {
 } from "react-icons/hi2";
 
 const NodeRenderer = ({ node, style, dragHandle, tree }) => {
-  const { setSelectedSessionId } = useInterventionStore();
-
   const Icon = useMemo(() => {
     if (node.data.type === 'folder') return HiOutlineQueueList;
     if (node.data.type === 'session') return HiOutlineCalendarDays;
@@ -63,7 +61,8 @@ const InterventionsSidebar = () => {
     sessions, interventions, phases, microcycles,
     selectedInterventionId, setSelectedInterventionId, setSelectedSessionId,
     addIntervention, addPhase, addMicrocycle, addSession,
-    moveSession, moveMicrocycle, movePhase, cloneSessions, removeIntervention
+    moveSession, moveMicrocycle, movePhase, cloneSessions, removeIntervention,
+    setSelectedNode
   } = useInterventionStore();
   
   const { patientId } = useNavigationStore();
@@ -152,7 +151,7 @@ const InterventionsSidebar = () => {
   const handleAddSessionAction = (microId) => {
     const targetMicroId = typeof microId === 'string' ? microId : microId?.id || treeRef?.selectedNodes.find(n => n.data.tagKey === 'Micro')?.id;
     const newSessionId = addSession(selectedInterventionId, {}, targetMicroId);
-    setSelectedSessionId(newSessionId);
+    setSelectedNode(newSessionId, 'Session');
   };
 
   return (
@@ -214,7 +213,16 @@ const InterventionsSidebar = () => {
             multiSelect={true}
             onSelect={(nodes) => {
               const session = nodes.find(n => n.data.type === 'session');
-              if (session) setSelectedSessionId(session.id);
+              if (session) {
+                setSelectedNode(session.id, 'Session');
+              } else {
+                const structural = nodes.find(n => n.data.tagKey === 'Phase' || n.data.tagKey === 'Micro');
+                if (structural) {
+                  setSelectedNode(structural.id, structural.data.tagKey);
+                } else {
+                  setSelectedNode(null, null);
+                }
+              }
             }}
           >
             {NodeRenderer}
