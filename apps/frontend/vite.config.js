@@ -18,6 +18,9 @@ export default defineConfig({
       }
     }
   },
+  optimizeDeps: {
+    exclude: ['@tauri-apps/api', '@tauri-apps/plugin-dialog', '@tauri-apps/plugin-fs']
+  },
   css: {
     postcss: './postcss.config.js',
   },

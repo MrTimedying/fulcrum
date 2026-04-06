@@ -4,16 +4,23 @@ import {
   HiMagnifyingGlass,
   HiOutlineCircleStack,
   HiOutlineCog6Tooth,
-  HiOutlineTrash
+  HiOutlineTrash,
+  HiOutlineArrowDownTray,
+  HiOutlineArrowUpTray,
+  HiOutlineBeaker
 } from "react-icons/hi2";
 import { usePatientStore } from "../state/core/usePatientStore";
 import { useInterventionStore } from "../state/core/useInterventionStore";
 import { useNavigationStore } from "../state/core/useNavigationStore";
+import { exportIntervention, importIntervention } from "../utils/interventionExchange";
+import { generateDummyIntervention } from "../utils/dummyGenerator";
 
 const IconBar = ({ activeContext, onContextChange, isSidebarCollapsed, onSettingsClick }) => {
   const clearPatients = usePatientStore(state => state.clearPatients);
   const clearInterventions = useInterventionStore(state => state.clearInterventions);
   const setPatientId = useNavigationStore(state => state.setPatientId);
+  const patientId = useNavigationStore(state => state.patientId);
+  const selectedInterventionId = useInterventionStore(state => state.selectedInterventionId);
 
   const isDevelopment = process.env.NODE_ENV === 'development';
 
@@ -23,6 +30,26 @@ const IconBar = ({ activeContext, onContextChange, isSidebarCollapsed, onSetting
       clearInterventions();
       setPatientId("");
       window.location.reload(); // Reload to ensure all components reset
+    }
+  };
+
+  const handleExport = () => {
+    if (selectedInterventionId) {
+      exportIntervention(selectedInterventionId);
+    } else {
+      alert("Please select an intervention first.");
+    }
+  };
+
+  const handleImport = () => {
+    importIntervention(patientId);
+  };
+
+  const handleGenerate = () => {
+    if (patientId) {
+      generateDummyIntervention(patientId);
+    } else {
+      alert("Please select a patient first.");
     }
   };
 
@@ -64,16 +91,48 @@ const IconBar = ({ activeContext, onContextChange, isSidebarCollapsed, onSetting
       {/* Bottom Icons */}
       <div className="w-full flex flex-col items-center pb-2">
         {isDevelopment && (
-          <div
-            onClick={handlePurge}
-            className="relative flex items-center justify-center w-full py-3 cursor-pointer group transition-all"
-            title="PURGE ALL DATA (DEV ONLY)"
-          >
-            <HiOutlineTrash 
-              size={24} 
-              className="text-red-500/50 group-hover:text-red-500 transition-colors duration-200"
-            />
-          </div>
+          <>
+            <div
+              onClick={handleExport}
+              className="relative flex items-center justify-center w-full py-3 cursor-pointer group transition-all"
+              title="Export Intervention (JSON)"
+            >
+              <HiOutlineArrowUpTray 
+                size={24} 
+                className="text-blue-500/50 group-hover:text-blue-500 transition-colors duration-200"
+              />
+            </div>
+            <div
+              onClick={handleImport}
+              className="relative flex items-center justify-center w-full py-3 cursor-pointer group transition-all"
+              title="Import Intervention (JSON)"
+            >
+              <HiOutlineArrowDownTray 
+                size={24} 
+                className="text-green-500/50 group-hover:text-green-500 transition-colors duration-200"
+              />
+            </div>
+            <div
+              onClick={handleGenerate}
+              className="relative flex items-center justify-center w-full py-3 cursor-pointer group transition-all"
+              title="Generate Dummy Data"
+            >
+              <HiOutlineBeaker 
+                size={24} 
+                className="text-amber-500/50 group-hover:text-amber-500 transition-colors duration-200"
+              />
+            </div>
+            <div
+              onClick={handlePurge}
+              className="relative flex items-center justify-center w-full py-3 cursor-pointer group transition-all"
+              title="PURGE ALL DATA (DEV ONLY)"
+            >
+              <HiOutlineTrash 
+                size={24} 
+                className="text-red-500/50 group-hover:text-red-500 transition-colors duration-200"
+              />
+            </div>
+          </>
         )}
         <div
           onClick={onSettingsClick}

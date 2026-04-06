@@ -53,11 +53,15 @@ function Home() {
   
   // Layout state
   const [activeSidebarContext, setActiveSidebarContext] = useState('patients');
+  const prevPatientIdRef = useRef(patientId);
 
   useEffect(() => {
-    // Clear selection when patient changes to prevent stale data
-    setSelectedInterventionId(null);
-    setSelectedSessionId(null);
+    // Clear selection when patient changes to a DIFFERENT one or becomes empty
+    if (patientId !== prevPatientIdRef.current) {
+      setSelectedInterventionId(null);
+      setSelectedSessionId(null);
+      prevPatientIdRef.current = patientId;
+    }
   }, [patientId, setSelectedInterventionId, setSelectedSessionId]);
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);

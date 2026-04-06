@@ -59,7 +59,8 @@ const NodeRenderer = ({ node, style, dragHandle, tree }) => {
 const InterventionsSidebar = () => {
   const { 
     sessions, interventions, phases, microcycles,
-    selectedInterventionId, setSelectedInterventionId, setSelectedSessionId,
+    selectedInterventionId, setSelectedInterventionId,
+    selectedSessionId, selectedStructuralNodeId,
     addIntervention, addPhase, addMicrocycle, addSession,
     moveSession, moveMicrocycle, movePhase, cloneSessions, removeIntervention,
     setSelectedNode
@@ -69,11 +70,38 @@ const InterventionsSidebar = () => {
   const [isAddingIntervention, setIsAddingIntervention] = useState(false);
   const [newInterventionName, setNewInterventionName] = useState("");
   const [treeRef, setTreeRef] = useState(null);
+  const containerRef = React.useRef(null);
+  const isInitialMount = React.useRef(true);
+  const [treeHeight, setTreeHeight] = useState(400);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      isInitialMount.current = false;
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const observer = new ResizeObserver((entries) => {
+      for (let entry of entries) {
+        setTreeHeight(entry.contentRect.height);
+      }
+    });
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
+  }, []);
 
   const activeInterventions = useMemo(() => 
     Object.values(interventions).filter(i => i.patientId === patientId),
     [interventions, patientId]
   );
+
+  useEffect(() => {
+    if (!selectedInterventionId && activeInterventions.length > 0) {
+      setSelectedInterventionId(activeInterventions[0].id);
+    }
+  }, [activeInterventions, selectedInterventionId, setSelectedInterventionId]);
 
   const selectedIntervention = useMemo(() => 
     selectedInterventionId ? interventions[selectedInterventionId] : null,
@@ -196,14 +224,15 @@ const InterventionsSidebar = () => {
       </div>
 
       {/* Tree Content */}
-      <div className="flex-1 overflow-hidden py-2 px-2">
+      <div ref={containerRef} className="flex-1 overflow-hidden py-2 px-2 custom-scrollbar-hover">
         {selectedInterventionId ? (
           <Tree
             ref={setTreeRef}
             data={treeData}
+            selection={selectedSessionId || selectedStructuralNodeId}
             openByDefault={true}
             width="100%"
-            height={600}
+            height={treeHeight}
             indent={12}
             rowHeight={22}
             onMove={handleMove}
@@ -212,6 +241,13 @@ const InterventionsSidebar = () => {
             onAddSession={handleAddSessionAction}
             multiSelect={true}
             onSelect={(nodes) => {
+              if (nodes.length === 0) {
+                // Only allow deselection if it's not the initial mounting phase
+                if (!isInitialMount.current) {
+                  setSelectedNode(null, null);
+                }
+                return;
+              }
               const session = nodes.find(n => n.data.type === 'session');
               if (session) {
                 setSelectedNode(session.id, 'Session');
@@ -219,8 +255,6 @@ const InterventionsSidebar = () => {
                 const structural = nodes.find(n => n.data.tagKey === 'Phase' || n.data.tagKey === 'Micro');
                 if (structural) {
                   setSelectedNode(structural.id, structural.data.tagKey);
-                } else {
-                  setSelectedNode(null, null);
                 }
               }
             }}

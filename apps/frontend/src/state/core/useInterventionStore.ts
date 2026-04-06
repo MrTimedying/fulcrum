@@ -132,11 +132,14 @@ export const useInterventionStore = create<InterventionState>()(
         selectedStructuralNodeType: null
       }),
 
-      setSelectedInterventionId: (id) => set({ 
-        selectedInterventionId: id,
-        selectedSessionId: null,
-        selectedStructuralNodeId: null,
-        selectedStructuralNodeType: null
+      setSelectedInterventionId: (id) => set((state) => {
+        if (state.selectedInterventionId === id) return state;
+        return { 
+          selectedInterventionId: id,
+          selectedSessionId: null,
+          selectedStructuralNodeId: null,
+          selectedStructuralNodeType: null
+        };
       }),
       setSelectedSessionId: (id) => set({ 
         selectedSessionId: id, 
@@ -145,18 +148,21 @@ export const useInterventionStore = create<InterventionState>()(
       }),
       setSelectedNode: (id, type) => set((state) => {
         if (type === 'Session') {
+          if (state.selectedSessionId === id) return state;
           return { 
             selectedSessionId: id, 
             selectedStructuralNodeId: null, 
             selectedStructuralNodeType: null 
           };
         } else if (type === 'Phase' || type === 'Micro' || type === 'Intervention') {
+          if (state.selectedStructuralNodeId === id && state.selectedStructuralNodeType === type) return state;
           return { 
             selectedSessionId: null, 
             selectedStructuralNodeId: id, 
             selectedStructuralNodeType: type 
           };
         } else {
+          if (state.selectedSessionId === null && state.selectedStructuralNodeId === null) return state;
           return { 
             selectedSessionId: null, 
             selectedStructuralNodeId: null, 

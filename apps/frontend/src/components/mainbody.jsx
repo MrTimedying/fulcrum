@@ -26,21 +26,6 @@ function MainBody({ handleEditPatient }) {
   // State for Bulk Exercise Edit Modal
   const [isBulkEditModalOpen, setIsBulkEditModalOpen] = useState(false);
 
-  useEffect(() => {
-    if (activeTab === "Editor" && patientId) {
-      // Find the intervention for this patient (e.g. starting with "default-" + patientId)
-      const interventions = useInterventionStore.getState().interventions;
-      const interventionId = Object.keys(interventions).find(
-        (id) => interventions[id].patientId === patientId && id.startsWith("default-")
-      ) || `default-${patientId}`;
-
-      useInterventionStore.getState().setSelectedInterventionId(interventionId);
-    } else if (activeTab === "Profile") {
-      // Clear the diagram or just leave it. (The Kanban view doesn't use it).
-      // For now, we just ensure selectedInterventionId is null or leave as is.
-    }
-  }, [patientId, activeTab]);
-
   const handleCloseBulkEditModal = useCallback(() => {
       setIsBulkEditModalOpen(false);
   }, []);

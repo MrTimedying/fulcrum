@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { FiCheck, FiX, FiTrash2 } from "react-icons/fi";
 import { useInterventionStore } from "../../state/core/useInterventionStore";
 import {
@@ -15,7 +15,7 @@ import useUIStore from "../../state/core/useUIStore";
 import CustomAutocompleteSelect from "./exercise_modal/CustomAutocompleteSelect";
 import { MdOutlineDataSaverOn } from "react-icons/md";
 import { v4 as uuidv4 } from 'uuid';
-import { getExerciseContainerDisplayName, createMangledContainerKey } from "../../utils/exerciseUtils";
+import { getExerciseContainerDisplayName, createMangledContainerKey, getExerciseContainerId } from "../../utils/exerciseUtils";
 import { motion, AnimatePresence } from "motion/react";
 import MultiListBox from "./exercise_modal/MultiListBox";
 import { HiOutlineCalendarDays } from "react-icons/hi2";
@@ -23,14 +23,14 @@ import DatepickerModal from "../dateModal";
 import { getOrderedSessions } from "../../utils/nodeDateCalculator";
 import { useNavigationStore } from "../../state/core/useNavigationStore";
 import InterventionWorkflowPlaceholder from "../util/InterventionWorkflowPlaceholder";
-
-
+import { debounce } from "lodash";
 
 const SessionEditor = () => {
   const [containers, setContainers] = useState([]);
   const [formValues, setFormValues] = useState({});
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSaved, setIsSaved] = useState(true);
   const [selectedContainers, setSelectedContainers] = useState(new Set());
   const [isBulkEditVisible, setIsBulkEditVisible] = useState(false);
   const [bulkEditTargetFields, setBulkEditTargetFields] = useState(null);
@@ -62,22 +62,41 @@ const SessionEditor = () => {
     return [];
   }, [sessions, selectedInterventionId]);
 
+  // Ref to store current state for the debounced function
+  const currentDataRef = useRef({ containers, formValues });
+
   useEffect(() => {
-    // Helper to save current local state back to store
-    const saveToStore = () => {
-      if (!selectedSessionId) return;
+    currentDataRef.current = { containers, formValues };
+  }, [containers, formValues]);
+
+  const debouncedSave = useCallback(
+    debounce((sessionId, data) => {
+      if (!sessionId) return;
+      
+      const { containers: currentContainers, formValues: currentFormValues } = data;
       const outputData = {};
-      containers.forEach(c => {
-        const mid = uuidv4();
-        const mkey = createMangledContainerKey(c.name, mid);
-        const vals = formValues[c.id] || {};
+      
+      currentContainers.forEach(c => {
+        // Use existing mangledKey or generate a new one
+        const mkey = c.mangledKey || createMangledContainerKey(c.name, uuidv4());
+        const vals = currentFormValues[c.id] || {};
         outputData[mkey] = {
           fields: c.fields.map(f => ({ ...f, value: vals[f.name] || "" }))
         };
       });
-      updateSession(selectedSessionId, { exercises: outputData });
-    };
 
+      updateSession(sessionId, { exercises: outputData });
+      setIsSaved(true);
+    }, 1000),
+    [updateSession]
+  );
+
+  const triggerSave = useCallback(() => {
+    setIsSaved(false);
+    debouncedSave(selectedSessionId, currentDataRef.current);
+  }, [selectedSessionId, debouncedSave]);
+
+  useEffect(() => {
     if (selectedSession) {
       const existingExerciseData = selectedSession.exercises || {};
       let structureToSet = [];
@@ -113,6 +132,7 @@ const SessionEditor = () => {
                 id: newContainerId,
                 name: containerName,
                 fields: reconstructedFields,
+                mangledKey: mangledKey // Store the mangled key
               });
               valuesToSet[newContainerId] = containerValues;
             }
@@ -135,12 +155,8 @@ const SessionEditor = () => {
       setFormValues(valuesToSet);
       setErrors({});
       setIsSubmitting(false);
+      setIsSaved(true);
     }
-
-    return () => {
-      // Auto-save on switch (optional: only if dirty)
-      saveToStore();
-    };
   }, [selectedSessionId]);
 
   const handleInputChange = (containerId, fieldName, value) => {
@@ -148,10 +164,20 @@ const SessionEditor = () => {
       ...prev,
       [containerId]: { ...(prev[containerId] || {}), [fieldName]: value }
     }));
+    triggerSave();
   };
 
   const updateContainerName = (containerId, newName) => {
-    setContainers(prev => prev.map(c => c.id === containerId ? { ...c, name: newName } : c));
+    setContainers(prev => prev.map(c => {
+      if (c.id !== containerId) return c;
+      const existingId = c.mangledKey ? getExerciseContainerId(c.mangledKey) : uuidv4();
+      return { 
+        ...c, 
+        name: newName,
+        mangledKey: createMangledContainerKey(newName, existingId)
+      };
+    }));
+    triggerSave();
   };
 
   const updateFieldProperties = (containerId, fieldId, newLabel) => {
@@ -174,15 +200,19 @@ const SessionEditor = () => {
         })
       };
     }));
+    triggerSave();
   };
 
   const addContainer = () => {
     const newContainer = createDefaultContainer(undefined, containers);
+    // Initialize mangledKey immediately to ensure stability
+    newContainer.mangledKey = createMangledContainerKey(newContainer.name, uuidv4());
     setContainers(prev => [...prev, newContainer]);
     setFormValues(prev => ({
       ...prev,
       [newContainer.id]: newContainer.fields.reduce((acc, f) => ({ ...acc, [f.name]: "" }), {})
     }));
+    triggerSave();
   };
 
   const removeContainer = (id) => {
@@ -191,6 +221,7 @@ const SessionEditor = () => {
       const { [id]: _, ...rest } = prev;
       return rest;
     });
+    triggerSave();
   };
 
   const addField = (containerId, type, subtype, label) => {
@@ -198,7 +229,11 @@ const SessionEditor = () => {
     setContainers(prev => prev.map(c => 
       c.id === containerId ? { ...c, fields: [...c.fields, newField] } : c
     ));
-    handleInputChange(containerId, newField.name, "");
+    setFormValues((prev) => ({
+      ...prev,
+      [containerId]: { ...(prev[containerId] || {}), [newField.name]: "" }
+    }));
+    triggerSave();
   };
 
   const removeField = (containerId, fieldId) => {
@@ -216,6 +251,7 @@ const SessionEditor = () => {
         return { ...prev, [containerId]: rest };
       });
     }
+    triggerSave();
   };
 
   const handleSave = (c) => {
@@ -229,12 +265,18 @@ const SessionEditor = () => {
 
   const handleSelection = (selectedOption) => {
     const newId = generateId();
-    const newContainer = { ...selectedOption, id: newId };
+    // Ensure mangledKey is present if not already in the template
+    const newContainer = { 
+      ...selectedOption, 
+      id: newId,
+      mangledKey: selectedOption.mangledKey || createMangledContainerKey(selectedOption.name, uuidv4())
+    };
     setContainers(prev => [...prev, newContainer]);
     setFormValues(prev => ({
       ...prev,
       [newId]: newContainer.fields.reduce((acc, f) => ({ ...acc, [f.name]: "" }), {})
     }));
+    triggerSave();
   };
 
   const handleContainerSelect = (containerId, isChecked) => {
@@ -269,6 +311,7 @@ const SessionEditor = () => {
     });
     setFormValues(updated);
     setIsBulkEditVisible(false);
+    triggerSave();
   };
 
   const bulkEditFieldOptions = useMemo(() => {
@@ -277,43 +320,6 @@ const SessionEditor = () => {
     targets.forEach(c => c.fields.forEach(f => f.label && labels.add(f.label)));
     return Array.from(labels);
   }, [containers, selectedContainers]);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!selectedSession) return;
-
-    const schema = createValidationSchema(containers);
-    setIsSubmitting(true);
-    try {
-      await schema.validate(formValues, { abortEarly: false });
-      const outputData = {};
-      containers.forEach(c => {
-        const mid = uuidv4();
-        const mkey = createMangledContainerKey(c.name, mid);
-        const vals = formValues[c.id] || {};
-        outputData[mkey] = {
-          fields: c.fields.map(f => ({ ...f, value: vals[f.name] || "" }))
-        };
-      });
-      
-      updateSession(selectedSession.id, { exercises: outputData });
-      setToaster({ type: "success", message: "Exercise data saved successfully.", show: true });
-    } catch (err) {
-      const formatted = {};
-      if (err.inner) {
-        err.inner.forEach(e => {
-          const [cid, fn] = e.path.split(".");
-          if (cid && fn) {
-            if (!formatted[cid]) formatted[cid] = {};
-            formatted[cid][fn] = e.message;
-          }
-        });
-      }
-      setErrors(formatted);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   const { patientId } = useNavigationStore();
 
@@ -372,7 +378,7 @@ const SessionEditor = () => {
       </div>
 
       {/* Body */}
-      <form onSubmit={handleSubmit} className="p-4 flex-grow overflow-y-auto space-y-4 bg-zinc-900 flex flex-col relative">
+      <div className="p-4 flex-grow overflow-y-auto space-y-4 bg-zinc-900 flex flex-col relative">
         {/* Bulk Edit Panel */}
         <AnimatePresence>
           {isBulkEditVisible && (
@@ -513,25 +519,22 @@ const SessionEditor = () => {
         </div>
 
         {/* Footer Actions */}
-        <div className="flex justify-end gap-3 pt-4 border-t border-zinc-800 flex-shrink-0 mt-auto sticky bottom-0 bg-zinc-900">
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="px-2 py-1 text-xs bg-zinc-800 hover:bg-zinc-700 text-white rounded-md border border-zinc-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center gap-2"
-          >
-            {isSubmitting ? (
+        <div className="flex justify-end items-center gap-3 pt-4 border-t border-zinc-800 flex-shrink-0 mt-auto sticky bottom-0 bg-zinc-900">
+          <div className="flex items-center gap-2 px-3 py-1 text-xs text-zinc-500 font-mono">
+            {isSaved ? (
               <>
-                <span className="animate-spin inline-block w-4 h-4 border-[2px] border-current border-t-transparent text-white rounded-full"></span>
-                Saving...
+                <FiCheck className="text-green-500" />
+                <span>SAVED</span>
               </>
             ) : (
               <>
-                <FiCheck size={18} /> Save Data
+                <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse" />
+                <span>SAVING...</span>
               </>
             )}
-          </button>
+          </div>
         </div>
-      </form>
+      </div>
 
       <DatepickerModal 
         isOpen={isDatePickerOpen} 
@@ -542,4 +545,3 @@ const SessionEditor = () => {
 };
 
 export default SessionEditor;
-
