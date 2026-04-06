@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 
 export interface NavigationState {
   patientId: string;
@@ -14,48 +13,45 @@ export interface NavigationState {
 }
 
 export const useNavigationStore = create<NavigationState>()(
-  persist(
-    (set, get) => ({
-      patientId: '',
-      trailingPatientId: '',
-      activeTab: 'Profile',
-      trailingActiveTab: '',
+  (set, get) => ({
+    // Session-only state — intentionally NOT persisted.
+    // patientId always resets to '' on app start (requirement: no patient pre-selected).
+    patientId: '',
+    trailingPatientId: '',
+    activeTab: 'Profile',
+    trailingActiveTab: '',
 
-      setPatientId: (id) => {
-        const { patientId } = get();
-        set({ 
-          patientId: id, 
-          trailingPatientId: patientId 
-        });
-      },
+    setPatientId: (id) => {
+      const { patientId } = get();
+      set({ 
+        patientId: id, 
+        trailingPatientId: patientId 
+      });
+    },
 
-      setActiveTab: (tab) => {
-        const { activeTab } = get();
-        set({ 
-          activeTab: tab, 
-          trailingActiveTab: activeTab 
-        });
-      },
+    setActiveTab: (tab) => {
+      const { activeTab } = get();
+      set({ 
+        activeTab: tab, 
+        trailingActiveTab: activeTab 
+      });
+    },
 
-      setTrailingActiveTab: (tab) => {
-        set({ trailingActiveTab: tab });
-      },
+    setTrailingActiveTab: (tab) => {
+      set({ trailingActiveTab: tab });
+    },
 
-      tabStateLogic: (trailingActiveTab, patientId) => {
-        console.log('Tab logic triggered - trailing tab:', trailingActiveTab, 'for patient:', patientId);
-        // This method serves as a hook for navigation-related state transitions.
-        // Complex state saving/loading logic will be coordinated by the refactored flow store.
-      },
+    tabStateLogic: (trailingActiveTab, patientId) => {
+      console.log('Tab logic triggered - trailing tab:', trailingActiveTab, 'for patient:', patientId);
+      // This method serves as a hook for navigation-related state transitions.
+      // Complex state saving/loading logic will be coordinated by the refactored flow store.
+    },
 
-      patientStateLogic: (trailingPatientId, activeTab) => {
-        if (trailingPatientId === '') return;
-        console.log('Patient state logic triggered - trailing patient:', trailingPatientId, 'on tab:', activeTab);
-        // This method serves as a hook for navigation-related state transitions.
-        // Complex state saving/loading logic will be coordinated by the refactored flow store.
-      },
-    }),
-    {
-      name: 'navigation-store',
-    }
-  )
+    patientStateLogic: (trailingPatientId, activeTab) => {
+      if (trailingPatientId === '') return;
+      console.log('Patient state logic triggered - trailing patient:', trailingPatientId, 'on tab:', activeTab);
+      // This method serves as a hook for navigation-related state transitions.
+      // Complex state saving/loading logic will be coordinated by the refactored flow store.
+    },
+  })
 );

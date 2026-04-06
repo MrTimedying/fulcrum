@@ -20,7 +20,7 @@ const PatientsSidebar = ({ handleEditPatient }) => {
   });
 
   const clientList = usePatientStore((state) => state.patients);
-  const { patientId, setPatientId } = useNavigationStore();
+  const { patientId, setPatientId, setActiveTab } = useNavigationStore();
 
   const handleListParsing = (event) => {
     const inputValue = event.target.value;
@@ -46,6 +46,8 @@ const PatientsSidebar = ({ handleEditPatient }) => {
       setPatientId("");
     } else {
       setPatientId(chosenPatient);
+      // Always reset to Profile when switching patients
+      setActiveTab('Profile');
     }
   };
 

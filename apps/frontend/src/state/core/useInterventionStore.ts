@@ -32,7 +32,20 @@ export interface Intervention {
   patientId: string;
   nodes?: any[];
   edges?: any[];
+  phaseIds: string[];
   [key: string]: any;
+}
+
+export interface Phase {
+  id: string;
+  name: string;
+  microcycleIds: string[];
+}
+
+export interface Microcycle {
+  id: string;
+  name: string;
+  sessionIds: string[];
 }
 
 export interface Template {
@@ -45,6 +58,8 @@ export interface Template {
 
 export interface InterventionState {
   interventions: Record<string, Intervention>;
+  phases: Record<string, Phase>;
+  microcycles: Record<string, Microcycle>;
   sessions: Record<string, Session>;
   exercises: Exercise[];
   templates: Template[];
@@ -56,10 +71,26 @@ export interface InterventionState {
   loadIntervention: (patientId: string, interventionId: string) => void;
   saveActiveIntervention: (patientId: string, interventionId: string) => void;
   removeIntervention: (patientId: string, interventionId: string) => void;
-  addSession: (interventionId: string, sessionData?: Partial<Session>) => string;
+  
+  addPhase: (interventionId: string, name?: string) => string;
+  updatePhase: (id: string, updates: Partial<Phase>) => void;
+  deletePhase: (interventionId: string, phaseId: string) => void;
+  
+  addMicrocycle: (phaseId: string, name?: string) => string;
+  updateMicrocycle: (id: string, updates: Partial<Microcycle>) => void;
+  deleteMicrocycle: (phaseId: string, microId: string) => void;
+
+  addSession: (interventionId: string, sessionData?: Partial<Session>, microId?: string) => string;
   updateSession: (id: string, updates: Partial<Session>) => void;
   updateMultipleSessions: (updatesMap: Record<string, Partial<Session>>) => void;
-  deleteSession: (id: string) => void;
+  deleteSession: (id: string, microId?: string) => void;
+  
+  moveSession: (sourceMicroId: string, targetMicroId: string, sessionId: string, newIndex: number) => void;
+  moveMicrocycle: (sourcePhaseId: string, targetPhaseId: string, microId: string, newIndex: number) => void;
+  movePhase: (interventionId: string, phaseId: string, newIndex: number) => void;
+
+  cloneSessions: (sessionIds: string[], targetMicroId: string) => void;
+
   setSelectedInterventionId: (id: string | null) => void;
   setSelectedSessionId: (id: string | null) => void;
 
@@ -81,6 +112,8 @@ export const useInterventionStore = create<InterventionState>()(
   persist(
     (set, get) => ({
       interventions: {},
+      phases: {},
+      microcycles: {},
       sessions: {},
       exercises: [],
       templates: [],
@@ -89,6 +122,8 @@ export const useInterventionStore = create<InterventionState>()(
 
       clearInterventions: () => set({ 
         interventions: {}, 
+        phases: {},
+        microcycles: {},
         sessions: {}, 
         exercises: [], 
         selectedInterventionId: null, 
@@ -102,10 +137,10 @@ export const useInterventionStore = create<InterventionState>()(
         let intervention: Intervention;
         if (typeof data === 'string') {
           const id = uuidv4();
-          intervention = { id, name: data, patientId };
+          intervention = { id, name: data, patientId, phaseIds: [] };
         } else {
           const id = data.id || uuidv4();
-          intervention = { ...data, id, patientId } as Intervention;
+          intervention = { ...data, id, patientId, phaseIds: data.phaseIds || [] } as Intervention;
         }
 
         set((state) => ({
@@ -135,7 +170,6 @@ export const useInterventionStore = create<InterventionState>()(
           flowStore.setEdges(intervention.edges || []);
           set({ selectedInterventionId: interventionId });
         } else {
-          // If intervention not found or belongs to another patient, clear diagram
           flowStore.setNodes([]);
           flowStore.setEdges([]);
           set({ selectedInterventionId: null });
@@ -176,28 +210,125 @@ export const useInterventionStore = create<InterventionState>()(
         });
       },
 
-      addSession: (interventionId, sessionData) => {
+      addPhase: (interventionId, name = 'New Phase') => {
         const id = uuidv4();
-        const interventionSessions = Object.values(get().sessions).filter(
-          (s) => s.interventionId === interventionId
-        );
-        const sessionNumber = interventionSessions.length + 1;
-
+        const phase: Phase = { id, name, microcycleIds: [] };
+        
         set((state) => ({
-          sessions: {
-            ...state.sessions,
-            [id]: {
-              id,
-              interventionId,
-              name: `Session ${sessionNumber}`,
-              date: new Date().toISOString(),
-              tags: { Phase: 'Phase 1', Micro: 'Micro 1' },
-              exercises: [],
-              order: sessionNumber,
-              ...sessionData,
-            },
-          },
+          phases: { ...state.phases, [id]: phase },
+          interventions: {
+            ...state.interventions,
+            [interventionId]: {
+              ...state.interventions[interventionId],
+              phaseIds: [...(state.interventions[interventionId].phaseIds || []), id]
+            }
+          }
         }));
+        return id;
+      },
+
+      updatePhase: (id, updates) => {
+        set((state) => ({
+          phases: {
+            ...state.phases,
+            [id]: { ...state.phases[id], ...updates }
+          }
+        }));
+      },
+
+      deletePhase: (interventionId, phaseId) => {
+        set((state) => {
+          const { [phaseId]: removedPhase, ...remainingPhases } = state.phases;
+          const intervention = state.interventions[interventionId];
+          if (!intervention) return state;
+          return {
+            phases: remainingPhases,
+            interventions: {
+              ...state.interventions,
+              [interventionId]: {
+                ...intervention,
+                phaseIds: (intervention.phaseIds || []).filter(id => id !== phaseId)
+              }
+            }
+          };
+        });
+      },
+
+      addMicrocycle: (phaseId, name = 'New Microcycle') => {
+        const id = uuidv4();
+        const micro: Microcycle = { id, name, sessionIds: [] };
+        
+        set((state) => ({
+          microcycles: { ...state.microcycles, [id]: micro },
+          phases: {
+            ...state.phases,
+            [phaseId]: {
+              ...state.phases[phaseId],
+              microcycleIds: [...(state.phases[phaseId].microcycleIds || []), id]
+            }
+          }
+        }));
+        return id;
+      },
+
+      updateMicrocycle: (id, updates) => {
+        set((state) => ({
+          microcycles: {
+            ...state.microcycles,
+            [id]: { ...state.microcycles[id], ...updates }
+          }
+        }));
+      },
+
+      deleteMicrocycle: (phaseId, microId) => {
+        set((state) => {
+          const { [microId]: _, ...remainingMicros } = state.microcycles;
+          const phase = state.phases[phaseId];
+          if (!phase) return state;
+          return {
+            microcycles: remainingMicros,
+            phases: {
+              ...state.phases,
+              [phaseId]: {
+                ...phase,
+                microcycleIds: (phase.microcycleIds || []).filter(id => id !== microId)
+              }
+            }
+          };
+        });
+      },
+
+      addSession: (interventionId, sessionData, microId) => {
+        const id = uuidv4();
+        const session: Session = {
+          id,
+          interventionId,
+          name: sessionData?.name || 'New Session',
+          date: sessionData?.date || new Date().toISOString(),
+          tags: sessionData?.tags || {},
+          exercises: sessionData?.exercises || [],
+          order: 0,
+          ...sessionData,
+        };
+
+        set((state) => {
+          const newState = {
+            ...state,
+            sessions: { ...state.sessions, [id]: session },
+          };
+
+          if (microId && state.microcycles[microId]) {
+            newState.microcycles = {
+              ...state.microcycles,
+              [microId]: {
+                ...state.microcycles[microId],
+                sessionIds: [...(state.microcycles[microId].sessionIds || []), id]
+              }
+            };
+          }
+
+          return newState;
+        });
         return id;
       },
 
@@ -222,12 +353,137 @@ export const useInterventionStore = create<InterventionState>()(
         });
       },
 
-      deleteSession: (id) => {
+      deleteSession: (id, microId) => {
         set((state) => {
-          const { [id]: _, ...rest } = state.sessions;
-          return {
-            sessions: rest,
+          const { [id]: _, ...remainingSessions } = state.sessions;
+          const newState: any = {
+            sessions: remainingSessions,
             selectedSessionId: state.selectedSessionId === id ? null : state.selectedSessionId,
+          };
+
+          if (microId && state.microcycles[microId]) {
+            newState.microcycles = {
+              ...state.microcycles,
+              [microId]: {
+                ...state.microcycles[microId],
+                sessionIds: (state.microcycles[microId].sessionIds || []).filter(sid => sid !== id)
+              }
+            };
+          }
+
+          return newState;
+        });
+      },
+
+      moveSession: (sourceMicroId, targetMicroId, sessionId, newIndex) => {
+        set((state) => {
+          const sourceMicro = state.microcycles[sourceMicroId];
+          const targetMicro = state.microcycles[targetMicroId];
+          
+          let sourceIds = [];
+          if (sourceMicro) {
+            sourceIds = [...sourceMicro.sessionIds];
+            const sIdx = sourceIds.indexOf(sessionId);
+            if (sIdx > -1) sourceIds.splice(sIdx, 1);
+          }
+
+          if (!targetMicro) return state; // Still need a valid target micro
+
+          const targetIds = sourceMicroId === targetMicroId ? sourceIds : [...targetMicro.sessionIds];
+          targetIds.splice(newIndex, 0, sessionId);
+
+          const newState: any = {
+            microcycles: {
+              ...state.microcycles,
+              [targetMicroId]: { ...targetMicro, sessionIds: targetIds },
+            }
+          };
+
+          if (sourceMicro && sourceMicroId !== targetMicroId) {
+            newState.microcycles[sourceMicroId] = { ...sourceMicro, sessionIds: sourceIds };
+          }
+
+          return newState;
+        });
+      },
+
+      moveMicrocycle: (sourcePhaseId, targetPhaseId, microId, newIndex) => {
+        set((state) => {
+          const sourcePhase = state.phases[sourcePhaseId];
+          const targetPhase = state.phases[targetPhaseId];
+          
+          let sourceIds = [];
+          if (sourcePhase) {
+            sourceIds = [...sourcePhase.microcycleIds];
+            const mIdx = sourceIds.indexOf(microId);
+            if (mIdx > -1) sourceIds.splice(mIdx, 1);
+          }
+
+          if (!targetPhase) return state;
+
+          const targetIds = sourcePhaseId === targetPhaseId ? sourceIds : [...targetPhase.microcycleIds];
+          targetIds.splice(newIndex, 0, microId);
+
+          const newState: any = {
+            phases: {
+              ...state.phases,
+              [targetPhaseId]: { ...targetPhase, microcycleIds: targetIds },
+            }
+          };
+
+          if (sourcePhase && sourcePhaseId !== targetPhaseId) {
+            newState.phases[sourcePhaseId] = { ...sourcePhase, microcycleIds: sourceIds };
+          }
+
+          return newState;
+        });
+      },
+
+      movePhase: (interventionId, phaseId, newIndex) => {
+        set((state) => {
+          const intervention = state.interventions[interventionId];
+          if (!intervention) return state;
+
+          const phaseIds = [...(intervention.phaseIds || [])];
+          const pIdx = phaseIds.indexOf(phaseId);
+          if (pIdx > -1) phaseIds.splice(pIdx, 1);
+          phaseIds.splice(newIndex, 0, phaseId);
+
+          return {
+            interventions: {
+              ...state.interventions,
+              [interventionId]: { ...intervention, phaseIds }
+            }
+          };
+        });
+      },
+
+      cloneSessions: (sessionIds, targetMicroId) => {
+        set((state) => {
+          const targetMicro = state.microcycles[targetMicroId];
+          if (!targetMicro) return state;
+
+          const newSessions: Record<string, Session> = {};
+          const newSessionIds: string[] = [];
+
+          sessionIds.forEach(sid => {
+            const original = state.sessions[sid];
+            if (original) {
+              const newId = uuidv4();
+              newSessions[newId] = { ..._.cloneDeep(original), id: newId };
+              newSessionIds.push(newId);
+            }
+          });
+
+          return {
+            sessions: { ...state.sessions, ...newSessions },
+            microcycles: {
+              ...state.microcycles,
+              [targetMicroId]: {
+                ...targetMicro,
+                sessionIds: [...(targetMicro.sessionIds || []), ...newSessionIds]
+              }
+            }
           };
         });
       },

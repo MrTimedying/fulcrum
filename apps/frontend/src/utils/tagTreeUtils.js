@@ -1,143 +1,109 @@
 import * as _ from 'lodash';
-import { isBefore, isAfter, isValid, parseISO } from 'date-fns';
+import { isValid, parseISO } from 'date-fns';
 
 /**
- * Transforms flat session objects into a dynamic tree structure based on grouping keys.
- * @param {Array} sessions - Array of session objects
- * @param {Array} groupingKeys - Ordered list of keys to group by (e.g., ['Phase', 'Micro'])
+ * Transforms pointer-based structure into a tree structure for react-arborist.
+ * @param {Object} intervention - The active intervention object
+ * @param {Object} phases - All phases records
+ * @param {Object} micros - All microcycles records
+ * @param {Object} sessions - All sessions records
  * @returns {Array} Tree structure for react-arborist
  */
-export const getDynamicTagTree = (sessions, groupingKeys = ['Phase', 'Micro']) => {
-  if (!sessions || sessions.length === 0) return [];
+export const getStructureTree = (intervention, phases, micros, sessions) => {
+  if (!intervention || !intervention.phaseIds) return [];
 
-  // Helper to build the tree recursively
-  const buildLevel = (items, keys, parentTags = {}, path = '') => {
-    if (keys.length === 0) {
-      // Sort sessions by date and then by name
-      return _.sortBy(items, [
-        item => item.date || '',
-        item => item.name || ''
-      ]).map(session => {
-        const sessionData = {
+  const allAssignedSessionIds = new Set();
+
+  // 1. Build the main hierarchical tree
+  const tree = (intervention.phaseIds || []).map(phaseId => {
+    const phase = phases[phaseId];
+    if (!phase) return null;
+
+    const phaseMicros = (phase.microcycleIds || []).map(microId => {
+      const micro = micros[microId];
+      if (!micro) return null;
+
+      const microSessions = (micro.sessionIds || []).map(sessionId => {
+        const session = sessions[sessionId];
+        if (!session) return null;
+        
+        allAssignedSessionIds.add(sessionId);
+
+        return {
           id: session.id,
           name: session.name || 'Unnamed Session',
           type: 'session',
-          originalNode: session, // Keep for backward compat or direct access
-          tags: { ...parentTags },
-          children: []
+          originalNode: session,
+          isLeaf: true,
+          parentId: micro.id
         };
+      }).filter(Boolean);
 
-        // Add exercises as children if they exist
-        if (session.exercises && typeof session.exercises === 'object') {
-          sessionData.children = Object.entries(session.exercises).map(([mangledKey, data]) => ({
-            id: `exercise-${mangledKey}`,
-            name: mangledKey.split('_')[0] || 'Unnamed Exercise',
-            type: 'exercise',
-            originalExercise: data,
-            isLeaf: true
-          }));
-        }
-
-        if (sessionData.children.length === 0) {
-          sessionData.isLeaf = true;
-          delete sessionData.children;
-        }
-
-        return sessionData;
-      });
-    }
-
-    const [currentKey, ...remainingKeys] = keys;
-    
-    // Group items by the value of the current key in their tags
-    const grouped = _.groupBy(items, item => {
-      const tagValue = item.tags?.[currentKey];
-      return tagValue || 'Uncategorized';
-    });
-
-    return Object.entries(grouped).map(([value, childItems]) => {
-      const currentTags = { ...parentTags, [currentKey]: value };
-      const currentPath = path ? `${path}/${value}` : value;
-      
-      const dates = childItems
-        .map(s => s.date)
+      // Deduct dates for Microcycle
+      const sessionDates = microSessions
+        .map(s => s.originalNode.date)
         .filter(Boolean)
-        .map(d => typeof d === 'string' ? parseISO(d) : new Date(d))
-        .filter(d => isValid(d));
+        .map(d => parseISO(d))
+        .filter(isValid);
       
-      const startDate = dates.length > 0 ? new Date(Math.min(...dates)) : null;
-      const endDate = dates.length > 0 ? new Date(Math.max(...dates)) : null;
+      const startDate = sessionDates.length > 0 ? new Date(Math.min(...sessionDates)) : null;
+      const endDate = sessionDates.length > 0 ? new Date(Math.max(...sessionDates)) : null;
 
       return {
-        id: `folder-${currentKey}-${currentPath}`,
-        name: value,
+        id: micro.id,
+        name: micro.name || 'Unnamed Microcycle',
         type: 'folder',
-        tagKey: currentKey,
-        tagValue: value,
-        tags: currentTags,
+        tagKey: 'Micro',
         startDate,
         endDate,
-        children: buildLevel(childItems, remainingKeys, currentTags, currentPath)
+        children: microSessions,
+        parentId: phase.id
       };
+    }).filter(Boolean);
+
+    // Deduct dates for Phase from its Micros
+    const microDates = phaseMicros
+      .map(m => [m.startDate, m.endDate])
+      .flat()
+      .filter(Boolean);
+    
+    const phaseStart = microDates.length > 0 ? new Date(Math.min(...microDates)) : null;
+    const phaseEnd = microDates.length > 0 ? new Date(Math.max(...microDates)) : null;
+
+    return {
+      id: phase.id,
+      name: phase.name || 'Unnamed Phase',
+      type: 'folder',
+      tagKey: 'Phase',
+      startDate: phaseStart,
+      endDate: phaseEnd,
+      children: phaseMicros,
+      parentId: null
+    };
+  }).filter(Boolean);
+
+  // 2. Identify and add orphaned sessions
+  const orphanedSessions = Object.values(sessions)
+    .filter(s => s.interventionId === intervention.id && !allAssignedSessionIds.has(s.id))
+    .map(s => ({
+      id: s.id,
+      name: s.name || 'Orphaned Session',
+      type: 'session',
+      originalNode: s,
+      isLeaf: true,
+      parentId: 'orphaned'
+    }));
+
+  if (orphanedSessions.length > 0) {
+    tree.push({
+      id: 'folder-orphaned',
+      name: 'Unassigned Sessions',
+      type: 'folder',
+      tagKey: 'Orphaned',
+      children: orphanedSessions,
+      parentId: null
     });
-  };
-
-  return buildLevel(sessions, groupingKeys);
-};
-
-/**
- * Validates n-consistency (chronological integrity)
- * @param {Object} session - The session being moved
- * @param {Object} prevSibling - The sibling before the new position
- * @param {Object} nextSibling - The sibling after the new position
- * @returns {Object} { valid: boolean, suggestedDate: Date|null }
- */
-export const validateNConsistency = (session, prevSibling, nextSibling) => {
-  const sessionDate = session.date ? new Date(session.date) : null;
-  const prevDate = prevSibling?.date ? new Date(prevSibling.date) : null;
-  const nextDate = nextSibling?.date ? new Date(nextSibling.date) : null;
-
-  if (!sessionDate) return { valid: false, suggestedDate: prevDate || nextDate || new Date() };
-
-  let valid = true;
-  if (prevDate && isBefore(sessionDate, prevDate)) valid = false;
-  if (nextDate && isAfter(sessionDate, nextDate)) valid = false;
-
-  if (valid) return { valid: true, suggestedDate: null };
-
-  let suggestedDate = sessionDate;
-  if (prevDate && nextDate) {
-    suggestedDate = prevDate; 
-  } else if (prevDate) {
-    suggestedDate = prevDate;
-  } else if (nextDate) {
-    suggestedDate = nextDate;
   }
 
-  return { valid: false, suggestedDate };
-};
-
-/**
- * Validates k-consistency (taxonomic categorization)
- * @param {Object} session - The session being moved
- * @param {Object} targetParent - The folder node it's being dropped into
- * @returns {Object} { valid: boolean, conflictingTags: Array }
- */
-export const validateKConsistency = (session, targetParent) => {
-  if (!targetParent || targetParent.type !== 'folder') return { valid: true, conflictingTags: [] };
-
-  const sessionTags = session.tags || {};
-  const targetTags = targetParent.tags || {};
-  const conflictingTags = [];
-
-  for (const [key, value] of Object.entries(targetTags)) {
-    if (sessionTags[key] !== value) {
-      conflictingTags.push({ key, expected: value, actual: sessionTags[key] });
-    }
-  }
-
-  return {
-    valid: conflictingTags.length === 0,
-    conflictingTags
-  };
+  return tree;
 };

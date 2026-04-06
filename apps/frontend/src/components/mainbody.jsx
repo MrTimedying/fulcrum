@@ -11,6 +11,7 @@ import { useInterventionStore } from "../state/core/useInterventionStore";
 import useUIStore from "../state/core/useUIStore";
 import BulkExerciseEditModal from "./BulkExerciseEditModal";
 import ICFSetsModal from "./icf-dashboard/ICFSetsModal";
+import InterventionWorkflowPlaceholder from "./util/InterventionWorkflowPlaceholder";
 
 // Bind modal to your appElement (http://reactcommunity.org/react-modal/accessibility/)
 Modal.setAppElement("#root");
@@ -78,11 +79,7 @@ function MainBody({ handleEditPatient }) {
       </div>
     );
   } else {
-    return (
-      <div className="flex items-center justify-center text-stone-400 bg-neutral-800 p-4 h-full">
-        Select a patient to view their information.
-      </div>
-    );
+    return <InterventionWorkflowPlaceholder activeStep={0} />;
   }
 }
 

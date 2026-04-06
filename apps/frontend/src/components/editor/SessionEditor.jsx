@@ -19,9 +19,12 @@ import { getExerciseContainerDisplayName, createMangledContainerKey } from "../.
 import { motion, AnimatePresence } from "motion/react";
 import MultiListBox from "./exercise_modal/MultiListBox";
 import { HiOutlineCalendarDays } from "react-icons/hi2";
-import DateTimeline from "../DateTimeline";
 import DatepickerModal from "../dateModal";
 import { getOrderedSessions } from "../../utils/nodeDateCalculator";
+import { useNavigationStore } from "../../state/core/useNavigationStore";
+import InterventionWorkflowPlaceholder from "../util/InterventionWorkflowPlaceholder";
+
+
 
 const SessionEditor = () => {
   const [containers, setContainers] = useState([]);
@@ -312,20 +315,12 @@ const SessionEditor = () => {
     }
   };
 
+  const { patientId } = useNavigationStore();
+
   if (!selectedSession) {
-    return (
-      <div className="flex flex-col items-center justify-center h-full text-zinc-500 space-y-4 bg-zinc-900 border-l border-zinc-800 shadow-inner">
-        <div className="p-6 rounded-full bg-zinc-800/50 border border-zinc-800 shadow-inner">
-          <HiOutlineCalendarDays size={48} className="text-zinc-600 animate-pulse" />
-        </div>
-        <div className="text-center space-y-1">
-          <p className="text-lg font-medium text-zinc-300">No session selected</p>
-          <p className="text-sm max-w-[200px] leading-relaxed">
-            Select a session from the timeline or navigator to begin editing exercises.
-          </p>
-        </div>
-      </div>
-    );
+    // Determine which workflow step the user is currently blocked on
+    const activeStep = !patientId ? 0 : !selectedInterventionId ? 1 : 2;
+    return <InterventionWorkflowPlaceholder activeStep={activeStep} />;
   }
 
   return (
@@ -357,12 +352,7 @@ const SessionEditor = () => {
         </div>
       </div>
 
-      {/* Timeline Integration */}
-      <DateTimeline 
-        items={orderedSessions} 
-        selectedId={selectedSessionId}
-        onNodeClick={(id) => setSelectedSessionId(id)}
-      />
+      {/* Timeline Integration Removed */}
 
       {/* Subheader */}
       <div className="bg-zinc-900 flex flex-row items-center gap-4 p-2 border-b border-zinc-800 flex-shrink-0">
