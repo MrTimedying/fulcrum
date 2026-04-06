@@ -15,11 +15,9 @@ import {
   HiOutlineSquare2Stack,
   HiOutlinePencilSquare
 } from "react-icons/hi2";
-import { format } from "date-fns";
-import { InlineEdit } from "../icf-dashboard/icf_modal/InlineEdit";
 
 const NodeRenderer = ({ node, style, dragHandle, tree }) => {
-  const { deletePhase, deleteMicrocycle, deleteSession, updatePhase, updateMicrocycle, updateSession } = useInterventionStore();
+  const { setSelectedSessionId } = useInterventionStore();
 
   const Icon = useMemo(() => {
     if (node.data.type === 'folder') return HiOutlineQueueList;
@@ -28,41 +26,10 @@ const NodeRenderer = ({ node, style, dragHandle, tree }) => {
     return HiOutlineTag;
   }, [node.data.type]);
 
-  const dateRange = useMemo(() => {
-    if (node.data.type === 'folder' && node.data.startDate && node.data.endDate) {
-      return `${format(node.data.startDate, 'MMM d')} - ${format(node.data.endDate, 'MMM d')}`;
-    }
-    if (node.data.type === 'session' && node.data.originalNode?.date) {
-      return format(new Date(node.data.originalNode.date), 'MMM d, yyyy');
-    }
-    return null;
-  }, [node.data]);
-
-  const handleDelete = (e) => {
-    e.stopPropagation();
-    if (node.data.type === 'session') {
-      deleteSession(node.id, node.data.parentId);
-    } else if (node.data.tagKey === 'Phase') {
-      deletePhase(tree.props.interventionId, node.id);
-    } else if (node.data.tagKey === 'Micro') {
-      deleteMicrocycle(node.data.parentId, node.id);
-    }
-  };
-
-  const handleRename = (newName) => {
-    if (node.data.type === 'session') {
-      updateSession(node.id, { name: newName });
-    } else if (node.data.tagKey === 'Phase') {
-      updatePhase(node.id, { name: newName });
-    } else if (node.data.tagKey === 'Micro') {
-      updateMicrocycle(node.id, { name: newName });
-    }
-  };
-
   return (
     <div 
       style={style} 
-      className={`flex items-center space-x-1.5 py-1 cursor-pointer group hover:bg-zinc-800/50 rounded px-1 transition-colors ${node.isSelected ? 'bg-blue-900/20 border-l-2 border-blue-500' : ''}`}
+      className={`flex items-center space-x-1.5 py-0.5 cursor-pointer group hover:bg-zinc-800/50 rounded px-1 transition-colors ${node.isSelected ? 'bg-zinc-700/50' : ''}`}
       onClick={(e) => {
         e.stopPropagation();
         node.select();
@@ -83,19 +50,8 @@ const NodeRenderer = ({ node, style, dragHandle, tree }) => {
         
         <div className="flex flex-col min-w-0 flex-1">
           <div className="text-[11px] truncate leading-tight text-zinc-300">
-            <InlineEdit 
-              value={node.data.name} 
-              onSave={handleRename} 
-              className="hover:bg-zinc-700/50 rounded px-1 -ml-1"
-            />
+            {node.data.name}
           </div>
-          {dateRange && <span className="text-[9px] text-zinc-600 font-mono">{dateRange}</span>}
-        </div>
-
-        <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity ml-auto">
-          <button onClick={handleDelete} className="p-1 hover:text-red-400 text-zinc-500" title="Delete">
-            <HiTrash size={12} />
-          </button>
         </div>
       </div>
     </div>
@@ -250,7 +206,7 @@ const InterventionsSidebar = () => {
             width="100%"
             height={600}
             indent={12}
-            rowHeight={36}
+            rowHeight={22}
             onMove={handleMove}
             interventionId={selectedInterventionId}
             onAddMicro={handleAddMicro}
@@ -269,47 +225,45 @@ const InterventionsSidebar = () => {
       </div>
 
       {/* Bottom IconBar */}
-      {selectedInterventionId && (
-        <div className="p-2 border-t border-zinc-800 bg-zinc-900/80 flex items-center justify-around">
-          <button 
-            onClick={handleAddPhase} 
-            className="flex flex-col items-center gap-1 text-zinc-500 hover:text-blue-400 transition-colors group"
-            title="Add Phase"
-          >
-            <HiOutlineQueueList size={18} className="group-hover:scale-110 transition-transform" />
-            <span className="text-[8px] uppercase font-bold">Phase</span>
-          </button>
-          
-          <button 
-            onClick={() => handleAddMicro()} 
-            className="flex flex-col items-center gap-1 text-zinc-500 hover:text-blue-400 transition-colors group"
-            title="Add Microcycle"
-          >
-            <HiOutlineSquare2Stack size={18} className="group-hover:scale-110 transition-transform" />
-            <span className="text-[8px] uppercase font-bold">Micro</span>
-          </button>
+      <div className="p-1.5 border-t border-zinc-800 bg-zinc-900/80 flex items-center justify-around">
+        <button 
+          onClick={handleAddPhase} 
+          disabled={!selectedInterventionId}
+          className={`flex items-center justify-center p-1.5 rounded transition-colors ${!selectedInterventionId ? 'text-zinc-700 cursor-not-allowed' : 'text-zinc-500 hover:text-blue-400 hover:bg-zinc-800'}`}
+          title="Add Phase"
+        >
+          <HiOutlineQueueList size={16} />
+        </button>
+        
+        <button 
+          onClick={() => handleAddMicro()} 
+          disabled={!selectedInterventionId}
+          className={`flex items-center justify-center p-1.5 rounded transition-colors ${!selectedInterventionId ? 'text-zinc-700 cursor-not-allowed' : 'text-zinc-500 hover:text-blue-400 hover:bg-zinc-800'}`}
+          title="Add Microcycle"
+        >
+          <HiOutlineSquare2Stack size={16} />
+        </button>
 
-          <button 
-            onClick={() => handleAddSessionAction()} 
-            className="flex flex-col items-center gap-1 text-zinc-500 hover:text-blue-400 transition-colors group"
-            title="Add Session"
-          >
-            <HiOutlineCalendarDays size={18} className="group-hover:scale-110 transition-transform" />
-            <span className="text-[8px] uppercase font-bold">Session</span>
-          </button>
+        <button 
+          onClick={() => handleAddSessionAction()} 
+          disabled={!selectedInterventionId}
+          className={`flex items-center justify-center p-1.5 rounded transition-colors ${!selectedInterventionId ? 'text-zinc-700 cursor-not-allowed' : 'text-zinc-500 hover:text-blue-400 hover:bg-zinc-800'}`}
+          title="Add Session"
+        >
+          <HiOutlineCalendarDays size={16} />
+        </button>
 
-          <div className="w-px h-6 bg-zinc-800 mx-1" />
+        <div className="w-px h-4 bg-zinc-800 mx-1" />
 
-          <button 
-            onClick={handleClone} 
-            className="flex flex-col items-center gap-1 text-zinc-500 hover:text-green-400 transition-colors group"
-            title="Clone Selected"
-          >
-            <HiOutlineSquare2Stack size={18} className="group-hover:scale-110 transition-transform" />
-            <span className="text-[8px] uppercase font-bold">Clone</span>
-          </button>
-        </div>
-      )}
+        <button 
+          onClick={handleClone} 
+          disabled={!selectedInterventionId}
+          className={`flex items-center justify-center p-1.5 rounded transition-colors ${!selectedInterventionId ? 'text-zinc-700 cursor-not-allowed' : 'text-zinc-500 hover:text-green-400 hover:bg-zinc-800'}`}
+          title="Clone Selected"
+        >
+          <HiOutlineSquare2Stack size={16} />
+        </button>
+      </div>
     </div>
   );
 };
