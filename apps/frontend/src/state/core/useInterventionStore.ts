@@ -2,8 +2,6 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { v4 as uuidv4 } from 'uuid';
 import _ from 'lodash';
-import { useFlowDiagramStore } from '../flow/useFlowDiagramStore';
-import { remapNodesAndEdgesWithNewIds, offsetNodesEdgesPosition } from '../../components/utils';
 
 export interface Exercise {
   id: string;
@@ -21,7 +19,7 @@ export interface Session {
   name: string;
   date: string;
   tags: Record<string, string>;
-  exercises: Exercise[];
+  exercises: Record<string, Exercise>;
   order: number;
   [key: string]: any;
 }
@@ -30,8 +28,6 @@ export interface Intervention {
   id: string;
   name: string;
   patientId: string;
-  nodes?: any[];
-  edges?: any[];
   phaseIds: string[];
   [key: string]: any;
 }
@@ -51,8 +47,7 @@ export interface Microcycle {
 export interface Template {
   id: string;
   name: string;
-  nodes: any[];
-  edges: any[];
+  content: any;
   [key: string]: any;
 }
 
@@ -65,6 +60,8 @@ export interface InterventionState {
   templates: Template[];
   selectedInterventionId: string | null;
   selectedSessionId: string | null;
+  selectedStructuralNodeId: string | null;
+  selectedStructuralNodeType: 'Phase' | 'Micro' | 'Intervention' | null;
 
   addIntervention: (patientId: string, data: string | Partial<Intervention>) => string;
   updateIntervention: (id: string, updates: Partial<Intervention>) => void;
@@ -93,6 +90,7 @@ export interface InterventionState {
 
   setSelectedInterventionId: (id: string | null) => void;
   setSelectedSessionId: (id: string | null) => void;
+  setSelectedNode: (id: string | null, type: 'Session' | 'Phase' | 'Micro' | 'Intervention' | null) => void;
 
   addExercise: () => void;
   updateExerciseData: (exerciseId: string, field: string, value: any) => void;
@@ -134,15 +132,36 @@ export const useInterventionStore = create<InterventionState>()(
         selectedStructuralNodeType: null
       }),
 
-      setSelectedInterventionId: (id) => set({ selectedInterventionId: id }),
-      setSelectedSessionId: (id) => set({ selectedSessionId: id, selectedStructuralNodeId: null, selectedStructuralNodeType: null }),
+      setSelectedInterventionId: (id) => set({ 
+        selectedInterventionId: id,
+        selectedSessionId: null,
+        selectedStructuralNodeId: null,
+        selectedStructuralNodeType: null
+      }),
+      setSelectedSessionId: (id) => set({ 
+        selectedSessionId: id, 
+        selectedStructuralNodeId: null, 
+        selectedStructuralNodeType: null 
+      }),
       setSelectedNode: (id, type) => set((state) => {
         if (type === 'Session') {
-          return { selectedSessionId: id, selectedStructuralNodeId: null, selectedStructuralNodeType: null };
-        } else if (type === 'Phase' || type === 'Micro') {
-          return { selectedSessionId: null, selectedStructuralNodeId: id, selectedStructuralNodeType: type };
+          return { 
+            selectedSessionId: id, 
+            selectedStructuralNodeId: null, 
+            selectedStructuralNodeType: null 
+          };
+        } else if (type === 'Phase' || type === 'Micro' || type === 'Intervention') {
+          return { 
+            selectedSessionId: null, 
+            selectedStructuralNodeId: id, 
+            selectedStructuralNodeType: type 
+          };
         } else {
-          return { selectedSessionId: null, selectedStructuralNodeId: null, selectedStructuralNodeType: null };
+          return { 
+            selectedSessionId: null, 
+            selectedStructuralNodeId: null, 
+            selectedStructuralNodeType: null 
+          };
         }
       }),
 
@@ -176,37 +195,27 @@ export const useInterventionStore = create<InterventionState>()(
 
       loadIntervention: (patientId, interventionId) => {
         const intervention = get().interventions[interventionId];
-        const flowStore = useFlowDiagramStore.getState();
         
         if (intervention && intervention.patientId === patientId) {
-          flowStore.setNodes(intervention.nodes || []);
-          flowStore.setEdges(intervention.edges || []);
-          set({ selectedInterventionId: interventionId });
+          set({ 
+            selectedInterventionId: interventionId,
+            selectedSessionId: null,
+            selectedStructuralNodeId: null,
+            selectedStructuralNodeType: null
+          });
         } else {
-          flowStore.setNodes([]);
-          flowStore.setEdges([]);
-          set({ selectedInterventionId: null });
+          set({ 
+            selectedInterventionId: null,
+            selectedSessionId: null,
+            selectedStructuralNodeId: null,
+            selectedStructuralNodeType: null
+          });
         }
       },
 
       saveActiveIntervention: (patientId, interventionId) => {
-        const { nodes, edges } = useFlowDiagramStore.getState();
-        set((state) => {
-          const intervention = state.interventions[interventionId];
-          if (intervention && intervention.patientId === patientId) {
-            return {
-              interventions: {
-                ...state.interventions,
-                [interventionId]: {
-                  ...intervention,
-                  nodes: _.cloneDeep(nodes),
-                  edges: _.cloneDeep(edges),
-                },
-              },
-            };
-          }
-          return state;
-        });
+        // Position and layout persistence is handled purely by the intervention store now.
+        // No longer pulling nodes/edges from useFlowDiagramStore.
       },
 
       removeIntervention: (patientId, interventionId) => {
@@ -219,6 +228,9 @@ export const useInterventionStore = create<InterventionState>()(
           return {
             interventions: rest,
             selectedInterventionId: state.selectedInterventionId === interventionId ? null : state.selectedInterventionId,
+            selectedSessionId: state.selectedInterventionId === interventionId ? null : state.selectedSessionId,
+            selectedStructuralNodeId: state.selectedInterventionId === interventionId ? null : state.selectedStructuralNodeId,
+            selectedStructuralNodeType: state.selectedInterventionId === interventionId ? null : state.selectedStructuralNodeType,
           };
         });
       },
@@ -262,7 +274,9 @@ export const useInterventionStore = create<InterventionState>()(
                 ...intervention,
                 phaseIds: (intervention.phaseIds || []).filter(id => id !== phaseId)
               }
-            }
+            },
+            selectedStructuralNodeId: state.selectedStructuralNodeId === phaseId ? null : state.selectedStructuralNodeId,
+            selectedStructuralNodeType: state.selectedStructuralNodeId === phaseId ? null : state.selectedStructuralNodeType,
           };
         });
       },
@@ -306,22 +320,29 @@ export const useInterventionStore = create<InterventionState>()(
                 ...phase,
                 microcycleIds: (phase.microcycleIds || []).filter(id => id !== microId)
               }
-            }
+            },
+            selectedStructuralNodeId: state.selectedStructuralNodeId === microId ? null : state.selectedStructuralNodeId,
+            selectedStructuralNodeType: state.selectedStructuralNodeId === microId ? null : state.selectedStructuralNodeType,
           };
         });
       },
 
       addSession: (interventionId, sessionData, microId) => {
         const id = uuidv4();
+        // Robust initialization
+        const exercises = sessionData?.exercises && !Array.isArray(sessionData.exercises) 
+          ? sessionData.exercises 
+          : {};
+
         const session: Session = {
           id,
           interventionId,
           name: sessionData?.name || 'New Session',
           date: sessionData?.date || new Date().toISOString(),
           tags: sessionData?.tags || {},
-          exercises: sessionData?.exercises || [],
           order: 0,
           ...sessionData,
+          exercises, // Force normalized Record
         };
 
         set((state) => {
@@ -518,14 +539,14 @@ export const useInterventionStore = create<InterventionState>()(
             intensity: 0,
           };
 
-          const exercises = Array.isArray(session.exercises) ? session.exercises : [];
+          const exercises = session.exercises || {};
 
           return {
             sessions: {
               ...state.sessions,
               [selectedSessionId]: {
                 ...session,
-                exercises: [...exercises, newExercise],
+                exercises: { ...exercises, [newExercise.id]: newExercise },
               },
             },
           };
@@ -540,11 +561,10 @@ export const useInterventionStore = create<InterventionState>()(
           const session = state.sessions[selectedSessionId];
           if (!session) return state;
 
-          const exercises = [...(session.exercises || [])];
-          const exerciseIndex = exercises.findIndex((ex) => ex.id === exerciseId);
+          const exercises = { ...(session.exercises || {}) };
 
-          if (exerciseIndex >= 0) {
-            exercises[exerciseIndex] = { ...exercises[exerciseIndex], [field]: value };
+          if (exercises[exerciseId]) {
+            exercises[exerciseId] = { ...exercises[exerciseId], [field]: value };
           }
 
           return {
@@ -567,9 +587,10 @@ export const useInterventionStore = create<InterventionState>()(
           const session = state.sessions[selectedSessionId];
           if (!session) return state;
 
-          const exercises = (session.exercises || []).filter(
-            (ex) => !exerciseIds.includes(ex.id)
-          );
+          const exercises = { ...(session.exercises || {}) };
+          exerciseIds.forEach(id => {
+            delete exercises[id];
+          });
 
           return {
             sessions: {
@@ -609,32 +630,119 @@ export const useInterventionStore = create<InterventionState>()(
       },
 
       loadTemplate: (templateId) => {
-        const template = get().templates.find((t) => t.id === templateId);
-        if (template) {
-          const { newNodes, newEdges } = remapNodesAndEdgesWithNewIds(
-            template.nodes || [],
-            template.edges || []
-          );
-          const { offsetedNodes, offsetedEdges } = offsetNodesEdgesPosition(
-            newNodes,
-            newEdges,
-            50,
-            50
-          );
-
-          const flowStore = useFlowDiagramStore.getState();
-          flowStore.setNodes((nds) => [...nds, ...offsetedNodes]);
-          flowStore.setEdges((eds) => [...eds, ...offsetedEdges]);
+        const state = get();
+        const template = state.templates.find((t) => t.id === templateId);
+        if (!template) return;
+        
+        // Handle legacy templates (those without hierarchical content)
+        if (!template.content) {
+          console.warn('Attempted to load a legacy template. Legacy templates are no longer supported.');
+          return;
         }
+
+        const activeInterventionId = state.selectedInterventionId;
+        if (!activeInterventionId) return;
+
+        const content = template.content;
+        
+        // Accumulators for the update
+        const newPhases = { ...state.phases };
+        const newMicros = { ...state.microcycles };
+        const newSessions = { ...state.sessions };
+        const newInterventions = { ...state.interventions };
+
+        const recursiveLoad = (item: any, parentId: string, parentType: 'Intervention' | 'Phase' | 'Micro') => {
+          const newId = uuidv4();
+          
+          if (item.type === 'Phase') {
+            const phase: Phase = { ..._.cloneDeep(item.data), id: newId, microcycleIds: [] };
+            newPhases[newId] = phase;
+            if (parentType === 'Intervention') {
+              newInterventions[parentId] = {
+                ...newInterventions[parentId],
+                phaseIds: [...(newInterventions[parentId].phaseIds || []), newId]
+              };
+            }
+            item.microcycles?.forEach((m: any) => recursiveLoad(m, newId, 'Phase'));
+          } else if (item.type === 'Micro') {
+            const micro: Microcycle = { ..._.cloneDeep(item.data), id: newId, sessionIds: [] };
+            newMicros[newId] = micro;
+            if (parentType === 'Phase') {
+              newPhases[parentId] = {
+                ...newPhases[parentId],
+                microcycleIds: [...(newPhases[parentId].microcycleIds || []), newId]
+              };
+            }
+            item.sessions?.forEach((s: any) => recursiveLoad(s, newId, 'Micro'));
+          } else if (item.type === 'Session') {
+            const session: Session = { 
+              ..._.cloneDeep(item.data), 
+              id: newId, 
+              interventionId: activeInterventionId,
+            };
+            
+            // Regenerate exercise IDs to avoid collisions
+            if (session.exercises) {
+              const updatedExercises: Record<string, Exercise> = {};
+              Object.values(session.exercises).forEach((ex: any) => {
+                const exId = uuidv4();
+                updatedExercises[exId] = { ...ex, id: exId };
+              });
+              session.exercises = updatedExercises;
+            }
+
+            newSessions[newId] = session;
+            if (parentType === 'Micro') {
+              newMicros[parentId] = {
+                ...newMicros[parentId],
+                sessionIds: [...(newMicros[parentId].sessionIds || []), newId]
+              };
+            }
+          }
+        };
+
+        // Determine where to start loading based on content type
+        if (content.type === 'Intervention') {
+          content.phases?.forEach((p: any) => recursiveLoad(p, activeInterventionId, 'Intervention'));
+        } else if (content.type === 'Phase') {
+          recursiveLoad(content, activeInterventionId, 'Intervention');
+        } else if (content.type === 'Micro') {
+          let targetPhaseId = state.selectedStructuralNodeType === 'Phase' ? state.selectedStructuralNodeId : null;
+          if (!targetPhaseId) {
+            const newPhaseId = uuidv4();
+            newPhases[newPhaseId] = { id: newPhaseId, name: 'Imported Microcycles', microcycleIds: [] };
+            newInterventions[activeInterventionId] = {
+              ...newInterventions[activeInterventionId],
+              phaseIds: [...(newInterventions[activeInterventionId].phaseIds || []), newPhaseId]
+            };
+            targetPhaseId = newPhaseId;
+          }
+          recursiveLoad(content, targetPhaseId, 'Phase');
+        } else if (content.type === 'Session') {
+          let targetMicroId = state.selectedStructuralNodeType === 'Micro' ? state.selectedStructuralNodeId : null;
+          if (!targetMicroId) {
+             const newPhaseId = uuidv4();
+             const newMicroId = uuidv4();
+             newPhases[newPhaseId] = { id: newPhaseId, name: 'Imported Sessions', microcycleIds: [newMicroId] };
+             newMicros[newMicroId] = { id: newMicroId, name: 'Imported Sessions', sessionIds: [] };
+             newInterventions[activeInterventionId] = {
+               ...newInterventions[activeInterventionId],
+               phaseIds: [...(newInterventions[activeInterventionId].phaseIds || []), newPhaseId]
+             };
+             targetMicroId = newMicroId;
+          }
+          recursiveLoad(content, targetMicroId, 'Micro');
+        }
+
+        set({
+          phases: newPhases,
+          microcycles: newMicros,
+          sessions: newSessions,
+          interventions: newInterventions
+        });
       },
 
       bulkUpdateNodeData: (nodeId, property, value) => {
-        const flowStore = useFlowDiagramStore.getState();
-        const nodeExists = flowStore.nodes.some((n) => n.id === nodeId);
-        if (nodeExists) {
-          flowStore.updateNodeData(property, value, nodeId);
-        }
-
         set((state) => {
           const newState = _.cloneDeep(state);
           if (newState.sessions[nodeId]) {

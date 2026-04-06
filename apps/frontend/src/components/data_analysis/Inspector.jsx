@@ -2,7 +2,7 @@ import React from "react";
 import Modal from "react-modal";
 import { Rnd } from "react-rnd";
 import { IoClose } from "react-icons/io5";
-import { useFlowDiagramStore } from "../../state/flow/useFlowDiagramStore";
+import { useInterventionStore } from "../../state/core/useInterventionStore";
 import SessionNodeInspector from "./SessionNodeInspector";
 import MicroNodeInspector from "./MicroNodeInspector";
 import PhaseNodeInspector from "./PhaseNodeInspector";
@@ -10,9 +10,16 @@ import InterventionNodeInspector from "./InterventionNodeInspector";
 import NoDateWarning from "./NoDateWarning";
 
 function Inspector({ isOpen, onClose, multiple }) {
-  const { nodes, setNodes } = useFlowDiagramStore();
-  const selectedNodes = Array.isArray(nodes) ? nodes.filter(node => node.selected) : [];
-  const selectedNode = selectedNodes[0]; // We'll focus on the first selected node
+  const { 
+    selectedSessionId, 
+    selectedStructuralNodeId, 
+    selectedStructuralNodeType,
+    sessions,
+    phases,
+    microcycles,
+    interventions,
+    setSelectedNode
+  } = useInterventionStore();
 
   const defaultModalConfig = {
     width: window.innerWidth, // Set to full width
@@ -22,45 +29,50 @@ function Inspector({ isOpen, onClose, multiple }) {
   };
 
   const handleClose = () => {
-    setNodes(nodes.map(node => ({ ...node, selected: false })));
+    setSelectedNode(null, null);
     onClose();
   };
 
-  // Determine which inspector to show based on node type
+  // Determine which inspector to show based on selected state in the store
   const renderInspectorContent = () => {
-    // Check if a node is selected
-    if (!selectedNode) {
-      return (
-        <div className="flex items-center justify-center h-full text-gray-400">
-          <p>No node selected.</p>
-        </div>
-      );
-    }
-
-    // Return the appropriate inspector based on node type
-    switch (selectedNode.type) {
-      case 'session':
-        // For session nodes, we need to check if there's a date
-        if (!selectedNode?.data?.date) {
-          return <NoDateWarning nodeType={selectedNode.type} />;
-        }
-        return <SessionNodeInspector node={selectedNode} />;
-      case 'micro':
-        // No date required for micro nodes
-        return <MicroNodeInspector node={selectedNode} />;
-      case 'phase':
-        // No date required for phase nodes
-        return <PhaseNodeInspector node={selectedNode} />;
-      case 'intervention':
-        // No date required for intervention nodes
-        return <InterventionNodeInspector node={selectedNode} />;
-      default:
+    if (selectedSessionId) {
+      const session = sessions[selectedSessionId];
+      if (!session) {
         return (
           <div className="flex items-center justify-center h-full text-gray-400">
-            <p>No visualization available for this node type: {selectedNode.type}</p>
+            <p>Session not found.</p>
           </div>
         );
+      }
+      // For session nodes, we need to check if there's a date
+      if (!session.date) {
+        return <NoDateWarning nodeType="session" />;
+      }
+      return <SessionNodeInspector node={session} />;
     }
+
+    if (selectedStructuralNodeId) {
+      switch (selectedStructuralNodeType) {
+        case 'Micro':
+          const micro = microcycles[selectedStructuralNodeId];
+          if (!micro) break;
+          return <MicroNodeInspector node={micro} />;
+        case 'Phase':
+          const phase = phases[selectedStructuralNodeId];
+          if (!phase) break;
+          return <PhaseNodeInspector node={phase} />;
+        case 'Intervention':
+          const intervention = interventions[selectedStructuralNodeId];
+          if (!intervention) break;
+          return <InterventionNodeInspector node={intervention} />;
+      }
+    }
+
+    return (
+      <div className="flex items-center justify-center h-full text-gray-400">
+        <p>No node selected.</p>
+      </div>
+    );
   };
 
   return (

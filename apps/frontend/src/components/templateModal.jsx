@@ -1,48 +1,25 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import Modal from "react-modal";
 import { Rnd } from "react-rnd";
 import { Tab } from "@headlessui/react";
 import { Close, Save, Delete, FolderOpen } from "@mui/icons-material";
 import { v4 as uuidv4 } from "uuid";
 
-// Zustand state management hooks (based on your InterventionModal pattern)
-import { useFlowDiagramStore } from "../state/flow/useFlowDiagramStore";
+// Zustand state management hooks
 import { useNavigationStore } from "../state/core/useNavigationStore";
 import { useInterventionStore } from "../state/core/useInterventionStore";
 import useUIStore from "../state/core/useUIStore";
 
-// Helper: Gather descendants and their edges given a parent nodeId
-function getAllDescendants(parentNodeId, nodes, edges) {
-  if (!parentNodeId) return { nodes: [], edges: [] };
-  const descendants = new Set();
-  const connectingEdges = new Set();
-  const queue = [parentNodeId];
-  while (queue.length > 0) {
-    const current = queue.shift();
-    for (const edge of edges) {
-      if (edge.source === current && !descendants.has(edge.target)) {
-        descendants.add(edge.target);
-        connectingEdges.add(edge.id);
-        queue.push(edge.target);
-      }
-    }
-  }
-  // Include parent node in results
-  const nodeSet = new Set([parentNodeId, ...descendants]);
-  return {
-    nodes: nodes.filter(n => nodeSet.has(n.id)),
-    edges: edges.filter(e =>
-      nodeSet.has(e.source) &&
-      nodeSet.has(e.target)
-    ),
-  };
-}
-
 const TemplateModal = ({ isOpen, onClose }) => {
-  // Zustand stores (pattern from InterventionModal)
-  const { nodes, edges } = useFlowDiagramStore();
-  const { patientId } = useNavigationStore();
   const {
+    selectedInterventionId,
+    selectedSessionId,
+    selectedStructuralNodeId,
+    selectedStructuralNodeType,
+    interventions,
+    phases,
+    microcycles,
+    sessions,
     templates,
     addTemplate,
     loadTemplate,
@@ -50,16 +27,94 @@ const TemplateModal = ({ isOpen, onClose }) => {
   } = useInterventionStore();
 
   const { setToaster } = useUIStore();
-  const nodeSelected = nodes.find((node) => node.selected);
-  const selectedNodeId = nodeSelected?.id;
+  
   const [newTemplateName, setNewTemplateName] = useState("");
   const [activeTabIndex, setActiveTabIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Get descendants for current selection
-  const { nodes: previewNodes, edges: previewEdges } =
-    getAllDescendants(selectedNodeId, nodes, edges);
+  const activeId = selectedStructuralNodeId || selectedSessionId || selectedInterventionId;
+  const activeType = selectedStructuralNodeType || (selectedSessionId ? 'Session' : (selectedInterventionId ? 'Intervention' : null));
 
+  // Hierarchical build helper
+  const buildHierarchy = useMemo(() => {
+    const build = (id, type) => {
+      if (!id || !type) return null;
+
+      if (type === 'Intervention') {
+        const item = interventions[id];
+        if (!item) return null;
+        // Exclude structural IDs and legacy flow data
+        const { id: _id, phaseIds, nodes, edges, patientId, ...data } = item;
+        return {
+          type: 'Intervention',
+          data,
+          phases: (phaseIds || []).map(pid => build(pid, 'Phase')).filter(Boolean)
+        };
+      }
+      if (type === 'Phase') {
+        const item = phases[id];
+        if (!item) return null;
+        // Exclude structural IDs
+        const { id: _id, microcycleIds, ...data } = item;
+        return {
+          type: 'Phase',
+          data,
+          microcycles: (microcycleIds || []).map(mid => build(mid, 'Micro')).filter(Boolean)
+        };
+      }
+      if (type === 'Micro') {
+        const item = microcycles[id];
+        if (!item) return null;
+        // Exclude structural IDs
+        const { id: _id, sessionIds, ...data } = item;
+        return {
+          type: 'Micro',
+          data,
+          sessions: (item.sessionIds || []).map(sid => build(sid, 'Session')).filter(Boolean)
+        };
+      }
+      if (type === 'Session') {
+        const item = sessions[id];
+        if (!item) return null;
+        // Exclude structural IDs
+        const { id: _id, interventionId, ...data } = item;
+        return {
+          type: 'Session',
+          data
+        };
+      }
+      return null;
+    };
+    return build;
+  }, [interventions, phases, microcycles, sessions]);
+
+  const previewHierarchy = useMemo(() => buildHierarchy(activeId, activeType), [activeId, activeType, buildHierarchy]);
+
+  // Preview helper
+  const getHierarchySummary = (item) => {
+    if (!item) return { title: "No selection", stats: "" };
+    let counts = { Phases: 0, Micros: 0, Sessions: 0 };
+    
+    const count = (node) => {
+      if (node.type === 'Phase') counts.Phases++;
+      if (node.type === 'Micro') counts.Micros++;
+      if (node.type === 'Session') counts.Sessions++;
+      
+      if (node.phases) node.phases.forEach(count);
+      if (node.microcycles) node.microcycles.forEach(count);
+      if (node.sessions) node.sessions.forEach(count);
+    };
+    
+    count(item);
+    
+    const rootName = item.data?.name || item.data?.scope || 'Unnamed';
+    return {
+      title: `${item.type}: ${rootName}`,
+      stats: `${counts.Phases} Phases, ${counts.Micros} Microcycles, ${counts.Sessions} Sessions`
+    };
+  };
+
+  const previewSummary = useMemo(() => getHierarchySummary(previewHierarchy), [previewHierarchy]);
 
   // Modal configuration
   const defaultModalConfig = {
@@ -71,10 +126,10 @@ const TemplateModal = ({ isOpen, onClose }) => {
 
   // Save Template
   function handleSaveTemplate() {
-    if (!nodeSelected) {
+    if (!activeId) {
       setToaster({
         type: "error",
-        message: "Please select a node to save as a template.",
+        message: "Please select an item to save as a template.",
         show: true,
       });
       return;
@@ -98,10 +153,10 @@ const TemplateModal = ({ isOpen, onClose }) => {
       return;
     }
 
-    if (previewNodes.length === 0) {
+    if (!previewHierarchy) {
       setToaster({
         type: "error",
-        message: "No nodes/descendants found for the current selection.",
+        message: "Failed to generate template content.",
         show: true,
       });
       return;
@@ -111,8 +166,7 @@ const TemplateModal = ({ isOpen, onClose }) => {
       id: uuidv4(),
       name: newTemplateName,
       date: new Date().toISOString().split("T")[0],
-      nodes: JSON.parse(JSON.stringify(previewNodes)),
-      edges: JSON.parse(JSON.stringify(previewEdges)),
+      content: previewHierarchy,
     };
 
     addTemplate(newTemplate);
@@ -244,61 +298,30 @@ const TemplateModal = ({ isOpen, onClose }) => {
                 <div className="flex-1 bg-zinc-800 rounded-md p-4 mb-6 overflow-auto">
                   <h3 className="text-sm font-medium text-gray-300 mb-2">Template Preview</h3>
                   <div className="text-gray-400 text-sm">
-                    {previewNodes.length > 0 ? (
+                    {previewHierarchy ? (
                       <div className="space-y-3">
-                        {previewNodes.slice(0, 5).map((node) => (
-                          <div key={node.id} className="p-3 bg-zinc-900 shadow">
-                            <h4 className="font-thin text-gray-300 text-xl">@ {node.type || "Unnamed node"}</h4>
-                            <div className="text-zinc-400 text-xs mt-2">
-                              {node.type === 'InterventionNode' && node.data && (
-                                <>
-                                  <p>Name: {node.data.name || 'Not defined'}</p>
-                                  <p>Type: {node.data.type || 'Not defined'}</p>
-                                  <p>Global Goal: {node.data.global || 'Not defined'}</p>
-                                  <p>Service Goal: {node.data.service || 'Not defined'}</p>
-                                </>
-                              )}
-                              {node.type === 'PhaseNode' && node.data && (
-                                <>
-                                  <p>Scope: {node.data.scope || 'Not defined'}</p>
-                                  <p>Description: {node.data.description || 'Not defined'}</p>
-                                </>
-                              )}
-                              {node.type === 'MicroNode' && node.data && (
-                                <>
-                                  <p>Scope: {node.data.scope || 'Not defined'}</p>
-                                  <p>Description: {node.data.description || 'Not defined'}</p>
-                                </>
-                              )}
-                              {node.type === 'SessionNode' && node.data && (
-                                <>
-                                  <p>Scope: {node.data.scope || 'Not defined'}</p>
-                                  <p>Date: {node.data.date || 'Not defined'}</p>
-                                  {node.data.exercises && Object.keys(node.data.exercises).length > 0 && (
-                                    <p>{Object.keys(node.data.exercises).length} exercises defined</p>
-                                  )}
-                                </>
-                              )}
-                              {/* Fallback if node type is unknown or data is missing */}
-                              {(!node.type || !node.data) && <p>No detailed data available</p>}
-                            </div>
+                        <div className="p-3 bg-zinc-900 shadow">
+                          <h4 className="font-thin text-gray-300 text-xl">@ {previewSummary.title}</h4>
+                          <div className="text-zinc-400 text-xs mt-2">
+                             <p className="font-bold text-blue-400 mb-2">{previewSummary.stats}</p>
+                             <div className="mt-4 p-2 bg-zinc-800 rounded border border-zinc-700">
+                                <pre className="text-[10px] text-zinc-500 overflow-hidden text-ellipsis whitespace-pre-wrap">
+                                  {JSON.stringify(previewHierarchy.data, null, 2)}
+                                </pre>
+                             </div>
                           </div>
-                        ))}
-                        {previewNodes.length > 5 && (
-                          <p className="text-zinc-400 text-xs">...and {previewNodes.length - 5} more nodes not shown</p>
-                        )}
+                        </div>
                       </div>
                     ) : (
-                      <p>No node or descendants selected. Please select a parent node.</p>
+                      <p>No item selected. Please select an Intervention, Phase, Microcycle or Session.</p>
                     )}
                   </div>
                 </div>
 
                 <div className="flex justify-end">
-
-                  { nodeSelected ? (<button
+                  { activeId ? (<button
                     onClick={handleSaveTemplate}
-                    className="flex items-center text-xs gap-2 px-2 bg-blue-600 rounded-md font-medium transition duration-150"
+                    className="flex items-center text-xs gap-2 px-2 bg-blue-600 hover:bg-blue-500 py-2 rounded-md font-medium transition duration-150"
                   >
                     <Save fontSize="small" /> Save Template
                   </button>) : (
@@ -306,10 +329,9 @@ const TemplateModal = ({ isOpen, onClose }) => {
                       disabled
                       className="flex items-center text-xs gap-2 px-2 bg-rose-800 rounded-md font-medium transition duration-150 opacity-50 cursor-not-allowed"
                     >
-                      No selected node
+                      No selected item
                     </button>
                   )}
-                  
                 </div>
               </Tab.Panel>
 
@@ -339,11 +361,16 @@ const TemplateModal = ({ isOpen, onClose }) => {
                           <div>
                             <h4 className="font-medium text-white">{tpl.name}</h4>
                             <p className="text-xs text-gray-400">Saved on {tpl.date}</p>
-                            <p className="text-xs text-gray-400">{(tpl.nodes?.length ?? 0)} nodes, {(tpl.edges?.length ?? 0)} edges</p>
+                            {tpl.content ? (
+                              <p className="text-xs text-blue-400">Hierarchical Template ({tpl.content.type})</p>
+                            ) : (
+                              <p className="text-xs text-rose-400">Legacy Template (Unsupported)</p>
+                            )}
                           </div>
                           <div className="flex gap-2">
                             <button
-                              className="flex items-center bg-zinc-700 hover:bg-zinc-600 text-zinc-200 px-3 py-1 rounded-md text-sm transition duration-150"
+                              disabled={!tpl.content}
+                              className={`flex items-center bg-zinc-700 hover:bg-zinc-600 text-zinc-200 px-3 py-1 rounded-md text-sm transition duration-150 ${!tpl.content ? 'opacity-50 cursor-not-allowed' : ''}`}
                               onClick={() => handleLoadTemplate(tpl.id)}
                             >
                               <FolderOpen fontSize="small" style={{marginRight: 4}} /> Load

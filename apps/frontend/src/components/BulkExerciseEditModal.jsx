@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import Modal from "react-modal";
 import { Rnd } from "react-rnd";
 import { FiX, FiCheck } from "react-icons/fi";
-import { useFlowDiagramStore } from "../state/flow/useFlowDiagramStore";
+import { useInterventionStore } from "../state/core/useInterventionStore";
 import useUIStore from "../state/core/useUIStore";
 import { getExerciseContainerDisplayName } from "../utils/exerciseUtils"; // Assuming these helpers exist or will be created
 import { v4 as uuidv4 } from 'uuid';
@@ -19,7 +19,7 @@ const areValuesMixed = (values) => {
   return values.some(value => value !== firstValue);
 };
 
-// Helper to determine the predominant type of a field label across nodes
+// Helper to determine the predominant type of a field label across sessions
 const getPredominantFieldType = (fieldInstances) => {
     if (!fieldInstances || fieldInstances.length === 0) return 'text'; // Default to text
     // Simple approach: take the type of the first instance found
@@ -27,21 +27,21 @@ const getPredominantFieldType = (fieldInstances) => {
     return fieldInstances[0].type || 'text';
 };
 
-function BulkExerciseEditModal({ isOpen, onClose, targetSessionNodes }) {
+function BulkExerciseEditModal({ isOpen, onClose, targetSessions }) {
   const [aggregatedData, setAggregatedData] = useState({
     uniqueContainerNames: [],
-    commonFieldLabels: [], // { label: "Field Label", type: "text", currentValue: "Mixed" | "Value", instances: [{ nodeId, containerMangledKey, fieldName, value, type }] }
+    commonFieldLabels: [], // { label: "Field Label", type: "text", currentValue: "Mixed" | "Value", instances: [{ sessionId, containerMangledKey, fieldName, value, type }] }
     containerSelection: new Set(), // Set of container names currently selected for bulk edit
   });
   const [pendingChanges, setPendingChanges] = useState({}); // { fieldLabel: { value: "new value", operation: "replace" } }
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { batchUpdateNodesExerciseData } = useFlowDiagramStore(); // Will add this action
+  const { updateMultipleSessions } = useInterventionStore(); 
   const { setToaster } = useUIStore();
 
-  // --- Effect to Aggregate Data from targetSessionNodes ---
+  // --- Effect to Aggregate Data from targetSessions ---
   useEffect(() => {
-    if (!isOpen || !targetSessionNodes || targetSessionNodes.length === 0) {
+    if (!isOpen || !targetSessions || targetSessions.length === 0) {
         setAggregatedData({
             uniqueContainerNames: [],
             commonFieldLabels: [],
@@ -51,13 +51,13 @@ function BulkExerciseEditModal({ isOpen, onClose, targetSessionNodes }) {
         return;
     }
 
-    console.log("Aggregating data for bulk edit...", targetSessionNodes);
+    console.log("Aggregating data for bulk edit...", targetSessions);
 
     const containerNameMap = new Map(); // Map<originalName, Set<mangledKey>>
-    const fieldLabelMap = new Map(); // Map<label, Array<{ nodeId, containerMangledKey, fieldName, value, type }>>
+    const fieldLabelMap = new Map(); // Map<label, Array<{ sessionId, containerMangledKey, fieldName, value, type }>>
 
-    targetSessionNodes.forEach(node => {
-        const exercises = node.data?.exercises || {};
+    targetSessions.forEach(session => {
+        const exercises = session.exercises || {};
         Object.keys(exercises).forEach(mangledKey => {
             const containerName = getExerciseContainerDisplayName(mangledKey); // Helper to get original name
             const containerData = exercises[mangledKey];
@@ -76,7 +76,7 @@ function BulkExerciseEditModal({ isOpen, onClose, targetSessionNodes }) {
                                 fieldLabelMap.set(field.label, []);
                             }
                              fieldLabelMap.get(field.label).push({
-                                nodeId: node.id,
+                                sessionId: session.id,
                                 containerMangledKey: mangledKey,
                                 fieldName: field.name, // Use field.name for internal lookup
                                 value: field.value, // Store the actual value
@@ -113,7 +113,7 @@ function BulkExerciseEditModal({ isOpen, onClose, targetSessionNodes }) {
     });
     setPendingChanges({}); // Reset pending changes on data load
 
-  }, [isOpen, targetSessionNodes]); // Re-run when modal opens or target nodes change
+  }, [isOpen, targetSessions]); // Re-run when modal opens or target sessions change
 
   // --- Handle Input Change for Pending Changes ---
   const handlePendingChange = (fieldLabel, value, operation = 'replace') => {
@@ -140,10 +140,10 @@ function BulkExerciseEditModal({ isOpen, onClose, targetSessionNodes }) {
 
   // --- Handle Apply Changes ---
   const handleApplyChanges = async () => {
-      if (!targetSessionNodes || targetSessionNodes.length === 0 || Object.keys(pendingChanges).length === 0) {
+      if (!targetSessions || targetSessions.length === 0 || Object.keys(pendingChanges).length === 0) {
           setToaster({
               type: "info",
-              message: "No nodes selected or no changes to apply.",
+              message: "No sessions selected or no changes to apply.",
               show: true,
           });
           return;
@@ -151,25 +151,25 @@ function BulkExerciseEditModal({ isOpen, onClose, targetSessionNodes }) {
 
       setIsSubmitting(true);
 
-      const updatesMap = {}; // { nodeId: updatedExerciseData }
+      const updatesMap = {}; // { sessionId: { exercises: updatedExerciseData } }
 
-      targetSessionNodes.forEach(node => {
-          // Deep copy the node's current exercise data to avoid direct mutation
-          const nodeExerciseDataCopy = JSON.parse(JSON.stringify(node.data?.exercises || {}));
+      targetSessions.forEach(session => {
+          // Deep copy the session's current exercise data to avoid direct mutation
+          const sessionExerciseDataCopy = JSON.parse(JSON.stringify(session.exercises || {}));
 
           // Iterate through each pending change from the modal UI
           Object.keys(pendingChanges).forEach(fieldLabelToChange => {
               const { value: newValue, operation } = pendingChanges[fieldLabelToChange];
 
-              // Find all instances of this field label within the current node's copied data
-              Object.keys(nodeExerciseDataCopy).forEach(mangledKey => {
+              // Find all instances of this field label within the current session's copied data
+              Object.keys(sessionExerciseDataCopy).forEach(mangledKey => {
                   // Get the original container name to check if it's selected for bulk edit
                   const originalContainerName = getExerciseContainerDisplayName(mangledKey);
                   if (!aggregatedData.containerSelection.has(originalContainerName)) {
                       return; // Skip this container if it's not selected
                   }
 
-                  const containerData = nodeExerciseDataCopy[mangledKey];
+                  const containerData = sessionExerciseDataCopy[mangledKey];
                   if (containerData && Array.isArray(containerData.fields)) {
                       containerData.fields.forEach(field => {
                           // Check if this field matches the label we are changing
@@ -213,7 +213,7 @@ function BulkExerciseEditModal({ isOpen, onClose, targetSessionNodes }) {
                                                updatedValue = amount;
                                           }
                                       } else {
-                                           console.warn(`Skipping numerical operation for field "${field.label}" due to non-numeric value or amount. Node ID: ${node.id}`);
+                                           console.warn(`Skipping numerical operation for field "${field.label}" due to non-numeric value or amount. Session ID: ${session.id}`);
                                            // Optionally notify user or log
                                       }
                                   }
@@ -222,10 +222,10 @@ function BulkExerciseEditModal({ isOpen, onClose, targetSessionNodes }) {
                                  field.value = updatedValue;
 
                               } catch (e) {
-                                  console.error(`Error applying bulk edit to field "${field.label}" in node ${node.id}:`, e);
+                                  console.error(`Error applying bulk edit to field "${field.label}" in session ${session.id}:`, e);
                                   setToaster({
                                       type: "error",
-                                      message: `Failed to apply change to field "${field.label}" in a node.`,
+                                      message: `Failed to apply change to field "${field.label}" in a session.`,
                                       show: true,
                                   });
                               }
@@ -236,14 +236,14 @@ function BulkExerciseEditModal({ isOpen, onClose, targetSessionNodes }) {
           });
 
            // Add the modified exercise data to the updates map
-          updatesMap[node.id] = nodeExerciseDataCopy;
+          updatesMap[session.id] = { exercises: sessionExerciseDataCopy };
       });
 
       console.log("Applying batch updates:", updatesMap);
 
       try {
           // Call the new store action
-          await batchUpdateNodesExerciseData(updatesMap);
+          await updateMultipleSessions(updatesMap);
           setToaster({
               type: "success",
               message: "Bulk exercise data updated successfully.",
@@ -317,7 +317,7 @@ function BulkExerciseEditModal({ isOpen, onClose, targetSessionNodes }) {
 
              {/* Scope Display */}
              <div className="text-sm text-gray-400">
-                 Applying to: {targetSessionNodes?.length || 0} Session Node(s){targetSessionNodes?.length > 0 && ` in subtree of "${targetSessionNodes[0].parentNode?.data?.label || targetSessionNodes[0].id}"`} {/* Needs parent node info, might need to pass root node prop */}
+                 Applying to: {targetSessions?.length || 0} Session(s)
              </div>
 
              {/* Container Filtering (Basic Checkbox List) */}
@@ -411,7 +411,7 @@ function BulkExerciseEditModal({ isOpen, onClose, targetSessionNodes }) {
             <button
               type="button"
               onClick={handleApplyChanges}
-              disabled={isSubmitting || !targetSessionNodes || targetSessionNodes.length === 0 || Object.keys(pendingChanges).length === 0}
+              disabled={isSubmitting || !targetSessions || targetSessions.length === 0 || Object.keys(pendingChanges).length === 0}
               className="px-3 py-1.5 text-xs bg-zinc-800 hover:bg-zinc-700 text-white rounded-md disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center gap-1"
             >
               {isSubmitting ? (

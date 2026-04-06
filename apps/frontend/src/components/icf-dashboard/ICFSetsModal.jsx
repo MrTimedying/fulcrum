@@ -1,9 +1,8 @@
 import React from 'react';
 import Modal from 'react-modal';
 import { Rnd } from 'react-rnd';
-import { Close } from '@mui/icons-material';
+import Close from '@mui/icons-material/Close';
 import ICFSetsModalContent from './icf_modal/ICFSetsModalContent';
-import { ReactFlowProvider } from '@xyflow/react';
 
 // Set app element for react-modal (important for accessibility)
 if (typeof window !== "undefined") {
@@ -69,9 +68,7 @@ const ICFSetsModal = ({ isOpen, onClose }) => {
 
           {/* Main content area */}
           <div className="flex-grow flex overflow-hidden">
-            <ReactFlowProvider>
-              <ICFSetsModalContent onClose={onClose} />
-            </ReactFlowProvider>
+            <ICFSetsModalContent onClose={onClose} />
           </div>
 
           {/* No footer needed since we moved controls to content component */}

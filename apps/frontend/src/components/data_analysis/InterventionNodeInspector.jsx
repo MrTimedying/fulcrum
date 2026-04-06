@@ -3,121 +3,72 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   BarChart, Bar, ComposedChart, Area, AreaChart, PieChart, Pie, Cell
 } from 'recharts';
-import { useFlowDiagramStore } from '../../state/flow/useFlowDiagramStore';
+import { useInterventionStore } from '../../state/core/useInterventionStore';
 import { getExerciseContainerDisplayName } from '../../utils/exerciseUtils';
 
 function InterventionNodeInspector({ node }) {
-  const { nodes, edges } = useFlowDiagramStore();
+  const { phases, microcycles, sessions } = useInterventionStore();
   const [selectedExercise, setSelectedExercise] = useState(null);
   const [selectedTags, setSelectedTags] = useState([]);
   const [showAllTags, setShowAllTags] = useState(true);
   
-  // Find all phase nodes connected to this intervention node
+  // Find all phases in this intervention
   const phaseNodes = useMemo(() => {
-    if (!node) return [];
+    if (!node?.phaseIds) return [];
     
-    // Find all edges connected to this node
-    const connectedEdges = edges.filter(
-      edge => edge.source === node.id || edge.target === node.id
-    );
-    
-    // Get the IDs of connected nodes
-    const connectedNodeIds = connectedEdges.map(edge => 
-      edge.source === node.id ? edge.target : edge.source
-    );
-    
-    // Get the phase nodes - no date requirement
-    return nodes.filter(n => 
-      connectedNodeIds.includes(n.id) && 
-      n.type === 'phase'
-    ).sort((a, b) => {
-      // Sort by id if no date
-      if (!a.data?.date || !b.data?.date) {
-        return a.id.localeCompare(b.id);
-      }
-      // Sort by date if available
-      const dateA = new Date(a.data.date);
-      const dateB = new Date(b.data.date);
-      return dateA - dateB;
-    });
-  }, [node, nodes, edges]);
+    return node.phaseIds
+      .map(pid => phases[pid])
+      .filter(Boolean);
+  }, [node, phases]);
   
   // Find all connected micro and session nodes through the phases
   const { allMicroNodes, allSessionNodes } = useMemo(() => {
     const micros = [];
-    const sessions = [];
+    const sessionsList = [];
     
     if (!phaseNodes.length) return { allMicroNodes: [], allSessionNodes: [] };
     
     // For each phase, find connected micro nodes
     phaseNodes.forEach(phaseNode => {
       const phaseId = phaseNode.id;
-      const phaseName = phaseNode.data?.label || phaseNode.label || `Phase ${phaseId.substr(0,4)}`;
+      const phaseName = phaseNode.name || `Phase ${phaseId.substr(0,4)}`;
       
-      // Find edges connected to this phase
-      const phaseEdges = edges.filter(
-        edge => edge.source === phaseId || edge.target === phaseId
-      );
-      
-      // Get connected micro node IDs
-      const connectedMicroIds = phaseEdges.map(edge => 
-        edge.source === phaseId ? edge.target : edge.source
-      );
-      
-      // Get micro nodes with phase info - no date requirement
-      const connectedMicros = nodes.filter(n => 
-        connectedMicroIds.includes(n.id) && 
-        n.type === 'micro'
-      ).map(microNode => ({
-        ...microNode,
-        phaseId,
-        phaseName
-      }));
+      const connectedMicros = (phaseNode.microcycleIds || [])
+        .map(mid => microcycles[mid])
+        .filter(Boolean)
+        .map(microNode => ({
+          ...microNode,
+          phaseId,
+          phaseName
+        }));
       
       micros.push(...connectedMicros);
       
       // For each micro, find connected sessions
       connectedMicros.forEach(microNode => {
         const microId = microNode.id;
-        const microWeek = microNode.data?.label || microNode.label || `Week ${microId.substr(0,4)}`;
+        const microWeek = microNode.name || `Week ${microId.substr(0,4)}`;
         
-        // Find edges connected to this micro
-        const microEdges = edges.filter(
-          edge => edge.source === microId || edge.target === microId
-        );
+        const connectedSessions = (microNode.sessionIds || [])
+          .map(sid => sessions[sid])
+          .filter(s => s && s.exercises && s.date)
+          .map(sessionNode => ({
+            ...sessionNode,
+            phaseId,
+            phaseName,
+            microId,
+            microWeek
+          }));
         
-        // Get connected session node IDs
-        const connectedSessionIds = microEdges.map(edge => 
-          edge.source === microId ? edge.target : edge.source
-        );
-        
-        // Get session nodes with phase and micro info - sessions still need dates
-        const connectedSessions = nodes.filter(n => 
-          connectedSessionIds.includes(n.id) && 
-          n.type === 'session' &&
-          n.data?.exercises &&
-          n.data?.date
-        ).map(sessionNode => ({
-          ...sessionNode,
-          phaseId,
-          phaseName,
-          microId,
-          microWeek
-        }));
-        
-        sessions.push(...connectedSessions);
+        sessionsList.push(...connectedSessions);
       });
     });
     
-    // Sort by date (for sessions) or id (for micros without date)
     return { 
-      allMicroNodes: micros.sort((a, b) => {
-        if (!a.data?.date || !b.data?.date) return a.id.localeCompare(b.id);
-        return new Date(a.data.date) - new Date(b.data.date);
-      }),
-      allSessionNodes: sessions.sort((a, b) => new Date(a.data.date) - new Date(b.data.date))
+      allMicroNodes: micros,
+      allSessionNodes: sessionsList.sort((a, b) => new Date(a.date) - new Date(b.date))
     };
-  }, [phaseNodes, nodes, edges]);
+  }, [phaseNodes, microcycles, sessions]);
   
   // Extract and normalize all exercise data and gather tags
   const { allExercisesData, allTags } = useMemo(() => {
@@ -126,15 +77,15 @@ function InterventionNodeInspector({ node }) {
     const tagSet = new Set();
     
     allSessionNodes.forEach(sessionNode => {
-      if (!sessionNode?.data?.exercises) return;
+      if (!sessionNode?.exercises) return;
       
-      const sessionDate = sessionNode.data.date;
+      const sessionDate = sessionNode.date;
       const formattedDate = new Date(sessionDate).toLocaleDateString();
-      const sessionLabel = sessionNode.data?.label || sessionNode.id;
+      const sessionLabel = sessionNode.name || sessionNode.id;
       const { phaseId, phaseName, microId, microWeek } = sessionNode;
       
-      // Extract exercises from each session node
-      const exercises = sessionNode.data.exercises;
+      // Extract exercises from each session
+      const exercises = sessionNode.exercises;
       
       // Process each exercise container
       if (exercises) {
@@ -461,7 +412,7 @@ function InterventionNodeInspector({ node }) {
   // Colors for charts
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FF5733', '#C70039', '#900C3F', '#581845'];
 
-  // If there are no session nodes, show a message
+  // If there are no sessions, show a message
   if (!allSessionNodes.length) {
     return (
       <div className="flex items-center justify-center h-full text-gray-400">
@@ -473,12 +424,12 @@ function InterventionNodeInspector({ node }) {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-medium mb-2">Intervention Overview: {node.data?.label || node.label || 'Unnamed Intervention'}</h3>
+        <h3 className="text-lg font-medium mb-2">Intervention Overview: {node.name || 'Unnamed Intervention'}</h3>
         <p className="text-sm text-gray-400 mb-4">
           Phases: {phaseNodes.length} | Micro Cycles: {allMicroNodes.length} | Sessions: {allSessionNodes.length} | 
           Date Range: {
             allSessionNodes.length > 0 
-              ? `${new Date(allSessionNodes[0].data.date).toLocaleDateString()} - ${new Date(allSessionNodes[allSessionNodes.length-1].data.date).toLocaleDateString()}`
+              ? `${new Date(allSessionNodes[0].date).toLocaleDateString()} - ${new Date(allSessionNodes[allSessionNodes.length-1].date).toLocaleDateString()}`
               : 'No date range'
           }
         </p>
@@ -722,4 +673,4 @@ function InterventionNodeInspector({ node }) {
   );
 }
 
-export default InterventionNodeInspector; 
+export default InterventionNodeInspector;

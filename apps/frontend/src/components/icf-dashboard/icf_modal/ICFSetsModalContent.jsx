@@ -1,10 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { useReactFlow } from "@xyflow/react";
-import { v4 as uuidv4 } from "uuid";
 import { useNavigationStore } from "../../../state/core/useNavigationStore";
 import { usePatientStore } from "../../../state/core/usePatientStore";
 import { useInterventionStore } from "../../../state/core/useInterventionStore";
-import { useFlowDiagramStore } from "../../../state/flow/useFlowDiagramStore";
 import useUIStore from "../../../state/core/useUIStore";
 import Sidebar from "./Sidebar";
 import NodeEditor from "./NodeEditor";
@@ -36,11 +33,145 @@ const ICFSetsModalContent = ({ onClose }) => {
   // Access granular stores
   const { activeTab, patientId } = useNavigationStore();
   const { addIcfRecord } = usePatientStore();
-  const { addTemplate, loadTemplate, removeTemplate, templates } = useInterventionStore();
-  const { setNodes, setEdges } = useFlowDiagramStore();
-  const reactFlowInstance = useReactFlow();
+  const { 
+    addTemplate, 
+    loadTemplate, 
+    removeTemplate, 
+    templates,
+    addSession,
+    selectedInterventionId,
+    selectedStructuralNodeId,
+    selectedStructuralNodeType
+  } = useInterventionStore();
 
-  // ... (setup useEffects unchanged)
+  // --- Effect to Aggregate records from local state and potential props ---
+  useEffect(() => {
+    // Initial default record if empty
+    if (records.length === 0) {
+      const defaultRecord = createDefaultICFRecord();
+      setRecords([defaultRecord]);
+      setFormValues({
+        [defaultRecord.id]: {
+          category: "body_function",
+          code: "",
+          description: "",
+        }
+      });
+    }
+  }, []);
+
+  // --- Record Actions ---
+  const handleRecordAdd = () => {
+    const newRecord = createDefaultICFRecord();
+    setRecords(prev => [...prev, newRecord]);
+    setFormValues(prev => ({
+      ...prev,
+      [newRecord.id]: {
+        category: "body_function",
+        code: "",
+        description: "",
+      }
+    }));
+  };
+
+  const handleRecordDelete = (id) => {
+    setRecords(prev => prev.filter(r => r.id !== id));
+    setFormValues(prev => {
+      const newValues = { ...prev };
+      delete newValues[id];
+      return newValues;
+    });
+    setSelectedRecords(prev => {
+      const newSelected = new Set(prev);
+      newSelected.delete(id);
+      return newSelected;
+    });
+  };
+
+  const handleInputChange = (recordId, fieldName, value) => {
+    setFormValues(prev => ({
+      ...prev,
+      [recordId]: {
+        ...(prev[recordId] || {}),
+        [fieldName]: value
+      }
+    }));
+
+    // Clear error when user types
+    if (errors[recordId]?.[fieldName]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        const recordErrors = { ...newErrors[recordId] };
+        delete recordErrors[fieldName];
+        
+        if (Object.keys(recordErrors).length === 0) {
+          delete newErrors[recordId];
+        } else {
+          newErrors[recordId] = recordErrors;
+        }
+        return newErrors;
+      });
+    }
+  };
+
+  const handleFieldAdd = (recordId, type, subtype, label) => {
+    setRecords(prev => prev.map(record => {
+      if (record.id === recordId) {
+        const newField = createDefaultField(type, label, subtype);
+        return {
+          ...record,
+          fields: [...record.fields, newField]
+        };
+      }
+      return record;
+    }));
+  };
+
+  const handleFieldDelete = (recordId, fieldId) => {
+    setRecords(prev => prev.map(record => {
+      if (record.id === recordId) {
+        const fieldToDelete = record.fields.find(f => f.id === fieldId);
+        if (fieldToDelete) {
+          setFormValues(prevValues => {
+            const recordValues = { ...prevValues[recordId] };
+            delete recordValues[fieldToDelete.name];
+            return { ...prevValues, [recordId]: recordValues };
+          });
+        }
+        return {
+          ...record,
+          fields: record.fields.filter(f => f.id !== fieldId)
+        };
+      }
+      return record;
+    }));
+  };
+
+  const handleUpdateRecordLabel = (recordId, newLabel) => {
+    setRecords(prev => prev.map(record => {
+      if (record.id === recordId) {
+        return { ...record, label: newLabel };
+      }
+      return record;
+    }));
+  };
+
+  const handleSaveSetTemplate = async () => {
+    if (!newSetName.trim()) return;
+    
+    const selectedRecordsData = records.filter(r => selectedRecords.has(r.id));
+    const template = createICFSetTemplate(newSetName, selectedRecordsData, formValues);
+    
+    addTemplate(template);
+    setShowSaveSetForm(false);
+    setNewSetName("");
+    
+    setToaster({
+      type: "success",
+      message: `Saved ICF set "${newSetName}" to templates`,
+      show: true,
+    });
+  };
 
   // Mapping from record category to state dimension
   const categoryToDimension = {
@@ -82,58 +213,45 @@ const ICFSetsModalContent = ({ onClose }) => {
       return;
     }
 
-    // React Flow logic for Editor tab
-    if (!reactFlowInstance) return;
-    
-    // Calculate position for new nodes
-    const containerBounds = reactFlowInstance.getContainer().getBoundingClientRect();
-    const centerPosition = reactFlowInstance.screenToFlowPosition({
-      x: containerBounds.width / 2,
-      y: containerBounds.height / 2
-    });
-    
-    // Create nodes for each selected record
-    const newNodes = selectedRecords.map((record, index) => {
-      const recordValues = formValues[record.id] || {};
-      
-      // Extract all field values to ensure we capture everything
-      const fieldData = {};
-      record.fields.forEach(field => {
-        if (recordValues[field.name]) {
-          fieldData[field.name] = recordValues[field.name];
-        }
+    // Editor logic - Add as sessions to the intervention
+    if (activeTab === "Editor") {
+      if (!selectedInterventionId) {
+        setToaster({
+          type: "error",
+          message: "No active intervention selected",
+          show: true,
+        });
+        return;
+      }
+
+      selectedRecords.forEach(record => {
+        const recordValues = formValues[record.id] || {};
+        
+        // Target a specific microcycle if one is selected
+        const targetMicroId = selectedStructuralNodeType === 'Micro' ? selectedStructuralNodeId : undefined;
+        
+        addSession(selectedInterventionId, {
+          name: `${recordValues.code || record.code || ""} ${recordValues.description || record.description || "ICF Record"}`.trim(),
+          tags: {
+            type: "ICF",
+            code: recordValues.code || record.code || "",
+            category: recordValues.category || record.category || "",
+            qualifier: recordValues.qualifier || ""
+          }
+        }, targetMicroId);
       });
       
-      return {
-        id: uuidv4(),
-        type: "record",
-        data: {
-          code: recordValues.code || record.code || "",
-          description: recordValues.description || record.description || "",
-          category: recordValues.category || "",
-          qualifier: recordValues.qualifier || "",
-          type: "ICF", // Add type for display
-          color: "rgba(28, 28, 28, 1)", // Default color from dataTemplates
-          ...fieldData // Include all other field data
-        },
-        position: {
-          x: centerPosition.x + (index % 3) * 150, // Grid layout
-          y: centerPosition.y + Math.floor(index / 3) * 100
-        }
-      };
-    });
-    
-    // Add nodes to the flow
-    setNodes(nodes => [...nodes, ...newNodes]);
-    
-    // Close the modal
-    onClose();
+      setToaster({
+        type: "success",
+        message: `Added ${selectedRecords.length} record(s) to intervention`,
+        show: true,
+      });
+      onClose();
+    }
   };
 
-  // Insert a template into the flow
+  // Insert a template
   const handleInsertTemplate = (template) => {
-    if (!reactFlowInstance) return;
-    
     loadTemplate(template.id);
     onClose();
   };

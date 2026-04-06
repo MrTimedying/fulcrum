@@ -1,10 +1,8 @@
 import React, { Fragment, useState, useEffect, useCallback } from "react";
 import Modal from "react-modal";
 import { Tab } from "@headlessui/react";
-import { ReactFlowProvider } from "@xyflow/react";
 import { usePatientStore } from "../state/core/usePatientStore";
 import { useNavigationStore } from "../state/core/useNavigationStore";
-import { useFlowDiagramStore } from "../state/flow/useFlowDiagramStore";
 import Profile from "./icf-dashboard/profile";
 import SessionEditor from "./editor/SessionEditor";
 import PhasePanel from "./editor/PhasePanel";
@@ -21,7 +19,6 @@ Modal.setAppElement("#root");
 function MainBody({ handleEditPatient }) {
   const { patients } = usePatientStore();
   const { patientId, activeTab } = useNavigationStore();
-  const { nodes, setNodes } = useFlowDiagramStore();
   const { setToaster } = useUIStore();
   const { selectedInterventionId, selectedSessionId, selectedStructuralNodeType } = useInterventionStore();
   const [isICFSetsModalOpen, setIsICFSetsModalOpen] = useState(false);
@@ -37,7 +34,7 @@ function MainBody({ handleEditPatient }) {
         (id) => interventions[id].patientId === patientId && id.startsWith("default-")
       ) || `default-${patientId}`;
 
-      useInterventionStore.getState().loadIntervention(patientId, interventionId);
+      useInterventionStore.getState().setSelectedInterventionId(interventionId);
     } else if (activeTab === "Profile") {
       // Clear the diagram or just leave it. (The Kanban view doesn't use it).
       // For now, we just ensure selectedInterventionId is null or leave as is.

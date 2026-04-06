@@ -3,57 +3,44 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   BarChart, Bar, ComposedChart, Area, PieChart, Pie, Cell
 } from 'recharts';
-import { useFlowDiagramStore } from '../../state/flow/useFlowDiagramStore';
+import { useInterventionStore } from '../../state/core/useInterventionStore';
 import { getExerciseContainerDisplayName } from '../../utils/exerciseUtils';
 
 function MicroNodeInspector({ node }) {
-  const { nodes, edges } = useFlowDiagramStore();
+  const { sessions } = useInterventionStore();
   const [selectedTags, setSelectedTags] = useState([]);
   const [showAllTags, setShowAllTags] = useState(true);
   
-  // Find all session nodes connected to this micro node
+  // Find all sessions in this micro cycle
   const sessionNodes = useMemo(() => {
-    if (!node) return [];
+    if (!node?.sessionIds) return [];
     
-    // Find all edges connected to this node
-    const connectedEdges = edges.filter(
-      edge => edge.source === node.id || edge.target === node.id
-    );
-    
-    // Get the IDs of connected nodes
-    const connectedNodeIds = connectedEdges.map(edge => 
-      edge.source === node.id ? edge.target : edge.source
-    );
-    
-    // Get the session nodes
-    return nodes.filter(n => 
-      connectedNodeIds.includes(n.id) && 
-      n.type === 'session' && 
-      n.data?.exercises && 
-      n.data?.date // Only sessions with date and exercises
-    ).sort((a, b) => {
-      // Sort by date
-      const dateA = new Date(a.data.date);
-      const dateB = new Date(b.data.date);
-      return dateA - dateB;
-    });
-  }, [node, nodes, edges]);
+    return node.sessionIds
+      .map(sid => sessions[sid])
+      .filter(s => s && s.exercises && s.date)
+      .sort((a, b) => {
+        // Sort by date
+        const dateA = new Date(a.date);
+        const dateB = new Date(b.date);
+        return dateA - dateB;
+      });
+  }, [node, sessions]);
   
-  // Parse exercise data from all session nodes and extract all tags
+  // Parse exercise data from all sessions and extract all tags
   const { allExercisesData, allTags } = useMemo(() => {
     // Store exercises from all sessions
     const allExercises = [];
     const tagSet = new Set();
     
     sessionNodes.forEach(sessionNode => {
-      if (!sessionNode?.data?.exercises) return;
+      if (!sessionNode?.exercises) return;
       
-      const sessionDate = sessionNode.data.date;
+      const sessionDate = sessionNode.date;
       const formattedDate = new Date(sessionDate).toLocaleDateString();
-      const sessionLabel = sessionNode.data?.label || sessionNode.id;
+      const sessionLabel = sessionNode.name || sessionNode.id;
       
-      // Extract exercises from each session node
-      const exercises = sessionNode.data.exercises;
+      // Extract exercises from each session
+      const exercises = sessionNode.exercises;
       if (exercises) {
         // Process each exercise container
         Object.keys(exercises).forEach(mangledKey => {
@@ -380,11 +367,11 @@ function MicroNodeInspector({ node }) {
     return Object.keys(exercisesByName);
   }, [exercisesByName]);
 
-  // If there are no session nodes, show a message
+  // If there are no sessions, show a message
   if (!sessionNodes.length) {
     return (
       <div className="flex items-center justify-center h-full text-gray-400">
-        <p>No session nodes connected to this micro cycle.</p>
+        <p>No sessions found in this micro cycle.</p>
       </div>
     );
   }
@@ -392,11 +379,11 @@ function MicroNodeInspector({ node }) {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-medium mb-2">Micro Cycle Overview: {node.data?.label || node.label || 'Unnamed Micro Cycle'}</h3>
+        <h3 className="text-lg font-medium mb-2">Micro Cycle Overview: {node.name || 'Unnamed Micro Cycle'}</h3>
         <p className="text-sm text-gray-400 mb-4">
           Sessions: {sessionNodes.length} | Date Range: {
             sessionNodes.length > 0 
-              ? `${new Date(sessionNodes[0].data.date).toLocaleDateString()} - ${new Date(sessionNodes[sessionNodes.length-1].data.date).toLocaleDateString()}`
+              ? `${new Date(sessionNodes[0].date).toLocaleDateString()} - ${new Date(sessionNodes[sessionNodes.length-1].date).toLocaleDateString()}`
               : 'No date range'
           }
         </p>

@@ -14,10 +14,10 @@ function SessionNodeInspector({ node }) {
   
   // Parse and normalize exercise data from the node
   const { exerciseData, allTags } = useMemo(() => {
-    if (!node?.data?.exercises) return { exerciseData: [], allTags: [] };
+    if (!node?.exercises) return { exerciseData: [], allTags: [] };
 
-    // Extract exercises from the node data
-    const exercises = node.data.exercises;
+    // Extract exercises from the session record
+    const exercises = node.exercises;
     const normalizedExercises = [];
     const tagSet = new Set();
 
@@ -467,9 +467,9 @@ function SessionNodeInspector({ node }) {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-medium mb-2">Session Overview: {node.data?.label || node.label || 'Unnamed Session'}</h3>
+        <h3 className="text-lg font-medium mb-2">Session Overview: {node.name || 'Unnamed Session'}</h3>
         <p className="text-sm text-gray-400 mb-4">
-          Date: {new Date(node.data.date).toLocaleDateString()}
+          Date: {new Date(node.date).toLocaleDateString()}
         </p>
         
         {/* Tag Filter Controls */}
@@ -576,7 +576,7 @@ function SessionNodeInspector({ node }) {
                 </div>
               )}
               
-              {/* Intensity per Set Chart */}
+              {/* Intensity by Set Chart */}
               {setBySetChartData.intensityData.length > 0 && (
                 <div className="mt-4">
                   <h5 className="text-sm font-medium mb-2 text-gray-400">Intensity by Set</h5>

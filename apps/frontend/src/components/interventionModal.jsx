@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import Modal from "react-modal";
 import { Rnd } from "react-rnd";
 import { Tab } from "@headlessui/react";
-import { useFlowDiagramStore } from "../state/flow/useFlowDiagramStore";
 import { useNavigationStore } from "../state/core/useNavigationStore";
 import { useInterventionStore } from "../state/core/useInterventionStore";
 import useUIStore from "../state/core/useUIStore";
@@ -10,7 +9,6 @@ import { Close, Save } from "@mui/icons-material";
 import { v4 as uuidv4 } from "uuid";
 
 const InterventionModal = ({ isOpen, onClose }) => {
-  const { nodes, edges } = useFlowDiagramStore();
   const { patientId } = useNavigationStore();
   const { interventions, addIntervention, loadIntervention, removeIntervention } = useInterventionStore();
   const { setToaster } = useUIStore();
@@ -50,15 +48,11 @@ const InterventionModal = ({ isOpen, onClose }) => {
     }
 
     // Save intervention logic here
-    const newIntervention = {
-      id: uuidv4(),
+    addIntervention(patientId, {
       name: newInterventionName,
       date: new Date().toISOString().split('T')[0],
-      nodes: nodes,
-      edges: edges,
-    };
+    });
 
-    addIntervention(patientId, newIntervention);
     setNewInterventionName("");
     setToaster({
       type: "success",
@@ -174,30 +168,11 @@ const InterventionModal = ({ isOpen, onClose }) => {
                   />
                 </div>
 
-                <div className="flex-1 bg-gray-700 rounded-md p-4 mb-6 overflow-auto">
-                  <h3 className="text-sm font-medium text-gray-300 mb-2">Intervention Preview</h3>
-                  <div className="text-gray-400 text-sm">
-                    {nodes.length > 0 ? (
-                      <div>
-                        <p>This intervention contains {nodes.length} nodes.</p>
-                        <ul className="list-disc list-inside mt-2">
-                          {nodes.slice(0, 5).map((node) => (
-                            <li key={node.id}>{node.data.label || "Unnamed node"}</li>
-                          ))}
-                          {nodes.length > 5 && <li>...and {nodes.length - 5} more</li>}
-                        </ul>
-                      </div>
-                    ) : (
-                      <p>No nodes in current intervention.</p>
-                    )}
-                  </div>
-                </div>
-
                 <div className="flex justify-end">
                   <button
                     onClick={handleSaveIntervention}
                     className="flex items-center gap-2 px-4 py-2 bg-zinc-600 hover:bg-zinc-700 rounded-md font-medium transition duration-150"
-                    disabled={!newInterventionName.trim() || nodes.length === 0}
+                    disabled={!newInterventionName.trim()}
                   >
                     <Save fontSize="small" />
                     Save Intervention

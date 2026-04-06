@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect, useMemo } from "react";
 import Modal from "react-modal";
 import { Rnd } from "react-rnd";
 import { FiCheck, FiX, FiTrash2 } from "react-icons/fi";
-import { useFlowDiagramStore } from "../../../state/flow/useFlowDiagramStore";
 import { useInterventionStore } from "../../../state/core/useInterventionStore";
 import {
   createDefaultField,
@@ -40,12 +39,19 @@ function ExerciseModal({ isOpen, onClose }) {
   const [bulkEditValue, setBulkEditValue] = useState("");
   const [bulkEditOperation, setBulkEditOperation] = useState('replace'); // 'replace' or 'append'
 
-  const { nodes, updateNodeExerciseData } = useFlowDiagramStore();
-  const { exercises, saveExercise, deleteExercise } = useInterventionStore();
+  const { 
+    exercises, 
+    saveExercise, 
+    deleteExercise, 
+    sessions, 
+    selectedSessionId, 
+    updateSession 
+  } = useInterventionStore();
   const {setToaster} = useUIStore();
-  const nodeSelected = useMemo(
-    () => nodes.find((node) => node.selected),
-    [nodes]
+  
+  const currentSession = useMemo(
+    () => (selectedSessionId ? sessions[selectedSessionId] : null),
+    [sessions, selectedSessionId]
   );
 
   const defaultModalConfig = {
@@ -59,11 +65,11 @@ function ExerciseModal({ isOpen, onClose }) {
   useEffect(() => {
     if (isOpen) {
         console.log(
-            `--- Effect Start: Modal Open for Node ${nodeSelected?.id} ---`
+            `--- Effect Start: Modal Open for Session ${selectedSessionId} ---`
         );
 
         // Existing exercise data will now potentially contain the full structure
-        const existingExerciseData = nodeSelected?.data?.exercises || {};
+        const existingExerciseData = currentSession?.exercises || {};
         console.log(
             "Existing exercise data fetched:",
             JSON.stringify(existingExerciseData, null, 2)
@@ -201,7 +207,7 @@ function ExerciseModal({ isOpen, onClose }) {
         setSuccessMessage("");
         console.log("--- Effect End ---");
     }
-}, [isOpen, nodeSelected?.id]);
+}, [isOpen, selectedSessionId, currentSession]);
 
   // --- Input Change Handler ---
   const handleInputChange = (containerId, fieldName, value) => {
@@ -511,8 +517,8 @@ function ExerciseModal({ isOpen, onClose }) {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    if (!nodeSelected) {
-        setErrors({ form: "Error: No node selected to save data for." });
+    if (!selectedSessionId) {
+        setErrors({ form: "Error: No session selected to save data for." });
         return;
     }
 
@@ -563,8 +569,8 @@ function ExerciseModal({ isOpen, onClose }) {
 
         console.log("Output data (full structure):", outputData);
 
-        // Assuming updateNodeExerciseData can handle this new structure
-        await updateNodeExerciseData(nodeSelected.id, outputData);
+        // Update the session in the intervention store
+        await updateSession(selectedSessionId, { exercises: outputData });
         setToaster({
             type: "success",
             message: "Exercise data saved successfully.",
@@ -856,7 +862,7 @@ function ExerciseModal({ isOpen, onClose }) {
               </button>
               <button
                 type="submit"
-                disabled={isSubmitting || !nodeSelected}
+                disabled={isSubmitting || !selectedSessionId}
                 className="px-2 text-xs bg-zinc-800 hover:bg-zinc-700 text-white rounded-md  disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center"
               >
                 {isSubmitting ? (

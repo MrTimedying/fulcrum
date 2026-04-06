@@ -1,13 +1,10 @@
 import { Patient } from '../core/usePatientStore';
 import { Session, Exercise, Template } from '../core/useInterventionStore';
-import { Node, Edge } from '@xyflow/react';
 
 export interface Intervention {
   id: string;
   name: string;
   patientId: string;
-  nodes?: any[];
-  edges?: any[];
   [key: string]: any;
 }
 
@@ -21,14 +18,14 @@ export interface LegacyState {
   selectedInterventionId: string | null;
   selectedSessionId: string | null;
   editorStates: Record<string, {
-    nodes: Node[];
-    edges: Edge[];
+    nodes: any[];
+    edges: any[];
     contextualMemory?: any[];
     historyIndex?: number;
   }>;
   profileStates: Record<string, {
-    nodes: Node[];
-    edges: Edge[];
+    nodes: any[];
+    edges: any[];
     contextualMemory?: any[];
     historyIndex?: number;
   }>;
@@ -37,7 +34,7 @@ export interface LegacyState {
   // Volatile properties that might not be in partialize but could exist in memory
   patientId?: string;
   activeTab?: string;
-  clipboard?: { nodes: Node[]; edges: Edge[] };
+  clipboard?: { nodes: any[]; edges: any[] };
   columnsLayout?: any[];
   rowsData?: any[];
 }
@@ -90,7 +87,7 @@ export const migrateLegacyState = () => {
       const interventions = { ...(legacyState.interventions || {}) };
 
       // For each patient, check if legacyState.editorStates[patientId] exists.
-      // If it exists, create a "Default Intervention" object with those nodes and edges and add it to the 'interventions' record.
+      // If it exists, create a "Default Intervention" object and add it to the 'interventions' record.
       Object.keys(legacyState.patients || {}).forEach((patientId) => {
         const editorState = legacyState.editorStates?.[patientId];
         if (editorState) {
@@ -100,8 +97,6 @@ export const migrateLegacyState = () => {
               id: defaultInterventionId,
               name: 'Default Intervention',
               patientId: patientId,
-              nodes: editorState.nodes || [],
-              edges: editorState.edges || [],
             };
           }
         }
@@ -135,39 +130,6 @@ export const migrateLegacyState = () => {
         version: 0,
       };
       localStorage.setItem('navigation-store', JSON.stringify(navigationStoreData));
-    }
-
-    // 4. Migrate Flow Diagram Store
-    if (!localStorage.getItem('flow-diagram-store')) {
-      const activePatientId = legacyState.patientId || Object.keys(legacyState.patients || {})[0];
-      const activeTab = legacyState.activeTab || 'Profile';
-      
-      let nodes: Node[] = [];
-      let edges: Edge[] = [];
-
-      // Try to hydrate with the last active patient/tab state
-      if (activePatientId) {
-        if (activeTab === 'Editor' && legacyState.editorStates?.[activePatientId]) {
-          nodes = legacyState.editorStates[activePatientId].nodes || [];
-          edges = legacyState.editorStates[activePatientId].edges || [];
-        } else if (legacyState.profileStates?.[activePatientId]) {
-          nodes = legacyState.profileStates[activePatientId].nodes || [];
-          edges = legacyState.profileStates[activePatientId].edges || [];
-        }
-      }
-
-      const flowDiagramStoreData: PersistedState<any> = {
-        state: {
-          nodes,
-          edges,
-          clipboard: legacyState.clipboard || { nodes: [], edges: [] },
-          selectedNodeId: null,
-          columnsLayout: legacyState.columnsLayout || [],
-          rowsData: legacyState.rowsData || [],
-        },
-        version: 0,
-      };
-      localStorage.setItem('flow-diagram-store', JSON.stringify(flowDiagramStoreData));
     }
 
     // Mark as completed

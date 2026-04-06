@@ -3,88 +3,51 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   BarChart, Bar, ComposedChart, Area, AreaChart, PieChart, Pie, Cell
 } from 'recharts';
-import { useFlowDiagramStore } from '../../state/flow/useFlowDiagramStore';
+import { useInterventionStore } from '../../state/core/useInterventionStore';
 import { getExerciseContainerDisplayName } from '../../utils/exerciseUtils';
 
 function PhaseNodeInspector({ node }) {
-  const { nodes, edges } = useFlowDiagramStore();
+  const { microcycles, sessions } = useInterventionStore();
   const [selectedTags, setSelectedTags] = useState([]);
   const [showAllTags, setShowAllTags] = useState(true);
   
-  // Find all micro nodes connected to this phase node
+  // Find all micro cycles in this phase
   const microNodes = useMemo(() => {
-    if (!node) return [];
+    if (!node?.microcycleIds) return [];
     
-    // Find all edges connected to this node
-    const connectedEdges = edges.filter(
-      edge => edge.source === node.id || edge.target === node.id
-    );
-    
-    // Get the IDs of connected nodes
-    const connectedNodeIds = connectedEdges.map(edge => 
-      edge.source === node.id ? edge.target : edge.source
-    );
-    
-    // Get the micro nodes - don't require a date on micro nodes
-    return nodes.filter(n => 
-      connectedNodeIds.includes(n.id) && 
-      n.type === 'micro'
-    ).sort((a, b) => {
-      // Sort by id if no date
-      if (!a.data?.date || !b.data?.date) {
-        return a.id.localeCompare(b.id);
-      }
-      // Sort by date if available
-      const dateA = new Date(a.data.date);
-      const dateB = new Date(b.data.date);
-      return dateA - dateB;
-    });
-  }, [node, nodes, edges]);
+    return node.microcycleIds
+      .map(mid => microcycles[mid])
+      .filter(Boolean);
+  }, [node, microcycles]);
   
-  // Find all session nodes connected to the micro nodes
+  // Find all sessions in the micro cycles
   const allSessionNodes = useMemo(() => {
     if (!microNodes.length) return [];
     
-    const microNodeIds = microNodes.map(n => n.id);
     const sessionsList = [];
     
-    // For each micro node, find connected session nodes
-    microNodeIds.forEach(microNodeId => {
-      // Find edges connected to this micro node
-      const microEdges = edges.filter(
-        edge => edge.source === microNodeId || edge.target === microNodeId
-      );
+    microNodes.forEach(micro => {
+      const microWeek = micro.name || `Week ${micro.id.substr(0,4)}`;
       
-      // Get connected session node IDs
-      const connectedSessionIds = microEdges.map(edge => 
-        edge.source === microNodeId ? edge.target : edge.source
-      );
-      
-      // Get session nodes and add micro info
-      const microNode = microNodes.find(n => n.id === microNodeId);
-      const microWeek = microNode.data?.label || microNode.label || `Week ${microNodeId.substr(0,4)}`;
-      
-      const connectedSessions = nodes.filter(n => 
-        connectedSessionIds.includes(n.id) && 
-        n.type === 'session' && 
-        n.data?.exercises &&
-        n.data?.date // Dates are still required for session nodes
-      ).map(sessionNode => ({
-        ...sessionNode,
-        microId: microNodeId,
-        microWeek
-      }));
+      const connectedSessions = (micro.sessionIds || [])
+        .map(sid => sessions[sid])
+        .filter(s => s && s.exercises && s.date)
+        .map(session => ({
+          ...session,
+          microId: micro.id,
+          microWeek
+        }));
       
       sessionsList.push(...connectedSessions);
     });
     
     // Sort all sessions by date
     return sessionsList.sort((a, b) => {
-      const dateA = new Date(a.data.date);
-      const dateB = new Date(b.data.date);
+      const dateA = new Date(a.date);
+      const dateB = new Date(b.date);
       return dateA - dateB;
     });
-  }, [microNodes, nodes, edges]);
+  }, [microNodes, sessions]);
   
   // Extract and normalize exercise data from all session nodes and gather all tags
   const { allExercisesData, allTags } = useMemo(() => {
@@ -93,15 +56,15 @@ function PhaseNodeInspector({ node }) {
     const tagSet = new Set();
     
     allSessionNodes.forEach(sessionNode => {
-      if (!sessionNode?.data?.exercises) return;
+      if (!sessionNode?.exercises) return;
       
-      const sessionDate = sessionNode.data.date;
+      const sessionDate = sessionNode.date;
       const formattedDate = new Date(sessionDate).toLocaleDateString();
-      const sessionLabel = sessionNode.data?.label || sessionNode.id;
+      const sessionLabel = sessionNode.name || sessionNode.id;
       const { microId, microWeek } = sessionNode;
       
-      // Extract exercises from each session node
-      const exercises = sessionNode.data.exercises;
+      // Extract exercises from each session
+      const exercises = sessionNode.exercises;
       
       // Process each exercise container
       if (exercises) {
@@ -446,7 +409,7 @@ function PhaseNodeInspector({ node }) {
   // Colors for charts
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FF5733', '#C70039', '#900C3F', '#581845'];
 
-  // If there are no session nodes, show a message
+  // If there are no sessions, show a message
   if (!allSessionNodes.length) {
     return (
       <div className="flex items-center justify-center h-full text-gray-400">
@@ -458,11 +421,11 @@ function PhaseNodeInspector({ node }) {
   return (
     <div className="space-y-6">
       <div>
-        <h3 className="text-lg font-medium mb-2">Phase Overview: {node.data?.label || node.label || 'Unnamed Phase'}</h3>
+        <h3 className="text-lg font-medium mb-2">Phase Overview: {node.name || 'Unnamed Phase'}</h3>
         <p className="text-sm text-gray-400 mb-4">
           Micro Cycles: {microNodes.length} | Sessions: {allSessionNodes.length} | Date Range: {
             allSessionNodes.length > 0 
-              ? `${new Date(allSessionNodes[0].data.date).toLocaleDateString()} - ${new Date(allSessionNodes[allSessionNodes.length-1].data.date).toLocaleDateString()}`
+              ? `${new Date(allSessionNodes[0].date).toLocaleDateString()} - ${new Date(allSessionNodes[allSessionNodes.length-1].date).toLocaleDateString()}`
               : 'No date range'
           }
         </p>
@@ -680,4 +643,4 @@ function PhaseNodeInspector({ node }) {
   );
 }
 
-export default PhaseNodeInspector; 
+export default PhaseNodeInspector;
