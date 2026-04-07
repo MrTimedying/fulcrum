@@ -5,13 +5,13 @@ import { getMetricsForNode } from '../../utils/analytics/DataAggregator';
 import { getExerciseContainerDisplayName } from '../../utils/exerciseUtils';
 import { motion } from "motion/react";
 import { FiCheck } from "react-icons/fi";
-import { 
-  HiOutlineHome, 
-  HiOutlineQueueList, 
-  HiOutlineAdjustmentsHorizontal 
+import {
+  HiOutlineHome,
+  HiOutlineQueueList,
+  HiOutlineAdjustmentsHorizontal
 } from "react-icons/hi2";
-import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   AreaChart, Area, Cell, PieChart, Pie
 } from 'recharts';
 
@@ -42,8 +42,8 @@ const STEPS = [
 ];
 
 const colorMap = {
-  blue:    { ring: 'ring-blue-500/40',    bg: 'bg-blue-500/10',    icon: 'text-blue-400',    dot: 'bg-blue-500',    label: 'text-blue-300',    line: 'bg-blue-500/30'   },
-  violet:  { ring: 'ring-violet-500/40',  bg: 'bg-violet-500/10',  icon: 'text-violet-400',  dot: 'bg-violet-500',  label: 'text-violet-300',  line: 'bg-violet-500/30' },
+  blue: { ring: 'ring-blue-500/40', bg: 'bg-blue-500/10', icon: 'text-blue-400', dot: 'bg-blue-500', label: 'text-blue-300', line: 'bg-blue-500/30' },
+  violet: { ring: 'ring-violet-500/40', bg: 'bg-violet-500/10', icon: 'text-violet-400', dot: 'bg-violet-500', label: 'text-violet-300', line: 'bg-violet-500/30' },
   emerald: { ring: 'ring-emerald-500/40', bg: 'bg-emerald-500/10', icon: 'text-emerald-400', dot: 'bg-emerald-500', label: 'text-emerald-300', line: 'bg-emerald-500/30' },
 };
 
@@ -58,7 +58,7 @@ const AnalysisWorkflowPlaceholder = ({ activeStep }) => {
       <div className="flex flex-col items-center gap-0 w-full max-w-xs">
         {STEPS.map((step, idx) => {
           const c = colorMap[step.color];
-          const isDone   = idx < activeStep;
+          const isDone = idx < activeStep;
           const isActive = idx === activeStep;
           const Icon = step.icon;
 
@@ -142,7 +142,7 @@ const AnalysisWorkflowPlaceholder = ({ activeStep }) => {
 const AnalysisDashboard = () => {
   const { interventions, phases, microcycles, sessions, selectedInterventionId } = useInterventionStore();
   const { focusNodeId, focusNodeType, selectedTags, selectedMetrics } = useAnalyticsStore();
-  
+
   const [analyticsData, setAnalyticsData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -169,8 +169,8 @@ const AnalysisDashboard = () => {
       setIsLoading(true);
       try {
         const data = await getMetricsForNode(
-          focusNodeId, 
-          focusNodeType, 
+          focusNodeId,
+          focusNodeType,
           { interventions, phases, microcycles, sessions },
           { selectedTags }
         );
@@ -215,12 +215,12 @@ const AnalysisDashboard = () => {
 
   return (
     <div className="h-full w-full bg-zinc-900 overflow-y-auto custom-scrollbar p-6 space-y-6">
-      <header className="flex items-center justify-between border-b border-zinc-800/50 pb-4 bg-zinc-900/50 backdrop-blur-sm -m-6 mb-0 p-6 sticky top-0 z-10">
+      <header className="flex items-center justify-between border-b border-zinc-800/50 pb-2 bg-zinc-900/50 backdrop-blur-sm -m-6 mb-0 pl-6 sticky top-0 z-10">
         <div>
           <div className="flex items-center space-x-3">
-            <h1 className="text-xl font-bold text-zinc-100">{focusNodeName || 'Analysis Focus'}</h1>
-            <span className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-[10px] font-bold text-blue-400 uppercase tracking-widest">
-              FOCUS TYPE: {focusNodeType}
+            <h1 className="text-l text-zinc-100">{focusNodeName || 'Analysis Focus'}</h1>
+            <span className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
+              Focus Type: {focusNodeType}
             </span>
           </div>
           <p className="text-sm text-zinc-500 mt-1">Aggregating workload across all child elements</p>
@@ -241,13 +241,13 @@ const AnalysisDashboard = () => {
           { label: 'Workload Ratio', value: summary.workloadRatio, color: 'text-purple-400', metric: 'Workload' },
           { label: 'Session Count', value: summary.sessionCount, color: 'text-amber-400' },
         ]
-        .filter(card => !card.metric || selectedMetrics.includes(card.metric))
-        .map((card, i) => (
-          <div key={i} className="bg-zinc-800/40 border border-zinc-700/50 p-4 rounded-lg backdrop-blur-sm transition-all hover:bg-zinc-800/60">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">{card.label}</p>
-            <p className={`text-2xl font-bold mt-1 ${card.color}`}>{card.value}</p>
-          </div>
-        ))}
+          .filter(card => !card.metric || selectedMetrics.includes(card.metric))
+          .map((card, i) => (
+            <div key={i} className="bg-zinc-800/40 border border-zinc-700/50 p-4 rounded-lg backdrop-blur-sm transition-all hover:bg-zinc-800/60">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-zinc-500">{card.label}</p>
+              <p className={`text-2xl font-bold mt-1 ${card.color}`}>{card.value}</p>
+            </div>
+          ))}
       </div>
 
       {/* Main Charts */}
@@ -262,14 +262,14 @@ const AnalysisDashboard = () => {
                   <AreaChart data={trendData}>
                     <defs>
                       <linearGradient id="colorVol" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
                     <XAxis dataKey="date" stroke="#52525b" fontSize={9} tickLine={false} axisLine={false} />
                     <YAxis stroke="#52525b" fontSize={9} tickLine={false} axisLine={false} />
-                    <Tooltip 
+                    <Tooltip
                       contentStyle={{ backgroundColor: '#18181b', borderColor: '#27272a', borderRadius: '8px', fontSize: '10px' }}
                       itemStyle={{ color: '#e4e4e7' }}
                     />
@@ -303,7 +303,7 @@ const AnalysisDashboard = () => {
                           <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} stroke="none" />
                         ))}
                       </Pie>
-                      <Tooltip 
+                      <Tooltip
                         contentStyle={{ backgroundColor: '#18181b', borderColor: '#27272a', borderRadius: '8px', fontSize: '10px' }}
                       />
                     </PieChart>
@@ -336,7 +336,7 @@ const AnalysisDashboard = () => {
                   <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
                   <XAxis dataKey="name" stroke="#52525b" fontSize={9} tickLine={false} axisLine={false} />
                   <YAxis stroke="#52525b" fontSize={9} tickLine={false} axisLine={false} />
-                  <Tooltip 
+                  <Tooltip
                     contentStyle={{ backgroundColor: '#18181b', borderColor: '#27272a', borderRadius: '8px', fontSize: '10px' }}
                   />
                   <Bar dataKey="intensity" fill="#10b981" radius={[4, 4, 0, 0]} barSize={24} />

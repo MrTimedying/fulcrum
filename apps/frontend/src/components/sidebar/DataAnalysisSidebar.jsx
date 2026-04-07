@@ -6,8 +6,8 @@ import { useNavigationStore } from "../../state/core/useNavigationStore";
 import useAnalyticsStore from "../../state/core/useAnalyticsStore";
 import { getAnalyticsTree } from "../../utils/tagTreeUtils.js";
 import { getExerciseTags } from "../../utils/analytics/DataAggregator";
-import { 
-  HiChevronRight, 
+import {
+  HiChevronRight,
   HiChevronDown,
   HiOutlineQueueList,
   HiOutlineCalendarDays,
@@ -21,17 +21,17 @@ import {
 
 const SidebarPanel = ({ title, children, defaultOpen = true, icon: Icon, compact = false }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
-  
+
   return (
     <div className="border-b border-zinc-800/50 flex flex-col">
-      <button 
+      <button
         onClick={() => setIsOpen(!isOpen)}
         className={`w-full px-4 ${compact ? 'py-1.5' : 'py-3'} flex items-center justify-between group hover:bg-zinc-800/20 transition-colors`}
       >
         <div className="flex items-center space-x-2.5">
-          <HiChevronRight 
-            size={compact ? 10 : 12} 
-            className={`text-zinc-600 transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`} 
+          <HiChevronRight
+            size={compact ? 10 : 12}
+            className={`text-zinc-600 transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`}
           />
           {Icon && <Icon size={compact ? 12 : 14} className="text-zinc-500 group-hover:text-zinc-400" />}
           <span className={`${compact ? 'text-[10px]' : 'text-[11px]'} font-bold uppercase tracking-widest text-zinc-400 group-hover:text-zinc-200`}>
@@ -39,7 +39,7 @@ const SidebarPanel = ({ title, children, defaultOpen = true, icon: Icon, compact
           </span>
         </div>
       </button>
-      
+
       <AnimatePresence initial={false}>
         {isOpen && (
           <motion.div
@@ -74,20 +74,20 @@ const NodeRenderer = ({ node, style, dragHandle }) => {
   const setFocus = useAnalyticsStore(state => state.setFocus);
 
   return (
-    <div 
-      style={style} 
+    <div
+      style={style}
       className={`flex items-center space-x-1.5 py-0.5 cursor-pointer group hover:bg-zinc-800/50 rounded px-1 transition-colors ${node.isSelected ? 'bg-zinc-700/50' : ''}`}
       onClick={(e) => {
         e.stopPropagation();
         node.select();
-        
+
         let focusType = null;
         switch (node.data.type) {
-            case 'intervention': focusType = 'Intervention'; break;
-            case 'phase': focusType = 'Phase'; break;
-            case 'microcycle': focusType = 'Microcycle'; break;
-            case 'session': focusType = 'Session'; break;
-            case 'exercise': focusType = 'Exercise'; break;
+          case 'intervention': focusType = 'Intervention'; break;
+          case 'phase': focusType = 'Phase'; break;
+          case 'microcycle': focusType = 'Microcycle'; break;
+          case 'session': focusType = 'Session'; break;
+          case 'exercise': focusType = 'Exercise'; break;
         }
         setFocus(node.id, focusType);
         if (node.isInternal) node.toggle();
@@ -102,9 +102,9 @@ const NodeRenderer = ({ node, style, dragHandle }) => {
             </div>
           )}
         </div>
-        
+
         <Icon size={14} className={`flex-shrink-0 mr-1.5 ${node.data.type === 'intervention' ? 'text-blue-400' : 'text-zinc-500'}`} />
-        
+
         <div className="flex flex-col min-w-0 flex-1">
           <div className="text-[11px] truncate leading-tight text-zinc-300">
             {node.data.name}
@@ -118,17 +118,29 @@ const NodeRenderer = ({ node, style, dragHandle }) => {
 const DataAnalysisSidebar = () => {
   const { interventions, phases, microcycles, sessions, selectedInterventionId, setSelectedInterventionId } = useInterventionStore();
   const { patientId } = useNavigationStore();
-  const { focusNodeId, selectedMetrics, setSelectedMetrics, selectedTags, toggleTag, setFocus } = useAnalyticsStore();
-  
-  const patientInterventions = useMemo(() => 
+  const { focusNodeId, selectedMetrics, setSelectedMetrics, selectedTags, setSelectedTags, toggleTag, setFocus } = useAnalyticsStore();
+
+  const [treeContainerRef, setTreeContainerRef] = useState(null);
+  const [treeHeight, setTreeHeight] = useState(400);
+
+  useEffect(() => {
+    if (!treeContainerRef) return;
+    const observer = new ResizeObserver(([entry]) => {
+      setTreeHeight(entry.contentRect.height);
+    });
+    observer.observe(treeContainerRef);
+    return () => observer.disconnect();
+  }, [treeContainerRef]);
+
+  const patientInterventions = useMemo(() =>
     Object.values(interventions).filter(i => i.patientId === patientId),
     [interventions, patientId]
   );
 
-  const treeData = useMemo(() => 
-    getAnalyticsTree(patientInterventions, phases, microcycles, sessions),
-    [patientInterventions, phases, microcycles, sessions]
-  );
+  const treeData = useMemo(() => {
+    const selected = patientInterventions.filter(i => i.id === selectedInterventionId);
+    return getAnalyticsTree(selected, phases, microcycles, sessions);
+  }, [patientInterventions, selectedInterventionId, phases, microcycles, sessions]);
 
   const allAvailableTags = useMemo(() => {
     const tags = new Set();
@@ -146,62 +158,68 @@ const DataAnalysisSidebar = () => {
 
   const handleInterventionChange = (id) => {
     setSelectedInterventionId(id);
-    setFocus(id, 'Intervention');
+    setFocus(null, null); // Reset focus so user must explicitly pick a focus level in the tree
   };
 
   return (
     <div className="h-full w-full bg-zinc-900 flex flex-col overflow-hidden select-none border-r border-zinc-800/50">
-      {/* 1. Structural Navigator (Explorer) */}
+      {/* 1. Structural Navigator (Explorer) - FIXED & EXPANDED */}
       <div className="flex-1 flex flex-col overflow-hidden min-h-0">
-        <SidebarPanel title="Explorer" icon={HiOutlineQueueList} compact={true}>
-          <div className="flex flex-col h-full space-y-3">
-            <select 
-              className="w-full bg-zinc-800/50 border border-zinc-700/50 text-zinc-300 text-[10px] rounded px-2 py-1.5 outline-none focus:border-blue-500/50 transition-colors"
-              value={selectedInterventionId || ""}
-              onChange={(e) => handleInterventionChange(e.target.value)}
-            >
-              <option value="" disabled>Select Intervention...</option>
-              {patientInterventions.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
-            </select>
+        <div className="px-4 pt-1 flex items-center space-x-2.5 border-b border-zinc-800/50 flex-none">
+          <HiOutlineQueueList size={14} className="text-zinc-500" />
+          <span className="text-[11px] font-bold tracking-widest text-zinc-400">Explorer</span>
+        </div>
 
-            <div className="flex-1 overflow-y-auto custom-scrollbar min-h-[200px]">
-              {treeData.length > 0 ? (
-                <Tree
-                  data={treeData}
-                  selection={focusNodeId}
-                  openByDefault={true}
-                  width="100%"
-                  height={800} // This is just a viewport, flexbox will contain it
-                  indent={12}
-                  rowHeight={24}
-                  onSelect={(nodes) => {
-                    if (nodes.length > 0) {
-                      const node = nodes[0];
-                      let focusType = null;
-                      switch (node.data.type) {
-                        case 'intervention': focusType = 'Intervention'; break;
-                        case 'phase': focusType = 'Phase'; break;
-                        case 'microcycle': focusType = 'Microcycle'; break;
-                        case 'session': focusType = 'Session'; break;
-                        case 'exercise': focusType = 'Exercise'; break;
-                      }
-                      setFocus(node.id, focusType);
+        <div className="flex-1 flex flex-col p-4 space-y-4 overflow-hidden">
+          <select
+            className="w-full bg-zinc-800/50 border border-zinc-700/50 text-zinc-300 text-[10px] rounded px-2 py-0.5 outline-none focus:border-blue-500/50 transition-colors flex-none"
+            value={selectedInterventionId || ""}
+            onChange={(e) => handleInterventionChange(e.target.value)}
+          >
+            <option value="" disabled>Select Intervention...</option>
+            {patientInterventions.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
+          </select>
+
+          <div
+            ref={setTreeContainerRef}
+            className="flex-1 overflow-hidden relative"
+          >
+            {treeData.length > 0 ? (
+              <Tree
+                data={treeData}
+                selection={focusNodeId}
+                openByDefault={true}
+                width="100%"
+                height={treeHeight}
+                indent={12}
+                rowHeight={24}
+                onSelect={(nodes) => {
+                  if (nodes.length > 0) {
+                    const node = nodes[0];
+                    let focusType = null;
+                    switch (node.data.type) {
+                      case 'intervention': focusType = 'Intervention'; break;
+                      case 'phase': focusType = 'Phase'; break;
+                      case 'microcycle': focusType = 'Microcycle'; break;
+                      case 'session': focusType = 'Session'; break;
+                      case 'exercise': focusType = 'Exercise'; break;
                     }
-                  }}
-                >
-                  {NodeRenderer}
-                </Tree>
-              ) : (
-                <div className="h-full flex items-center justify-center text-zinc-600 text-[11px] italic py-8">
-                  Select an intervention to browse
-                </div>
-              )}
-            </div>
+                    setFocus(node.id, focusType);
+                  }
+                }}
+              >
+                {NodeRenderer}
+              </Tree>
+            ) : (
+              <div className="h-full flex items-center justify-center text-zinc-600 text-[11px] italic">
+                Select an intervention to browse
+              </div>
+            )}
           </div>
-        </SidebarPanel>
+        </div>
       </div>
 
-      {/* 2. Filtering & Metrics */}
+      {/* 2. Filtering & Metrics - COLLAPSIBLE AT BOTTOM */}
       <div className="flex-none">
         <SidebarPanel title="Analytics Setup" icon={HiOutlineAdjustmentsHorizontal} defaultOpen={false} compact={true}>
           <div className="max-h-64 overflow-y-auto custom-scrollbar pr-1 space-y-5 py-1">
@@ -213,16 +231,15 @@ const DataAnalysisSidebar = () => {
                   <button
                     key={m}
                     onClick={() => {
-                      const next = selectedMetrics.includes(m) 
-                        ? selectedMetrics.filter(x => x !== m) 
+                      const next = selectedMetrics.includes(m)
+                        ? selectedMetrics.filter(x => x !== m)
                         : [...selectedMetrics, m];
                       setSelectedMetrics(next);
                     }}
-                    className={`text-left px-2.5 py-1.5 rounded text-[10px] border transition-all ${
-                      selectedMetrics.includes(m) 
-                        ? 'bg-blue-500/10 border-blue-500/40 text-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.1)]' 
-                        : 'bg-zinc-800/30 border-zinc-700/50 text-zinc-500 hover:border-zinc-600'
-                    }`}
+                    className={`text-left px-2.5 py-1.5 rounded text-[10px] border transition-all ${selectedMetrics.includes(m)
+                      ? 'bg-blue-500/10 border-blue-500/40 text-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.1)]'
+                      : 'bg-zinc-800/30 border-zinc-700/50 text-zinc-500 hover:border-zinc-600'
+                      }`}
                   >
                     <div className="flex items-center justify-between">
                       <span>{m}</span>
@@ -237,7 +254,7 @@ const DataAnalysisSidebar = () => {
             <div className="space-y-2.5">
               <div className="flex items-center justify-between">
                 <span className="text-[9px] text-zinc-500 font-bold uppercase tracking-wider">Semantic Filters</span>
-                <button 
+                <button
                   onClick={() => setSelectedTags([])}
                   className="text-[9px] text-zinc-600 hover:text-blue-400 transition-colors"
                 >
@@ -250,11 +267,10 @@ const DataAnalysisSidebar = () => {
                     <button
                       key={tag}
                       onClick={() => toggleTag(tag)}
-                      className={`px-2 py-0.5 rounded text-[9px] border transition-all ${
-                        selectedTags.includes(tag)
-                          ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-400'
-                          : 'bg-zinc-800/50 border-zinc-700/50 text-zinc-500 hover:text-zinc-300'
-                      }`}
+                      className={`px-2 py-0.5 rounded text-[9px] border transition-all ${selectedTags.includes(tag)
+                        ? 'bg-emerald-500/10 border-emerald-500/40 text-emerald-400'
+                        : 'bg-zinc-800/50 border-zinc-700/50 text-zinc-500 hover:text-zinc-300'
+                        }`}
                     >
                       {tag}
                     </button>

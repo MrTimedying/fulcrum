@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2025-02-14
+
+### Added
+- Added patient information (name and surname) to the application title bar for better context during navigation.
+- Implemented a placeholder in the Data Analysis Explorer for when no intervention is selected.
+
+### Changed
+- Refactored Data Analysis sidebar layout: the Explorer tree is now non-collapsible and occupies the full available height.
+- The "Analytics Setup" panel in the Data Analysis sidebar is now collapsible at the bottom.
+- Improved Data Analysis Explorer to show only the selected intervention's hierarchy, preventing state disruption when switching between patients.
+- Implemented dynamic resizing for the Data Analysis tree component to adjust to the "Analytics Setup" panel's expansion state.
+
+### Fixed
+- Fixed a bug in Data Analysis where only session-level selection would trigger the dashboard. Metrics are now correctly aggregated and displayed when selecting an Intervention, Phase, or Microcycle.
+
 ## [1.1.0] - 2024-05-24
 
 ### Added

@@ -17,7 +17,7 @@ import NpForm from './npform';
 import OptionsModal from './OptionsModal';
 
 const containerStyle = {
-  height: 'calc(100vh - 18px)',
+  height: '100%',
   width: '100%',
   display: 'flex',
   flexDirection: 'row', // VS Code style: IconBar is a sibling of the main area
@@ -50,7 +50,7 @@ function Home() {
   const { patientId, setPatientId, setActiveTab, setCurrentModule } = useNavigationStore();
   const { setToaster } = useUIStore();
   const { setSelectedInterventionId, setSelectedSessionId } = useInterventionStore();
-  
+
   // Layout state
   const [activeSidebarContext, setActiveSidebarContext] = useState('patients');
   const prevPatientIdRef = useRef(patientId);
@@ -167,20 +167,20 @@ function Home() {
   return (
     <CustomFrame>
       <div className="App bg-zinc-950" style={containerStyle}>
-        <IconBar 
-          activeContext={activeSidebarContext} 
-          onContextChange={handleContextChange} 
+        <IconBar
+          activeContext={activeSidebarContext}
+          onContextChange={handleContextChange}
           isSidebarCollapsed={isSidebarCollapsed}
           onSettingsClick={() => setIsOptionsModalOpen(true)}
         />
-        
+
         <div style={mainAreaStyle}>
           <UpdateManager />
           <Toaster />
           <div ref={containerRef} style={splitPaneContainerStyle}>
-            <SplitPane 
-              split="vertical" 
-              sizes={isSidebarCollapsed ? [0, 'auto'] : sizes} 
+            <SplitPane
+              split="vertical"
+              sizes={isSidebarCollapsed ? [0, 'auto'] : sizes}
               onChange={setSizes}
               className={`split-pane-row ${isDragging ? 'is-resizing' : ''} ${isSidebarCollapsed ? 'collapsed' : ''}`}
               onDragStart={handleDragStart}
@@ -188,9 +188,9 @@ function Home() {
             >
               <Pane minSize={isSidebarCollapsed ? 0 : 250} maxSize="50%">
                 <div className="h-full bg-zinc-900 overflow-hidden border-r border-zinc-800">
-                   {!isSidebarCollapsed && (
-                     <Sidebar context={activeSidebarContext} handleEditPatient={handleEditPatient} />
-                   )}
+                  {!isSidebarCollapsed && (
+                    <Sidebar context={activeSidebarContext} handleEditPatient={handleEditPatient} />
+                  )}
                 </div>
               </Pane>
               <Pane minSize={400}>
@@ -204,20 +204,20 @@ function Home() {
             </SplitPane>
           </div>
         </div>
-        
+
         <NpForm
           isOpen={isPatientEditModalOpen}
           closeModal={closePatientEditModal}
           formData={patientFormData}
           setFormData={setPatientFormData}
-          setFetchingSwitch={() => {}}
+          setFetchingSwitch={() => { }}
           isEditing={isEditing}
           setIsEditing={setIsEditing}
         />
 
-        <OptionsModal 
-          isOpen={isOptionsModalOpen} 
-          onClose={() => setIsOptionsModalOpen(false)} 
+        <OptionsModal
+          isOpen={isOptionsModalOpen}
+          onClose={() => setIsOptionsModalOpen(false)}
         />
       </div>
     </CustomFrame>

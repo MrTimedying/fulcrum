@@ -99,19 +99,8 @@ export const getMetricsForNode = async (nodeId, nodeType, store, options = {}) =
 
   // 1. Collect all sessions belonging to the focus node
   if (nodeType === 'Intervention') {
-    const intervention = interventions[nodeId];
-    if (intervention) {
-      const pIds = intervention.phaseIds || [];
-      pIds.forEach(pId => {
-        const phase = phases[pId];
-        (phase?.microcycleIds || []).forEach(mId => {
-          const micro = microcycles[mId];
-          (micro?.sessionIds || []).forEach(sId => {
-            if (sessions[sId]) targetSessions.push(sessions[sId]);
-          });
-        });
-      });
-    }
+    // Robust: Get all sessions belonging to this intervention regardless of hierarchy
+    targetSessions = Object.values(sessions).filter(s => s.interventionId === nodeId);
   } else if (nodeType === 'Phase') {
     const phase = phases[nodeId];
     if (phase) {
@@ -131,6 +120,12 @@ export const getMetricsForNode = async (nodeId, nodeType, store, options = {}) =
     }
   } else if (nodeType === 'Session') {
     if (sessions[nodeId]) targetSessions.push(sessions[nodeId]);
+  } else if (nodeType === 'Exercise') {
+    // For a single exercise, we look at the session it belongs to
+    // Note: Analysis for a specific exercise across multiple sessions 
+    // would require matching by name/baseId, but for now we show the session it's in.
+    const session = Object.values(sessions).find(s => s.exercises && s.exercises[nodeId]);
+    if (session) targetSessions.push(session);
   }
 
   if (targetSessions.length === 0) return null;
@@ -171,9 +166,49 @@ export const getMetricsForNode = async (nodeId, nodeType, store, options = {}) =
       distributionData
     };
   } catch (error) {
-    console.error('Failed to calculate metrics in Rust:', error);
-    // Fallback or rethrow? Let's rethrow for now so UI can handle it
-    throw error;
+    console.warn('Rust metrics unavailable, using JS fallback:', error);
+
+    // JS Fallback: compute basic aggregation without Rust
+    const sessionMetrics = targetSessions.map(aggregateSessionMetrics);
+    const totalVolume = sessionMetrics.reduce((s, m) => s + m.volume, 0);
+    const allIntensities = sessionMetrics.map(m => m.avgIntensity).filter(v => v > 0);
+    const avgIntensity = allIntensities.length > 0
+      ? allIntensities.reduce((s, v) => s + v, 0) / allIntensities.length
+      : 0;
+
+    // Aggregate tag volumes across all sessions
+    const tagVolumeTotals = {};
+    sessionMetrics.forEach(m => {
+      Object.entries(m.tagVolume).forEach(([tag, vol]) => {
+        tagVolumeTotals[tag] = (tagVolumeTotals[tag] || 0) + vol;
+      });
+    });
+
+    const distributionData = Object.entries(tagVolumeTotals)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value);
+
+    const trendData = sessionMetrics
+      .sort((a, b) => new Date(a.date) - new Date(b.date))
+      .map(m => ({
+        date: m.date ? new Date(m.date).toLocaleDateString() : 'Unknown',
+        name: m.name,
+        volume: Math.round(m.volume),
+        intensity: Math.round(m.avgIntensity)
+      }));
+
+    return {
+      focusName: nodeId,
+      summary: {
+        totalVolume: Math.round(totalVolume).toLocaleString(),
+        avgIntensity: avgIntensity.toFixed(1) + '%',
+        avgRpe: '0.0',
+        sessionCount: targetSessions.length,
+        workloadRatio: 'N/A'
+      },
+      trendData,
+      distributionData
+    };
   }
 };
 
