@@ -1,6 +1,6 @@
 {
   "name": "fulcrum-tauri",
-  "version": "1.2.0",
+  "version": "1.6.1",
   "description": "Tauri desktop application for Fulcrum",
   "main": "index.js",
   "scripts": {

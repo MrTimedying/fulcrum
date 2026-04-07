@@ -81,7 +81,20 @@ const SessionEditor = () => {
         // Use existing mangledKey or generate a new one
         const mkey = c.mangledKey || createMangledContainerKey(c.name, uuidv4());
         const vals = currentFormValues[c.id] || {};
+        
+        const standardFields = {};
+        c.fields.forEach(f => {
+           const labelLower = (f.label || "").toLowerCase();
+           if (labelLower.includes('sets')) standardFields.sets = vals[f.name];
+           if (labelLower.includes('reps')) standardFields.reps = vals[f.name];
+           if (labelLower.includes('duration')) standardFields.duration = vals[f.name];
+           if (labelLower.includes('intensity')) standardFields.intensity = vals[f.name];
+        });
+
         outputData[mkey] = {
+          id: mkey,
+          name: c.name,
+          ...standardFields,
           fields: c.fields.map(f => ({ ...f, value: vals[f.name] || "" }))
         };
       });
@@ -105,10 +118,45 @@ const SessionEditor = () => {
 
       if (existingExerciseData && typeof existingExerciseData === "object" && Object.keys(existingExerciseData).length > 0) {
         Object.keys(existingExerciseData).forEach(mangledKey => {
-          const containerName = getExerciseContainerDisplayName(mangledKey);
           const savedContainerWrapper = existingExerciseData[mangledKey];
+          const containerName = savedContainerWrapper?.name || getExerciseContainerDisplayName(mangledKey);
 
-          if (savedContainerWrapper && Array.isArray(savedContainerWrapper.fields)) {
+          if (savedContainerWrapper && !Array.isArray(savedContainerWrapper.fields)) {
+             const reconstructedFields = [];
+             const containerValues = {};
+             
+             const skipKeys = ['id', 'name', 'fields', 'originalName', 'tags'];
+             Object.keys(savedContainerWrapper).forEach(key => {
+                if (!skipKeys.includes(key)) {
+                   const val = savedContainerWrapper[key];
+                   const newFieldId = generateId();
+                   const fieldName = `${key}_${newFieldId.substring(3, 7)}`;
+                   reconstructedFields.push({
+                      id: newFieldId,
+                      type: typeof val === 'number' ? 'number' : 'text',
+                      label: key.charAt(0).toUpperCase() + key.slice(1).replace(/_/g, ' '),
+                      name: fieldName,
+                      required: false,
+                      subtype: "",
+                   });
+                   containerValues[fieldName] = val !== null && val !== undefined ? val : "";
+                }
+             });
+             
+             if (reconstructedFields.length === 0) {
+                reconstructedFields.push(createDefaultField("text", "Name input", "name"));
+             }
+
+             const newContainerId = generateId();
+             structureToSet.push({
+                id: newContainerId,
+                name: containerName,
+                fields: reconstructedFields,
+                mangledKey: mangledKey
+             });
+             valuesToSet[newContainerId] = containerValues;
+
+          } else if (savedContainerWrapper && Array.isArray(savedContainerWrapper.fields)) {
             const newContainerId = generateId();
             const reconstructedFields = [];
             const containerValues = {};

@@ -5,6 +5,90 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.2] - 2026-04-16
+
+### Fixed
+- **Exercise Data Schema**: Unified the exercise data schema between the Session Editor and the Domain Model.
+    - `SessionEditor.jsx` now detects Domain Schema objects on load and automatically constructs a `fields` array for the UI to render them.
+    - Updated `debouncedSave` in `SessionEditor.jsx` to save a unified schema containing top-level properties (`id`, `name`, `sets`, `reps`, `duration`, `intensity`) alongside the dynamic `fields` array.
+    - Added a fallback in `DataAnalysisSidebar.jsx`'s `renderExercise` to extract the exercise name from the mangled key if the `name` property is missing, ensuring backward compatibility.
+
+## [1.6.1] - 2026-04-14
+
+### Fixed
+- **react-complex-tree Migration**: Fixed Rules of Hooks violation in `NodeRenderer`.
+- **Tree Reactivity**: Implemented `StaticTreeDataProvider` to ensure correct state synchronization and reactivity within the tree.
+
+## [1.6.0] - 2026-04-12
+
+### Changed
+- **Tree Component Refactoring**: Refactored tree dependencies, replacing `@headless-tree` with `react-complex-tree` for `InterventionsSidebar` and `DataAnalysisSidebar`.
+- **Data Structures**: Refactored `tagTreeUtils.js` to conform to the new `react-complex-tree` data structures.
+
+## [1.5.0] - 2026-04-10
+
+### Added
+- **Headless Tree Integration**: Fully transitioned to `react-headless-tree` for sidebar management, replacing the legacy tree implementation.
+- **Virtualization**: Implemented list virtualization in `InterventionsSidebar` and `DataAnalysisSidebar` to ensure smooth performance with large trees.
+- **Inline Renaming**: Added support for inline renaming of Phases, Microcycles, and Sessions via double-click or context menu.
+- **Context Menus**: Added comprehensive right-click context menus for all tree nodes, including:
+    - **Duplicate**: Quickly clone existing structures (Phases, Microcycles, Sessions).
+    - **Delete**: Remove nodes with confirmation.
+    - **Save as Template**: Direct access to the hierarchical templating system.
+- **Enhanced Drag & Drop**:
+    - Added visual feedback for drop targets with insertion indicators.
+    - Improved structural validation to maintain strict hierarchy (Intervention > Phase > Microcycle > Session).
+- **Store Extensions**:
+    - Added `renameNode` for atomic name updates in `useInterventionStore`.
+    - Added `duplicateNode` for deep cloning of hierarchical nodes.
+    - Added `addTemplateFromNode` to streamline creating reusable templates directly from the tree.
+
+### Changed
+- Optimized sidebar rendering logic for better responsiveness and lower memory overhead.
+- Unified tree interaction patterns across both Interventions and Data Analysis sidebars.
+
+## [1.4.1] - 2026-04-07
+
+### Changed
+- Improved performance and robustness of the tree drag-and-drop functionality.
+
+### Fixed
+- Fixed `SyntaxError` in `InterventionsSidebar.jsx` caused by an incorrect icon import.
+
+## [1.4.0] - 2024-05-30
+
+### Added
+- **Hierarchical Templater**: Added support for saving and loading templates for Phases and Microcycles.
+    - Users can now save a complete Phase or Microcycle structure (including all nested sessions and exercises) as a reusable template.
+    - New "Save as Template" button in `PhasePanel` and `MicroPanel` overviews.
+    - `TemplaterModal` updated to categorize and display Phase and Microcycle templates alongside existing exercise templates.
+- **Tree Drag-and-Drop Improvements**:
+    - Implemented strict hierarchical validation for the Interventions sidebar tree.
+    - Sessions can now be moved between Microcycles or moved to a new "Unassigned Sessions" folder.
+    - Microcycles can be moved between different Phases.
+    - Phases can be reordered within an Intervention.
+    - Added multi-select support for bulk operations within the tree.
+    - Added an "Unassigned Sessions" folder to automatically collect sessions not yet linked to a Microcycle.
+
+### Changed
+- Improved `tagTreeUtils.js` with recursive building logic for complex hierarchical templates.
+- Enhanced `InterventionsSidebar` with a height-aware layout using `ResizeObserver` for better tree rendering.
+
+## [1.3.0] - 2026-04-07
+
+### Added
+- Implemented `IcfOverview.jsx` and `IcfDimensionCollapsible.jsx` components for the new Patient Profile.
+- Added a stylized placeholder UI when no patient is selected.
+
+### Changed
+- Redesigned Patient Profile (`profile.jsx`) with a `SplitPane` layout to align with the Session Editor's UX.
+- Updated Patient Profile layout to feature a vertical, collapsible ICF dimensions overview and a detailed personal data panel.
+- Refined styling for `PatientDetails.jsx` and `profile.jsx` using a minimalistic dark theme (`zinc-900`) and improved typography.
+- Restored and integrated access to `ICFSetsModal` within the new Profile interface.
+
+### Fixed
+- Fixed BMI calculation logic in `PatientDetails.jsx`.
+
 ## [1.2.0] - 2025-02-14
 
 ### Added

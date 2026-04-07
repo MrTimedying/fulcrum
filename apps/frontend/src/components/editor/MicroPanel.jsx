@@ -3,17 +3,44 @@ import { useInterventionStore } from "../../state/core/useInterventionStore";
 import { getExerciseContainerDisplayName } from "../../utils/exerciseUtils";
 import { InlineEdit } from "./exercise_modal/InlineEdit";
 import { HiOutlineCalendarDays } from "react-icons/hi2";
+import { MdOutlineDataSaverOn } from 'react-icons/md';
+import { buildHierarchicalContent } from "../../utils/tagTreeUtils";
+import { v4 as uuidv4 } from 'uuid';
+import useUIStore from "../../state/core/useUIStore";
 
 const MicroPanel = () => {
   const { 
     selectedStructuralNodeId, 
     microcycles, 
     sessions,
-    updateMicrocycle
+    updateMicrocycle,
+    phases,
+    addTemplate
   } = useInterventionStore();
+  const { addToast } = useUIStore();
 
   const microcycle = selectedStructuralNodeId ? microcycles[selectedStructuralNodeId] : null;
 
+  const handleSaveAsTemplate = () => {
+    if (!microcycle) return;
+    const templateName = window.prompt("Enter a name for this Microcycle template:", `${microcycle.name} Template`);
+    if (!templateName) return;
+
+    const content = buildHierarchicalContent(microcycle.id, 'Micro', phases, microcycles, sessions);
+    if (!content) {
+      addToast({ type: 'error', message: 'Failed to generate template content' });
+      return;
+    }
+
+    addTemplate({
+      id: uuidv4(),
+      name: templateName,
+      date: new Date().toISOString().split('T')[0],
+      content
+    });
+
+    addToast({ type: 'success', message: `Microcycle template "${templateName}" saved successfully!` });
+  };
   const microSessions = useMemo(() => {
     if (!microcycle || !microcycle.sessionIds) return [];
     return microcycle.sessionIds
@@ -61,8 +88,18 @@ const MicroPanel = () => {
             inputClassName="text-[10px] bg-zinc-800 text-white border border-zinc-500 rounded px-1 outline-none"
           />
         </div>
-        <div className="text-[9px] text-zinc-600 mr-2 font-mono">
-           ID: {microcycle.id.slice(0, 8)}...
+        <div className="flex items-center gap-2 mr-2">
+          <button
+            onClick={handleSaveAsTemplate}
+            className="flex items-center gap-1 px-2 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white transition-colors text-[10px] border border-zinc-700"
+            title="Save Microcycle as Template"
+          >
+            <MdOutlineDataSaverOn size={14} className="text-blue-400" />
+            <span>SAVE AS TEMPLATE</span>
+          </button>
+          <div className="text-[9px] text-zinc-600 font-mono">
+            ID: {microcycle.id.slice(0, 8)}...
+          </div>
         </div>
       </div>
 

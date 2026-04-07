@@ -1,29 +1,55 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigationStore } from "../../state/core/useNavigationStore";
-import KanbanBoard from "../kanban/KanbanBoard";
 import PatientDetails from "./PatientDetails";
+import IcfOverview from "./IcfOverview";
+import SplitPane, { Pane } from 'split-pane-react';
+import 'split-pane-react/esm/themes/default.css';
 
-function Profile() {
+function Profile({ onOpenIcfModal }) {
   const { patientId } = useNavigationStore();
+  const [sizes, setSizes] = useState(['40%', '60%']);
 
   return (
     <div
       id="wrapper"
-      className="flex flex-col h-full overflow-hidden bg-zinc-900"
+      className="w-full flex flex-col h-full overflow-hidden bg-zinc-900 text-white border-l border-zinc-800"
     >
-      <header className="px-6 py-4 border-b border-zinc-800 flex justify-between items-center bg-zinc-900/50 backdrop-blur-sm">
-        <div>
-          <h1 className="text-xl font-thin text-white tracking-tight">Patient Profile</h1>
-          <p className="text-xs text-zinc-500 font-mono">ICF Dimensions & Personal Data</p>
+      {/* Header - Minimalistic, synced with Session Editor */}
+      <div className="bg-zinc-900 p-1 flex justify-between items-center border-b border-zinc-800 flex-shrink-0 min-h-[53px]">
+        <div className="flex items-center">
+          <h2 className="text-gray-300 text-base font-medium ml-2 mr-4">Patient Profile</h2>
+          <div className="flex items-center space-x-4">
+            <span className="text-[10px] text-zinc-500 font-mono uppercase tracking-widest">
+              ICF Dimensions & Personal Data
+            </span>
+          </div>
         </div>
-      </header>
+        
+        <div className="flex items-center gap-4 mr-2">
+           <div className="text-[9px] text-zinc-600 font-mono">
+            {patientId ? `ID: ${patientId.slice(0, 8)}...` : "NO PATIENT SELECTED"}
+          </div>
+        </div>
+      </div>
       
-      <main className="flex-grow overflow-y-auto scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent">
-        <PatientDetails patientId={patientId} />
-        <div className="p-1">
-          <KanbanBoard patientId={patientId} />
-        </div>
-      </main>
+      {/* Main Body: Split Pane */}
+      <div className="flex-grow flex overflow-hidden bg-zinc-900">
+        <SplitPane
+          split='vertical'
+          sizes={sizes}
+          onChange={setSizes}
+        >
+          <Pane minSize='250px'>
+            <IcfOverview 
+              patientId={patientId} 
+              onOpenIcfModal={onOpenIcfModal}
+            />
+          </Pane>
+          <Pane minSize='300px'>
+            <PatientDetails patientId={patientId} />
+          </Pane>
+        </SplitPane>
+      </div>
     </div>
   );
 }

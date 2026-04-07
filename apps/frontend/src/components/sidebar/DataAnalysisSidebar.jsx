@@ -1,23 +1,15 @@
-import React, { useMemo, useState, useEffect } from "react";
-import { Tree } from "react-arborist";
+import React, { useMemo, useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useInterventionStore } from "../../state/core/useInterventionStore";
 import { useNavigationStore } from "../../state/core/useNavigationStore";
 import useAnalyticsStore from "../../state/core/useAnalyticsStore";
-import { getAnalyticsTree } from "../../utils/tagTreeUtils.js";
 import { getExerciseTags } from "../../utils/analytics/DataAggregator";
 import {
   HiChevronRight,
-  HiChevronDown,
   HiOutlineQueueList,
-  HiOutlineCalendarDays,
-  HiOutlinePlay,
-  HiOutlineTag,
-  HiOutlineSquare2Stack,
-  HiOutlineHome,
-  HiOutlineFunnel,
   HiOutlineAdjustmentsHorizontal
 } from "react-icons/hi2";
+import { TreeItem, TreeBranch } from "./TreeComponents";
 
 const SidebarPanel = ({ title, children, defaultOpen = true, icon: Icon, compact = false }) => {
   const [isOpen, setIsOpen] = useState(defaultOpen);
@@ -59,88 +51,32 @@ const SidebarPanel = ({ title, children, defaultOpen = true, icon: Icon, compact
   );
 };
 
-const NodeRenderer = ({ node, style, dragHandle }) => {
-  const Icon = useMemo(() => {
-    switch (node.data.type) {
-      case 'intervention': return HiOutlineHome;
-      case 'phase': return HiOutlineQueueList;
-      case 'microcycle': return HiOutlineSquare2Stack;
-      case 'session': return HiOutlineCalendarDays;
-      case 'exercise': return HiOutlinePlay;
-      default: return HiOutlineTag;
-    }
-  }, [node.data.type]);
-
-  const setFocus = useAnalyticsStore(state => state.setFocus);
-
-  return (
-    <div
-      style={style}
-      className={`flex items-center space-x-1.5 py-0.5 cursor-pointer group hover:bg-zinc-800/50 rounded px-1 transition-colors ${node.isSelected ? 'bg-zinc-700/50' : ''}`}
-      onClick={(e) => {
-        e.stopPropagation();
-        node.select();
-
-        let focusType = null;
-        switch (node.data.type) {
-          case 'intervention': focusType = 'Intervention'; break;
-          case 'phase': focusType = 'Phase'; break;
-          case 'microcycle': focusType = 'Microcycle'; break;
-          case 'session': focusType = 'Session'; break;
-          case 'exercise': focusType = 'Exercise'; break;
-        }
-        setFocus(node.id, focusType);
-        if (node.isInternal) node.toggle();
-      }}
-      ref={dragHandle}
-    >
-      <div className="flex items-center w-full min-w-0">
-        <div className="w-4 h-4 flex items-center justify-center flex-shrink-0">
-          {node.children && node.children.length > 0 && (
-            <div className="text-zinc-600 group-hover:text-zinc-400">
-              {node.isOpen ? <HiChevronDown size={14} /> : <HiChevronRight size={14} />}
-            </div>
-          )}
-        </div>
-
-        <Icon size={14} className={`flex-shrink-0 mr-1.5 ${node.data.type === 'intervention' ? 'text-blue-400' : 'text-zinc-500'}`} />
-
-        <div className="flex flex-col min-w-0 flex-1">
-          <div className="text-[11px] truncate leading-tight text-zinc-300">
-            {node.data.name}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 const DataAnalysisSidebar = () => {
   const { interventions, phases, microcycles, sessions, selectedInterventionId, setSelectedInterventionId } = useInterventionStore();
   const { patientId } = useNavigationStore();
   const { focusNodeId, selectedMetrics, setSelectedMetrics, selectedTags, setSelectedTags, toggleTag, setFocus } = useAnalyticsStore();
 
-  const [treeContainerRef, setTreeContainerRef] = useState(null);
-  const [treeHeight, setTreeHeight] = useState(400);
-
-  useEffect(() => {
-    if (!treeContainerRef) return;
-    const observer = new ResizeObserver(([entry]) => {
-      setTreeHeight(entry.contentRect.height);
-    });
-    observer.observe(treeContainerRef);
-    return () => observer.disconnect();
-  }, [treeContainerRef]);
+  const [expandedIds, setExpandedIds] = useState(new Set());
 
   const patientInterventions = useMemo(() =>
     Object.values(interventions).filter(i => i.patientId === patientId),
     [interventions, patientId]
   );
 
-  const treeData = useMemo(() => {
-    const selected = patientInterventions.filter(i => i.id === selectedInterventionId);
-    return getAnalyticsTree(selected, phases, microcycles, sessions);
-  }, [patientInterventions, selectedInterventionId, phases, microcycles, sessions]);
+  const selectedIntervention = interventions[selectedInterventionId] || null;
+
+  const toggleExpand = useCallback((id) => {
+    setExpandedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const handleSelect = useCallback((id, type) => {
+    setFocus(id, type === 'Micro' ? 'Microcycle' : type);
+  }, [setFocus]);
 
   const allAvailableTags = useMemo(() => {
     const tags = new Set();
@@ -158,21 +94,162 @@ const DataAnalysisSidebar = () => {
 
   const handleInterventionChange = (id) => {
     setSelectedInterventionId(id);
-    setFocus(null, null); // Reset focus so user must explicitly pick a focus level in the tree
+    setFocus(null, null);
+    setExpandedIds(new Set([id]));
+  };
+
+  const renderExercise = (eid, session) => {
+    const exercise = session.exercises[eid];
+    if (!exercise) return null;
+    
+    // Ensure backwards compatibility for old UI schema formats that lack a direct 'name'
+    const exerciseData = {
+      ...exercise,
+      name: exercise.name || eid.split('_').slice(0, -1).join('_') || eid
+    };
+
+    return (
+      <TreeItem
+        key={eid}
+        id={eid}
+        type="Exercise"
+        data={exerciseData}
+        isSelected={focusNodeId === eid}
+        onSelect={handleSelect}
+        compact={true}
+      />
+    );
+  };
+
+  const renderSession = (sid) => {
+    const session = sessions[sid];
+    if (!session) return null;
+    const exerciseIds = Object.keys(session.exercises || {});
+    return (
+      <TreeItem
+        key={sid}
+        id={sid}
+        type="Session"
+        data={session}
+        isExpanded={expandedIds.has(sid)}
+        onToggle={toggleExpand}
+        isSelected={focusNodeId === sid}
+        onSelect={handleSelect}
+        compact={true}
+        hasChildren={exerciseIds.length > 0}
+      >
+        {expandedIds.has(sid) && (
+          <TreeBranch>
+            {exerciseIds.map(eid => renderExercise(eid, session))}
+          </TreeBranch>
+        )}
+      </TreeItem>
+    );
+  };
+
+  const renderMicro = (mid) => {
+    const micro = microcycles[mid];
+    if (!micro) return null;
+    return (
+      <TreeItem
+        key={mid}
+        id={mid}
+        type="Micro"
+        data={micro}
+        isExpanded={expandedIds.has(mid)}
+        onToggle={toggleExpand}
+        isSelected={focusNodeId === mid}
+        onSelect={handleSelect}
+        compact={true}
+        hasChildren={micro.sessionIds?.length > 0}
+      >
+        {expandedIds.has(mid) && (
+          <TreeBranch>
+            {micro.sessionIds?.map(renderSession)}
+          </TreeBranch>
+        )}
+      </TreeItem>
+    );
+  };
+
+  const renderPhase = (pid) => {
+    const phase = phases[pid];
+    if (!phase) return null;
+    return (
+      <TreeItem
+        key={pid}
+        id={pid}
+        type="Phase"
+        data={phase}
+        isExpanded={expandedIds.has(pid)}
+        onToggle={toggleExpand}
+        isSelected={focusNodeId === pid}
+        onSelect={handleSelect}
+        compact={true}
+        hasChildren={phase.microcycleIds?.length > 0}
+      >
+        {expandedIds.has(pid) && (
+          <TreeBranch>
+            {phase.microcycleIds?.map(renderMicro)}
+          </TreeBranch>
+        )}
+      </TreeItem>
+    );
+  };
+
+  const orphanedSessions = useMemo(() => {
+    if (!selectedInterventionId) return [];
+    const assignedIds = new Set();
+    Object.values(phases).forEach(p => p.microcycleIds?.forEach(mid => microcycles[mid]?.sessionIds?.forEach(sid => assignedIds.add(sid))));
+    return Object.values(sessions).filter(s => s.interventionId === selectedInterventionId && !assignedIds.has(s.id));
+  }, [selectedInterventionId, phases, microcycles, sessions]);
+
+  const renderInterventionNode = (intervention) => {
+    const hasOrphaned = orphanedSessions.length > 0;
+    const totalChildren = (intervention.phaseIds?.length || 0) + (hasOrphaned ? 1 : 0);
+    
+    return (
+      <TreeItem
+        key={intervention.id}
+        id={intervention.id}
+        type="Intervention"
+        data={intervention}
+        isExpanded={expandedIds.has(intervention.id)}
+        onToggle={toggleExpand}
+        isSelected={focusNodeId === intervention.id}
+        onSelect={handleSelect}
+        compact={true}
+        hasChildren={totalChildren > 0}
+      >
+        {expandedIds.has(intervention.id) && (
+          <TreeBranch>
+            {intervention.phaseIds?.map(renderPhase)}
+            {hasOrphaned && (
+              <div className="mt-2">
+                <div className="flex items-center px-2 py-1 text-[9px] font-bold text-zinc-500 uppercase tracking-tighter opacity-70">
+                  Unassigned
+                </div>
+                {orphanedSessions.map(s => renderSession(s.id))}
+              </div>
+            )}
+          </TreeBranch>
+        )}
+      </TreeItem>
+    );
   };
 
   return (
     <div className="h-full w-full bg-zinc-900 flex flex-col overflow-hidden select-none border-r border-zinc-800/50">
-      {/* 1. Structural Navigator (Explorer) - FIXED & EXPANDED */}
+      {/* Structural Navigator */}
       <div className="flex-1 flex flex-col overflow-hidden min-h-0">
-        <div className="px-4 pt-1 flex items-center space-x-2.5 border-b border-zinc-800/50 flex-none">
+        <div className="px-4 py-2 flex items-center space-x-2.5 border-b border-zinc-800/50 flex-none">
           <HiOutlineQueueList size={14} className="text-zinc-500" />
-          <span className="text-[11px] font-bold tracking-widest text-zinc-400">Explorer</span>
+          <span className="text-[11px] font-bold tracking-widest text-zinc-400 uppercase">Explorer</span>
         </div>
 
         <div className="flex-1 flex flex-col p-4 space-y-4 overflow-hidden">
           <select
-            className="w-full bg-zinc-800/50 border border-zinc-700/50 text-zinc-300 text-[10px] rounded px-2 py-0.5 outline-none focus:border-blue-500/50 transition-colors flex-none"
+            className="w-full bg-zinc-800/50 border border-zinc-700/50 text-zinc-300 text-[10px] rounded px-2 py-1.5 outline-none focus:border-blue-500/50 transition-colors flex-none"
             value={selectedInterventionId || ""}
             onChange={(e) => handleInterventionChange(e.target.value)}
           >
@@ -180,46 +257,30 @@ const DataAnalysisSidebar = () => {
             {patientInterventions.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
           </select>
 
-          <div
-            ref={setTreeContainerRef}
-            className="flex-1 overflow-hidden relative"
-          >
-            {treeData.length > 0 ? (
-              <Tree
-                data={treeData}
-                selection={focusNodeId}
-                openByDefault={true}
-                width="100%"
-                height={treeHeight}
-                indent={12}
-                rowHeight={24}
-                onSelect={(nodes) => {
-                  if (nodes.length > 0) {
-                    const node = nodes[0];
-                    let focusType = null;
-                    switch (node.data.type) {
-                      case 'intervention': focusType = 'Intervention'; break;
-                      case 'phase': focusType = 'Phase'; break;
-                      case 'microcycle': focusType = 'Microcycle'; break;
-                      case 'session': focusType = 'Session'; break;
-                      case 'exercise': focusType = 'Exercise'; break;
-                    }
-                    setFocus(node.id, focusType);
-                  }
-                }}
-              >
-                {NodeRenderer}
-              </Tree>
-            ) : (
+          <div className="flex-1 overflow-y-auto relative custom-scrollbar-hover pr-2">
+            {!selectedInterventionId ? (
               <div className="h-full flex items-center justify-center text-zinc-600 text-[11px] italic">
                 Select an intervention to browse
+              </div>
+            ) : !selectedIntervention ? (
+               <div className="h-full flex items-center justify-center text-zinc-600 text-[11px] italic text-center">
+                Intervention not found.
+              </div>
+            ) : (
+              <div className="space-y-0.5">
+                {renderInterventionNode(selectedIntervention)}
+                {(!selectedIntervention.phaseIds || selectedIntervention.phaseIds.length === 0) && orphanedSessions.length === 0 && (
+                  <div className="px-4 py-8 text-center text-zinc-600 text-[11px] italic text-center">
+                    Empty intervention. Add data in the Interventions tab.
+                  </div>
+                )}
               </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* 2. Filtering & Metrics - COLLAPSIBLE AT BOTTOM */}
+      {/* Analytics Setup */}
       <div className="flex-none">
         <SidebarPanel title="Analytics Setup" icon={HiOutlineAdjustmentsHorizontal} defaultOpen={false} compact={true}>
           <div className="max-h-64 overflow-y-auto custom-scrollbar pr-1 space-y-5 py-1">

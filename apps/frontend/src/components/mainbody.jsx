@@ -54,6 +54,7 @@ function MainBody({ handleEditPatient }) {
           <div key="icfProfile" className="h-full overflow-hidden">
             <Profile 
               handleEditPatient={handleEditPatient}
+              onOpenIcfModal={() => setIsICFSetsModalOpen(true)}
             />
             <ICFSetsModal
               isOpen={activeTab === "Profile" && isICFSetsModalOpen}

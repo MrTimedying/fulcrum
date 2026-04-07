@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { v4 as uuidv4 } from 'uuid';
 import _ from 'lodash';
+import { buildHierarchicalContent } from '../../utils/tagTreeUtils';
 
 export interface Exercise {
   id: string;
@@ -104,6 +105,10 @@ export interface InterventionState {
 
   bulkUpdateNodeData: (nodeId: string, property: string, value: any) => void;
   clearInterventions: () => void;
+
+  renameNode: (id: string, type: string, newName: string) => void;
+  duplicateNode: (id: string, type: string) => void;
+  addTemplateFromNode: (id: string, type: string, name: string) => void;
 }
 
 export const useInterventionStore = create<InterventionState>()(
@@ -418,29 +423,30 @@ export const useInterventionStore = create<InterventionState>()(
       moveSession: (sourceMicroId, targetMicroId, sessionId, newIndex) => {
         set((state) => {
           const sourceMicro = state.microcycles[sourceMicroId];
-          const targetMicro = state.microcycles[targetMicroId];
+          const targetMicro = targetMicroId ? state.microcycles[targetMicroId] : null;
           
-          let sourceIds = [];
-          if (sourceMicro) {
-            sourceIds = [...sourceMicro.sessionIds];
-            const sIdx = sourceIds.indexOf(sessionId);
-            if (sIdx > -1) sourceIds.splice(sIdx, 1);
-          }
-
-          if (!targetMicro) return state; // Still need a valid target micro
-
-          const targetIds = sourceMicroId === targetMicroId ? sourceIds : [...targetMicro.sessionIds];
-          targetIds.splice(newIndex, 0, sessionId);
-
           const newState: any = {
-            microcycles: {
-              ...state.microcycles,
-              [targetMicroId]: { ...targetMicro, sessionIds: targetIds },
-            }
+            microcycles: { ...state.microcycles }
           };
 
-          if (sourceMicro && sourceMicroId !== targetMicroId) {
+          // 1. Remove from source if it exists
+          if (sourceMicro) {
+            const sourceIds = (sourceMicro.sessionIds || []).filter(id => id !== sessionId);
             newState.microcycles[sourceMicroId] = { ...sourceMicro, sessionIds: sourceIds };
+          }
+
+          // 2. Add to target if it exists
+          if (targetMicro) {
+            // Use the already updated sourceIds if source and target are the same
+            const currentTargetIds = (sourceMicroId === targetMicroId && sourceMicro)
+              ? newState.microcycles[sourceMicroId].sessionIds
+              : (targetMicro.sessionIds || []);
+            
+            const targetIds = [...currentTargetIds];
+            const safeIndex = Math.max(0, Math.min(newIndex, targetIds.length));
+            targetIds.splice(safeIndex, 0, sessionId);
+            
+            newState.microcycles[targetMicroId] = { ...targetMicro, sessionIds: targetIds };
           }
 
           return newState;
@@ -450,30 +456,30 @@ export const useInterventionStore = create<InterventionState>()(
       moveMicrocycle: (sourcePhaseId, targetPhaseId, microId, newIndex) => {
         set((state) => {
           const sourcePhase = state.phases[sourcePhaseId];
-          const targetPhase = state.phases[targetPhaseId];
+          const targetPhase = targetPhaseId ? state.phases[targetPhaseId] : null;
           
-          let sourceIds = [];
-          if (sourcePhase) {
-            sourceIds = [...sourcePhase.microcycleIds];
-            const mIdx = sourceIds.indexOf(microId);
-            if (mIdx > -1) sourceIds.splice(mIdx, 1);
-          }
-
-          if (!targetPhase) return state;
-
-          const targetIds = sourcePhaseId === targetPhaseId ? sourceIds : [...targetPhase.microcycleIds];
-          targetIds.splice(newIndex, 0, microId);
+          if (!targetPhase) return state; // Microcycles must belong to a phase
 
           const newState: any = {
-            phases: {
-              ...state.phases,
-              [targetPhaseId]: { ...targetPhase, microcycleIds: targetIds },
-            }
+            phases: { ...state.phases }
           };
 
-          if (sourcePhase && sourcePhaseId !== targetPhaseId) {
+          // 1. Remove from source
+          if (sourcePhase) {
+            const sourceIds = (sourcePhase.microcycleIds || []).filter(id => id !== microId);
             newState.phases[sourcePhaseId] = { ...sourcePhase, microcycleIds: sourceIds };
           }
+
+          // 2. Add to target
+          const currentTargetIds = (sourcePhaseId === targetPhaseId && sourcePhase)
+            ? newState.phases[sourcePhaseId].microcycleIds
+            : (targetPhase.microcycleIds || []);
+          
+          const targetIds = [...currentTargetIds];
+          const safeIndex = Math.max(0, Math.min(newIndex, targetIds.length));
+          targetIds.splice(safeIndex, 0, microId);
+          
+          newState.phases[targetPhaseId] = { ...targetPhase, microcycleIds: targetIds };
 
           return newState;
         });
@@ -484,10 +490,9 @@ export const useInterventionStore = create<InterventionState>()(
           const intervention = state.interventions[interventionId];
           if (!intervention) return state;
 
-          const phaseIds = [...(intervention.phaseIds || [])];
-          const pIdx = phaseIds.indexOf(phaseId);
-          if (pIdx > -1) phaseIds.splice(pIdx, 1);
-          phaseIds.splice(newIndex, 0, phaseId);
+          const phaseIds = (intervention.phaseIds || []).filter(id => id !== phaseId);
+          const safeIndex = Math.max(0, Math.min(newIndex, phaseIds.length));
+          phaseIds.splice(safeIndex, 0, phaseId);
 
           return {
             interventions: {
@@ -758,6 +763,143 @@ export const useInterventionStore = create<InterventionState>()(
           }
           return newState;
         });
+      },
+
+      renameNode: (id, type, newName) => {
+        if (type === 'Phase' || type === 'phase') {
+          get().updatePhase(id, { name: newName });
+        } else if (type === 'Micro' || type === 'microcycle' || type === 'folder') {
+          get().updateMicrocycle(id, { name: newName });
+        } else if (type === 'Session' || type === 'session') {
+          get().updateSession(id, { name: newName });
+        } else if (type === 'Intervention' || type === 'intervention') {
+          get().updateIntervention(id, { name: newName });
+        }
+      },
+
+      duplicateNode: (id, type) => {
+        const state = get();
+        
+        const recursiveClone = (nodeId: string, nodeType: string): any => {
+          if (nodeType === 'Phase' || nodeType === 'phase') {
+            const phase = state.phases[nodeId];
+            if (!phase) return null;
+            return {
+              type: 'Phase',
+              data: { ..._.omit(phase, ['id', 'microcycleIds']), name: `${phase.name} (Copy)` },
+              microcycles: (phase.microcycleIds || []).map(mid => recursiveClone(mid, 'Micro')).filter(Boolean)
+            };
+          }
+          if (nodeType === 'Micro' || nodeType === 'microcycle') {
+            const micro = state.microcycles[nodeId];
+            if (!micro) return null;
+            return {
+              type: 'Micro',
+              data: { ..._.omit(micro, ['id', 'sessionIds']), name: `${micro.name} (Copy)` },
+              sessions: (micro.sessionIds || []).map(sid => recursiveClone(sid, 'Session')).filter(Boolean)
+            };
+          }
+          if (nodeType === 'Session' || nodeType === 'session') {
+            const session = state.sessions[nodeId];
+            if (!session) return null;
+            return {
+              type: 'Session',
+              data: { ..._.omit(session, ['id']), name: `${session.name} (Copy)` }
+            };
+          }
+          return null;
+        };
+
+        const clonedContent = recursiveClone(id, type);
+        if (!clonedContent) return;
+
+        let parentId: string | null = null;
+        let parentType: 'Intervention' | 'Phase' | 'Micro' | null = null;
+
+        if (type === 'Phase' || type === 'phase') {
+          parentId = Object.keys(state.interventions).find(intId => state.interventions[intId].phaseIds?.includes(id)) || null;
+          parentType = 'Intervention';
+        } else if (type === 'Micro' || type === 'microcycle' || type === 'folder') {
+          parentId = Object.keys(state.phases).find(pId => state.phases[pId].microcycleIds?.includes(id)) || null;
+          parentType = 'Phase';
+        } else if (type === 'Session' || type === 'session') {
+          parentId = Object.keys(state.microcycles).find(mId => state.microcycles[mId].sessionIds?.includes(id)) || null;
+          parentType = 'Micro';
+        }
+
+        if (!parentId || !parentType) return;
+
+        const newPhases = { ...state.phases };
+        const newMicros = { ...state.microcycles };
+        const newSessions = { ...state.sessions };
+        const newInterventions = { ...state.interventions };
+
+        const applyClone = (item: any, pId: string, pType: string) => {
+          const newId = uuidv4();
+          if (item.type === 'Phase') {
+            newPhases[newId] = { ..._.cloneDeep(item.data), id: newId, microcycleIds: [] };
+            if (pType === 'Intervention') {
+              newInterventions[pId] = {
+                ...newInterventions[pId],
+                phaseIds: [...(newInterventions[pId].phaseIds || []), newId]
+              };
+            }
+            item.microcycles?.forEach((m: any) => applyClone(m, newId, 'Phase'));
+          } else if (item.type === 'Micro') {
+            newMicros[newId] = { ..._.cloneDeep(item.data), id: newId, sessionIds: [] };
+            if (pType === 'Phase') {
+              newPhases[pId] = {
+                ...newPhases[pId],
+                microcycleIds: [...(newPhases[pId].microcycleIds || []), newId]
+              };
+            }
+            item.sessions?.forEach((s: any) => applyClone(s, newId, 'Micro'));
+          } else if (item.type === 'Session') {
+            const sessionData = { ..._.cloneDeep(item.data), id: newId };
+            if (sessionData.exercises) {
+              const updatedExercises: Record<string, Exercise> = {};
+              Object.values(sessionData.exercises).forEach((ex: any) => {
+                const exId = uuidv4();
+                updatedExercises[exId] = { ...ex, id: exId };
+              });
+              sessionData.exercises = updatedExercises;
+            }
+            newSessions[newId] = sessionData;
+            if (pType === 'Micro') {
+              newMicros[pId] = {
+                ...newMicros[pId],
+                sessionIds: [...(newMicros[pId].sessionIds || []), newId]
+              };
+            }
+          }
+        };
+
+        applyClone(clonedContent, parentId, parentType);
+
+        set({
+          phases: newPhases,
+          microcycles: newMicros,
+          sessions: newSessions,
+          interventions: newInterventions
+        });
+      },
+
+      addTemplateFromNode: (id, type, name) => {
+        const state = get();
+        // buildHierarchicalContent expects capitalized types for Phase, Micro, Session
+        let normalizedType = type;
+        if (type === 'phase') normalizedType = 'Phase';
+        if (type === 'microcycle' || type === 'folder') normalizedType = 'Micro';
+        if (type === 'session') normalizedType = 'Session';
+
+        const content = buildHierarchicalContent(id, normalizedType, state.phases, state.microcycles, state.sessions);
+        if (content) {
+          get().addTemplate({
+            id: uuidv4(),
+            name,
+            content
+          });
+        }
       },
     }),
     {
