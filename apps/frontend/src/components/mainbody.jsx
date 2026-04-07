@@ -12,6 +12,7 @@ import useUIStore from "../state/core/useUIStore";
 import BulkExerciseEditModal from "./BulkExerciseEditModal";
 import ICFSetsModal from "./icf-dashboard/ICFSetsModal";
 import InterventionWorkflowPlaceholder from "./util/InterventionWorkflowPlaceholder";
+import AnalysisDashboard from "./data_analysis/AnalysisDashboard";
 
 // Bind modal to your appElement (http://reactcommunity.org/react-modal/accessibility/)
 Modal.setAppElement("#root");
@@ -31,6 +32,10 @@ function MainBody({ handleEditPatient }) {
   }, []);
 
   function TabStructure() {
+    if (activeTab === "Analysis") {
+      return <AnalysisDashboard />;
+    }
+
     let editorContent = null;
     if (selectedStructuralNodeType === 'Phase') {
       editorContent = <PhasePanel />;

@@ -107,3 +107,76 @@ export const getStructureTree = (intervention, phases, micros, sessions) => {
 
   return tree;
 };
+
+/**
+ * Transforms all interventions of a patient into a full hierarchical tree for data analysis.
+ * Hierarchy: Intervention -> Phase -> Microcycle -> Session -> Exercise
+ */
+export const getAnalyticsTree = (interventions, phases, micros, sessions) => {
+  if (!interventions) return [];
+  
+  return interventions.map(intervention => {
+    if (!intervention?.id) {
+        console.warn('Intervention without ID:', intervention);
+        return null;
+    }
+
+    const phaseNodes = (intervention.phaseIds || []).map(phaseId => {
+      const phase = phases[phaseId];
+      if (!phase?.id) return null;
+
+      const microNodes = (phase.microcycleIds || []).map(microId => {
+        const micro = micros[microId];
+        if (!micro?.id) return null;
+
+        const sessionNodes = (micro.sessionIds || []).map(sessionId => {
+          const session = sessions[sessionId];
+          if (!session?.id) return null;
+
+          const exerciseNodes = Object.values(session.exercises || {}).map(exercise => {
+            if (!exercise?.id) return null;
+            return {
+              id: exercise.id,
+              name: exercise.name || 'Unnamed Exercise',
+              type: 'exercise',
+              isLeaf: true,
+              parentId: session.id
+            };
+          }).filter(Boolean);
+
+          return {
+            id: session.id,
+            name: session.name || 'Unnamed Session',
+            type: 'session',
+            children: exerciseNodes.length > 0 ? exerciseNodes : undefined,
+            parentId: micro.id
+          };
+        }).filter(Boolean);
+
+        return {
+          id: micro.id,
+          name: micro.name || 'Unnamed Microcycle',
+          type: 'microcycle',
+          children: sessionNodes.length > 0 ? sessionNodes : undefined,
+          parentId: phase.id
+        };
+      }).filter(Boolean);
+
+      return {
+        id: phase.id,
+        name: phase.name || 'Unnamed Phase',
+        type: 'phase',
+        children: microNodes.length > 0 ? microNodes : undefined,
+        parentId: intervention.id
+      };
+    }).filter(Boolean);
+
+    return {
+      id: intervention.id,
+      name: intervention.name || 'Unnamed Intervention',
+      type: 'intervention',
+      children: phaseNodes.length > 0 ? phaseNodes : undefined,
+      parentId: null
+    };
+  }).filter(Boolean);
+};

@@ -7,7 +7,8 @@ import {
   HiOutlineTrash,
   HiOutlineArrowDownTray,
   HiOutlineArrowUpTray,
-  HiOutlineBeaker
+  HiOutlineBeaker,
+  HiOutlinePresentationChartLine
 } from "react-icons/hi2";
 import { usePatientStore } from "../state/core/usePatientStore";
 import { useInterventionStore } from "../state/core/useInterventionStore";
@@ -56,6 +57,7 @@ const IconBar = ({ activeContext, onContextChange, isSidebarCollapsed, onSetting
   const iconGroups = [
     { id: 'patients', icon: HiUsers, label: 'Patients' },
     { id: 'interventions', icon: HiOutlineCircleStack, label: 'Interventions' },
+    { id: 'analysis', icon: HiOutlinePresentationChartLine, label: 'Data Analysis' },
     { id: 'search', icon: HiMagnifyingGlass, label: 'Search' },
   ];
 

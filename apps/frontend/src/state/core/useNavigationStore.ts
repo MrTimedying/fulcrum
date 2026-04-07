@@ -5,9 +5,11 @@ export interface NavigationState {
   trailingPatientId: string;
   activeTab: string;
   trailingActiveTab: string;
+  currentModule: 'patients' | 'interventions' | 'analysis';
   setPatientId: (id: string) => void;
   setActiveTab: (tab: string) => void;
   setTrailingActiveTab: (tab: string) => void;
+  setCurrentModule: (module: 'patients' | 'interventions' | 'analysis') => void;
   tabStateLogic: (trailingActiveTab: string, patientId: string) => void;
   patientStateLogic: (trailingPatientId: string, activeTab: string) => void;
 }
@@ -20,6 +22,7 @@ export const useNavigationStore = create<NavigationState>()(
     trailingPatientId: '',
     activeTab: 'Profile',
     trailingActiveTab: '',
+    currentModule: 'patients',
 
     setPatientId: (id) => {
       const { patientId } = get();
@@ -39,6 +42,10 @@ export const useNavigationStore = create<NavigationState>()(
 
     setTrailingActiveTab: (tab) => {
       set({ trailingActiveTab: tab });
+    },
+
+    setCurrentModule: (module) => {
+      set({ currentModule: module });
     },
 
     tabStateLogic: (trailingActiveTab, patientId) => {

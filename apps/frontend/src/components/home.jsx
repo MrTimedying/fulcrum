@@ -47,7 +47,7 @@ function Home() {
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef(null);
   const { patients } = usePatientStore();
-  const { patientId, setPatientId, setActiveTab } = useNavigationStore();
+  const { patientId, setPatientId, setActiveTab, setCurrentModule } = useNavigationStore();
   const { setToaster } = useUIStore();
   const { setSelectedInterventionId, setSelectedSessionId } = useInterventionStore();
   
@@ -80,13 +80,17 @@ function Home() {
       if (nodePatientId) {
         setPatientId(nodePatientId);
         setActiveTab('Profile');
+        setCurrentModule('patients');
+        setActiveSidebarContext('patients');
         return;
       }
     }
     if (patientId) {
       setActiveTab('Profile');
+      setCurrentModule('patients');
+      setActiveSidebarContext('patients');
     }
-  }, [patientId, setPatientId, setActiveTab]);
+  }, [patientId, setPatientId, setActiveTab, setCurrentModule]);
 
   const closePatientEditModal = useCallback(() => {
     setIsPatientEditModalOpen(false);
@@ -97,11 +101,11 @@ function Home() {
     if (newContext === activeSidebarContext) {
       setIsSidebarCollapsed(!isSidebarCollapsed);
     } else {
-      // If switching to interventions, we need a patient selected
-      if (newContext === 'interventions' && !patientId) {
+      // If switching to interventions or analysis, we need a patient selected
+      if ((newContext === 'interventions' || newContext === 'analysis') && !patientId) {
         setToaster({
           type: "info",
-          message: "Please select a patient first to manage their interventions.",
+          message: `Please select a patient first to manage their ${newContext}.`,
           show: true,
         });
         // We still switch context so they can see the tree view (which will show its empty state)
@@ -109,6 +113,7 @@ function Home() {
 
       setActiveSidebarContext(newContext);
       setIsSidebarCollapsed(false);
+      setCurrentModule(newContext);
 
       // Sync active tab with context
       if (newContext === 'patients') {
@@ -117,6 +122,10 @@ function Home() {
         // Only switch to Editor tab if a patient is selected
         if (patientId) {
           setActiveTab('Editor');
+        }
+      } else if (newContext === 'analysis') {
+        if (patientId) {
+          setActiveTab('Analysis');
         }
       }
     }
