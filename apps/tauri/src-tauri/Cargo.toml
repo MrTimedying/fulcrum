@@ -36,6 +36,8 @@ keyring = "2.0"
 anyhow = "1.0"
 dirs = "5.0.1"
 uuid = { version = "1.20.0", features = ["v4"] }
+chrono = { version = "0.4", features = ["serde"] }
+rayon = "1.10"
 
 [features]
 # by default Tauri runs in production mode

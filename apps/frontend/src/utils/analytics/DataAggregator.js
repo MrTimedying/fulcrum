@@ -4,6 +4,7 @@
  */
 
 import _ from 'lodash';
+import { invoke } from '@tauri-apps/api/core';
 
 /**
  * Parses a variant string (e.g., "10;12;10;") into a numeric array.
@@ -87,9 +88,9 @@ export const aggregateSessionMetrics = (session) => {
 
 /**
  * The Main Entry Point for Data Analysis.
- * Aggregates data for a node and all its children.
+ * Aggregates data for a node and all its children using Rust commands.
  */
-export const getMetricsForNode = (nodeId, nodeType, store, options = {}) => {
+export const getMetricsForNode = async (nodeId, nodeType, store, options = {}) => {
   if (!nodeId || !nodeType || !store) return null;
 
   const { interventions, phases, microcycles, sessions } = store;
@@ -132,80 +133,47 @@ export const getMetricsForNode = (nodeId, nodeType, store, options = {}) => {
     if (sessions[nodeId]) targetSessions.push(sessions[nodeId]);
   }
 
-  // 2. Aggregate metrics for each session
-  const aggregatedSessions = targetSessions
-    .map(s => {
-      const metrics = aggregateSessionMetrics(s);
-      
-      // If tags are selected, filter exercises within the metrics calculation
-      // Or filter the session entirely if no exercises match (if that's the intent)
-      // For now, let's filter metrics based on tags if selectedTags is not empty
-      if (selectedTags.length > 0) {
-        const exercises = Object.values(s.exercises || {});
-        const filteredExercises = exercises.filter(ex => {
-          const exTags = getExerciseTags(ex);
-          return selectedTags.some(t => exTags.includes(t));
-        });
+  if (targetSessions.length === 0) return null;
 
-        let filteredVol = 0;
-        let filteredInt = 0;
-        const filteredTagVol = {};
+  try {
+    // 2. Call Rust commands for analysis
+    const [analysisResult, acwr] = await Promise.all([
+      invoke('calculate_hierarchical_metrics', { 
+        sessions: targetSessions, 
+        selectedTags: selectedTags.length > 0 ? selectedTags : null 
+      }),
+      invoke('calculate_acwr', { 
+        sessions: targetSessions, 
+        targetDate: new Date().toISOString().split('T')[0] 
+      })
+    ]);
 
-        filteredExercises.forEach(ex => {
-          const vol = calculateExerciseVolume(ex);
-          filteredVol += vol;
-          filteredInt += (ex.intensity || 0);
-          const tags = getExerciseTags(ex);
-          tags.forEach(tag => {
-            filteredTagVol[tag] = (filteredTagVol[tag] || 0) + vol;
-          });
-        });
+    const { summary, trend_data } = analysisResult;
 
-        return {
-          ...metrics,
-          volume: filteredVol,
-          avgIntensity: filteredExercises.length > 0 ? filteredInt / filteredExercises.length : 0,
-          tagVolume: filteredTagVol,
-          exerciseCount: filteredExercises.length
-        };
-      }
-      return { ...metrics, exerciseCount: Object.keys(s.exercises || {}).length };
-    })
-    .filter(s => selectedTags.length === 0 || s.exerciseCount > 0) // Hide empty sessions if filtering
-    .sort((a, b) => new Date(a.date) - new Date(b.date));
+    // 3. Map to existing AggregatedMetrics format
+    const distributionData = Object.entries(summary.tag_distribution)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value);
 
-  // 3. Compute Global Totals & Distributions
-  let totalVolume = 0;
-  const globalTagVolume = {};
-  const trendData = aggregatedSessions.map(s => ({
-    name: s.name,
-    date: new Date(s.date).toLocaleDateString(),
-    volume: s.volume,
-    intensity: s.avgIntensity
-  }));
-
-  aggregatedSessions.forEach(s => {
-    totalVolume += s.volume;
-    Object.entries(s.tagVolume).forEach(([tag, vol]) => {
-      globalTagVolume[tag] = (globalTagVolume[tag] || 0) + vol;
-    });
-  });
-
-  const distributionData = Object.entries(globalTagVolume)
-    .map(([name, value]) => ({ name, value }))
-    .sort((a, b) => b.value - a.value);
-
-  return {
-    focusName: nodeId,
-    summary: {
-      totalVolume: totalVolume.toLocaleString(),
-      avgIntensity: aggregatedSessions.length > 0 
-        ? (_.sumBy(aggregatedSessions, 'avgIntensity') / aggregatedSessions.length).toFixed(1) + '%'
-        : '0%',
-      sessionCount: aggregatedSessions.length,
-      workloadRatio: '1.0'
-    },
-    trendData,
-    distributionData
-  };
+    return {
+      focusName: nodeId,
+      summary: {
+        totalVolume: summary.total_volume.toLocaleString(),
+        avgIntensity: summary.avg_intensity.toFixed(1) + '%',
+        avgRpe: '0.0', // Rust does not calculate RPE yet
+        sessionCount: summary.session_count,
+        workloadRatio: acwr.toFixed(2)
+      },
+      trendData: trend_data.map(p => ({
+        ...p,
+        date: new Date(p.date).toLocaleDateString()
+      })),
+      distributionData
+    };
+  } catch (error) {
+    console.error('Failed to calculate metrics in Rust:', error);
+    // Fallback or rethrow? Let's rethrow for now so UI can handle it
+    throw error;
+  }
 };
+

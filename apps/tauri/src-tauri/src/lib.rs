@@ -1,5 +1,6 @@
 mod encryption;
 mod state;
+mod analysis;
 
 use encryption::EncryptionManager;
 use state::StateManager;
@@ -196,7 +197,9 @@ pub fn run() {
             save_app_state,
             check_for_updates,
             download_update,
-            quit_and_install
+            quit_and_install,
+            analysis::calculate_hierarchical_metrics,
+            analysis::calculate_acwr
         ])
         .on_window_event(|window, event| {
             if let tauri::WindowEvent::CloseRequested { .. } = event {

@@ -42,20 +42,21 @@ Provide movement science experts with granular, hierarchical insights into train
 - Bound real training data to the `AnalysisDashboard` charts.
 
 ### Phase 4: Enhanced Control & UI 
-- [ ] Implement collapsible sidebar panels (VS Code style).
-- [ ] Restore Intervention Dropdown selector.
-- [ ] Implement Tag-based multi-filter logic.
-- [ ] Restore Metric-specific toggles.
+- [x] Implement collapsible sidebar panels (VS Code style).
+- [x] Restore Intervention Dropdown selector.
+- [x] Implement Tag-based multi-filter logic.
+- [x] Restore Metric-specific toggles.
 
 ### Phase 5: High-Performance Rust Offloading 
-- [ ] Offload heavy aggregation math to Tauri/Rust.
-- [ ] Implement Acute-to-Chronic Workload Ratio (ACWR) in Rust.
-- [ ] Longitudinal cross-intervention analysis.
+- [x] Offload heavy aggregation math to Tauri/Rust.
+- [x] Implement Acute-to-Chronic Workload Ratio (ACWR) in Rust.
+- [x] Longitudinal cross-intervention analysis.
 
 ---
 
 ## 4. Current Status
-- **Core Engine**: 100% Functional (JS-based).
-- **UI Shell**: 90% (Refining sidebar controls).
-- **Data Fidelity**: High (Handles variant strings and semantic tags).
-- **Overall Completion**: ~75% of the initial suite scope.
+- **Core Engine**: 100% Functional (Rust-powered).
+- **UI Shell**: 100% (Collapsible sidebar, hierarchical navigation).
+- **Data Fidelity**: High (Handles variant strings, semantic tags, and ACWR).
+- **Overall Completion**: 100% of the initial suite scope.
+- **Last Updated**: 2024-05-24
