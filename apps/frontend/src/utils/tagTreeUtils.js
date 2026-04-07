@@ -1,5 +1,6 @@
 import * as _ from 'lodash';
 import { isValid, parseISO } from 'date-fns';
+import { getExerciseContainerDisplayName } from './exerciseUtils';
 
 /**
  * Transforms pointer-based structure into a tree structure for react-arborist.
@@ -133,11 +134,10 @@ export const getAnalyticsTree = (interventions, phases, micros, sessions) => {
           const session = sessions[sessionId];
           if (!session?.id) return null;
 
-          const exerciseNodes = Object.values(session.exercises || {}).map(exercise => {
-            if (!exercise?.id) return null;
+          const exerciseNodes = Object.entries(session.exercises || {}).map(([mkey, exercise]) => {
             return {
-              id: exercise.id,
-              name: exercise.name || 'Unnamed Exercise',
+              id: mkey,
+              name: getExerciseContainerDisplayName(mkey) || 'Unnamed Exercise',
               type: 'exercise',
               isLeaf: true,
               parentId: session.id

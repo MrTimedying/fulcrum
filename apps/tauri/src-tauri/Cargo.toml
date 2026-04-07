@@ -1,6 +1,6 @@
 [package]
 name = "fulcrum"
-version = "1.0.1"
+version = "1.1.0"
 description = "Management software for movement science experts, leveraging flow diagrams for intervention creation and patient management, including comprehensive data analysis."
 authors = ["Antonio Logarzo"]
 license = "CC BY-NC-ND 4.0 Deed"
