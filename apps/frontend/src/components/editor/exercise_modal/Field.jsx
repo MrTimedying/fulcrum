@@ -11,27 +11,24 @@ function Field({
 }) {
   const fieldIdPath = `${containerId}-${field.id}`;
   const inputClasses =
-    "w-full px-1  rounded-md text-neutral-300 bg-neutral-700 focus:outline-none focus:ring-1 focus:ring-red-500 dark:focus:ring-passion-500 text-sm";
+    "w-full px-2 py-1 rounded bg-zinc-800/50 border border-zinc-800 text-zinc-200 placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-blue-500/30 transition-all text-[11px]";
   const errorClasses =
-    "border-red-500 dark:border-red-400 focus:ring-red-500 dark:focus:ring-red-400";
+    "border-red-500/50 focus:ring-red-500/30";
 
   return (
-    <div className="px-1 mb-1 border text-xs shadow-sm shadow-neutral-950 rounded-md border-neutral-950 bg-neutral-900 relative group/field space-y-2">
+    <div className="relative group/field space-y-1">
       {/* Field Header */}
-      <div className="flex justify-between items-start gap-2">
-        <div className="flex-grow flex items-center gap-2">
-          <label htmlFor={fieldIdPath} className="flex items-center gap-1">
+      <div className="flex justify-between items-center px-0.5">
+        <label htmlFor={fieldIdPath} className="text-[11px] text-zinc-300 font-bold tracking-tight">
           {field.label}
-          </label>
-        </div>
+        </label>
         <button
           type="button"
           onClick={() => onRemove(containerId, field.id)}
-          className="px-1 opacity-50 group-hover/field:opacity-100 transition-opacity text-red-400 hover:bg-red-100 dark:hover:bg-red-900/20 rounded-full flex-shrink-0"
+          className="p-1 opacity-0 group-hover/field:opacity-100 transition-opacity text-zinc-600 hover:text-red-400 rounded"
           aria-label={`Delete Field ${field.label}`}
-          title={`Delete ${field.label}`}
         >
-          <FiX size={14} />
+          <FiX size={12} />
         </button>
       </div>
 
@@ -43,7 +40,7 @@ function Field({
           type="text"
           value={value}
           onChange={(e) => onChange(containerId, field.name, e.target.value)}
-          placeholder={`Enter ${field.label.toLowerCase()}`}
+          placeholder={`Enter ${field.label}...`}
           className={`${inputClasses} ${error ? errorClasses : ""}`}
         />
       )}
@@ -55,7 +52,7 @@ function Field({
           type="number"
           value={value}
           onChange={(e) => onChange(containerId, field.name, e.target.value)}
-          placeholder={`Enter ${field.label.toLowerCase()}`}
+          placeholder={`0`}
           className={`${inputClasses} [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${error ? errorClasses : ""}`}
         />
       )}
@@ -66,13 +63,13 @@ function Field({
           name={field.name}
           value={value}
           onChange={(e) => onChange(containerId, field.name, e.target.value)}
-          placeholder={`Enter ${field.label.toLowerCase()}`}
-          className={`${inputClasses} min-h-[60px] ${error ? errorClasses : ""}`}
+          placeholder={`Enter ${field.label}...`}
+          className={`${inputClasses} min-h-[40px] resize-none ${error ? errorClasses : ""}`}
         />
       )}
 
       {/* Error Message */}
-      {error && <div className="text-red-500 text-xs my-1">{error}</div>}
+      {error && <div className="text-red-500 text-[10px] px-1">{error}</div>}
     </div>
   );
 }

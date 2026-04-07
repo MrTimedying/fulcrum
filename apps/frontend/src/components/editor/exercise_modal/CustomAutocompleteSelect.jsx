@@ -1,27 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { v4 as uuidv4 } from "uuid";
 import { getExerciseContainerDisplayName } from '../../../utils/exerciseUtils';
+import { FiSearch, FiTrash2 } from 'react-icons/fi';
 
-const CustomAutocompleteSelect = ({ options, onSelect, onDelete }) => {
+const CustomAutocompleteSelect = ({ options, onSelect, onDelete, compact = false }) => {
   const [inputValue, setInputValue] = useState('');
   const [filteredOptions, setFilteredOptions] = useState(options);
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
   const containerRef = useRef(null);
 
-  // Theme colors (Tailwind CSS classes will be preferred where possible)
-  const colors = {
-    primary: 'zinc-600',       // A nice primary color
-    secondary: 'zinc-800',     // A darker shade for focus/hover in dark theme
-    background: 'neutral-950',       // Dark background for the page
-    cardBackground: 'zinc-900',     // Card background
-    textPrimary: 'zinc-200',     // Primary text color
-    textSecondary: 'zinc-500',   // Secondary text color
-    border: 'zinc-800',          // Border color
-    focusRing: 'zinc-700',     // Focus ring color
-  };
-
   useEffect(() => {
-    // Filter options based on input value
     if (inputValue) {
       setFilteredOptions(
         options.filter(option =>
@@ -34,7 +22,6 @@ const CustomAutocompleteSelect = ({ options, onSelect, onDelete }) => {
   }, [inputValue, options]);
 
   useEffect(() => {
-    // Handle clicks outside to close the dropdown
     const handleClickOutside = (event) => {
       if (containerRef.current && !containerRef.current.contains(event.target)) {
         setIsDropdownVisible(false);
@@ -48,92 +35,86 @@ const CustomAutocompleteSelect = ({ options, onSelect, onDelete }) => {
 
   const handleInputChange = (event) => {
     setInputValue(event.target.value);
-    setIsDropdownVisible(true); // Show dropdown when typing
+    setIsDropdownVisible(true);
   };
 
   const handleOptionClick = (option) => {
-    
-    const optionNewId = {...option, id: uuidv4()};
-    // Use the helper function to get the clean display name before sending it
+    const optionNewId = { ...option, id: uuidv4() };
     optionNewId.name = getExerciseContainerDisplayName(option.name);
 
     if (onSelect) {
       onSelect(optionNewId);
     }
-    // Clear input and hide dropdown
     setInputValue('');
     setIsDropdownVisible(false);
-    setFilteredOptions(options); // Reset filtered options
   };
 
-  const handleInputFocus = () => {
-    setIsDropdownVisible(true);
-  };
-
-  const handleDeleteOption = (option) => {
+  const handleDeleteOption = (e, option) => {
+    e.stopPropagation();
     if (onDelete) {
       onDelete(option.name);
     }
-  }
+  };
 
-  // Basic styling using Tailwind CSS classes
   return (
-    <div className={`flex items-start w-1/3 flex-1 justify-start bg-\${colors.background}`}>
-      <div ref={containerRef} className={`relative w-full max-w-xs p-6 rounded-2xl bg-\${colors.cardBackground}`}>
-        <label htmlFor="autocomplete-input" className={`block text-sm font-medium mb-2 text-\${colors.textPrimary}`}>
-          Exercise templates
-        </label>
+    <div ref={containerRef} className="relative w-full">
+      <div className="relative">
+        <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+          <FiSearch className="h-3 w-3 text-zinc-500" />
+        </div>
         <input
-          id="autocomplete-input"
           type="text"
           value={inputValue}
           onChange={handleInputChange}
-          onFocus={handleInputFocus}
-          placeholder="Type to search..."
-          aria-autocomplete="list"
-          aria-controls="autocomplete-list"
-          className={`w-full px-4 py-1 rounded-xl text-sm focus:outline-none border border-\${colors.border} focus:ring-1 focus:ring-\${colors.focusRing} transition-all duration-200 dark:bg-neutral-700 dark:text-white dark:border-neutral-600 dark:focus:ring-zinc-700`}
+          onFocus={() => setIsDropdownVisible(true)}
+          placeholder="Search templates..."
+          className="w-full pl-8 pr-2 py-1.5 bg-zinc-800/40 border border-zinc-800 rounded text-[11px] text-white placeholder-zinc-500 focus:outline-none focus:ring-1 focus:ring-blue-500/30 focus:border-blue-500/30 transition-all"
         />
-
-        {isDropdownVisible && filteredOptions.length > 0 && (
-          <ul
-            id="autocomplete-list"
-            role="listbox"
-            className={`absolute z-10 w-full mt-2 bg-\${colors.cardBackground} border border-\${colors.border} rounded-xl shadow-lg max-h-60 overflow-y-auto dark:bg-gray-700 dark:border-gray-600`}
-          >
-            {filteredOptions.map((option, index) => (
-             <div key={option.id} className="bg-zinc-900 hover:bg-\${colors.secondary} dark:text-white dark:hover:bg-neutral-700 transition-colors duration-150 flex flex-row justify-between"> 
-             <li
-                key={index}
-                role="option"
-                aria-selected={inputValue.toLowerCase() === option.name.toLowerCase()} // Basic aria-selected
-                onClick={() => handleOptionClick(option)}
-                className={`flex flex-auto flex-col px-4 py-3 cursor-pointer text-sm text-\${colors.textPrimary}   `}
-              >
-                <p className='text-zinc-400 font-thin text-lg'>@{getExerciseContainerDisplayName(option.name)}</p>
-                <p className='text-zinc-400 text-xs'>Fields:</p>
-                <ul>
-                {option.fields.map((field) => (
-                  <li className='text-zinc-200 text-xs ml-4 border border-zinc-400 rounded-md p-1 m-1 w-fit' key={field.id}>{field.label}</li>
-                ))}
-                </ul>
-              </li>
-              <button className='flex w-8 text-xs h-4 mt-3 mr-2 px-2 items-center border-solid border border-neutral-400 rounded-md'
-              onClick={() => handleDeleteOption(option)}
-              >del</button></div>
-            ))}
-          </ul>
-        )}
-
-        {isDropdownVisible && filteredOptions.length === 0 && inputValue && (
-           <div className={`absolute z-10 w-full mt-2 px-4 py-3 text-sm text-\${colors.textSecondary} bg-\${colors.cardBackground} border border-\${colors.border} rounded-xl shadow-lg dark:bg-gray-700 dark:border-gray-600 dark:text-gray-400`}>
-              No results found for "{inputValue}"
-           </div>
-        )}
       </div>
+
+      {isDropdownVisible && (inputValue || filteredOptions.length > 0) && (
+        <div className="absolute z-50 w-full mt-2 bg-zinc-900 border border-zinc-800 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+          {filteredOptions.length > 0 ? (
+            <ul id="autocomplete-list" role="listbox">
+              {filteredOptions.map((option, index) => (
+                <div 
+                  key={option.id} 
+                  className="bg-zinc-900 hover:bg-zinc-800 transition-colors duration-150 flex flex-row justify-between border-b border-zinc-800 last:border-0"
+                > 
+                  <li
+                    role="option"
+                    aria-selected={inputValue.toLowerCase() === option.name.toLowerCase()}
+                    onClick={() => handleOptionClick(option)}
+                    className="flex flex-auto flex-col px-4 py-3 cursor-pointer text-sm text-zinc-200"
+                  >
+                    <p className='text-zinc-400 font-thin text-lg'>@{getExerciseContainerDisplayName(option.name)}</p>
+                    <p className='text-zinc-400 text-xs'>Fields:</p>
+                    <ul className="flex flex-wrap">
+                      {option.fields.map((field) => (
+                        <li className='text-zinc-200 text-xs ml-4 border border-zinc-400 rounded-md p-1 m-1 w-fit' key={field.id}>
+                          {field.label}
+                        </li>
+                      ))}
+                    </ul>
+                  </li>
+                  <button 
+                    className='flex w-8 text-[10px] h-6 mt-4 mr-2 px-1 items-center justify-center border border-zinc-500 text-zinc-400 hover:text-red-400 hover:border-red-400 rounded transition-colors'
+                    onClick={(e) => handleDeleteOption(e, option)}
+                  >
+                    del
+                  </button>
+                </div>
+              ))}
+            </ul>
+          ) : inputValue ? (
+            <div className="px-4 py-3 text-sm text-zinc-500">
+              No results found for "{inputValue}"
+            </div>
+          ) : null}
+        </div>
+      )}
     </div>
   );
 };
 
 export default CustomAutocompleteSelect;
-

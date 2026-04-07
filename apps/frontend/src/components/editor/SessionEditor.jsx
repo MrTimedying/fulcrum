@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
-import { FiCheck, FiX, FiTrash2 } from "react-icons/fi";
+import { FiCheck } from "react-icons/fi";
 import { useInterventionStore } from "../../state/core/useInterventionStore";
 import {
   createDefaultField,
@@ -8,22 +8,21 @@ import {
   generateFieldNameFromLabel,
 } from "./exercise_modal/helpers";
 import { InlineEdit } from "./exercise_modal/InlineEdit";
-import { createValidationSchema } from "./exercise_modal/validationSchema";
-import Field from "./exercise_modal/Field";
-import { FieldTypeButtons } from "./exercise_modal/FieldsButtons";
 import useUIStore from "../../state/core/useUIStore";
-import CustomAutocompleteSelect from "./exercise_modal/CustomAutocompleteSelect";
-import { MdOutlineDataSaverOn } from "react-icons/md";
 import { v4 as uuidv4 } from 'uuid';
 import { getExerciseContainerDisplayName, createMangledContainerKey, getExerciseContainerId } from "../../utils/exerciseUtils";
-import { motion, AnimatePresence } from "motion/react";
-import MultiListBox from "./exercise_modal/MultiListBox";
+import { AnimatePresence } from "motion/react";
 import { HiOutlineCalendarDays } from "react-icons/hi2";
 import DatepickerModal from "../dateModal";
 import { getOrderedSessions } from "../../utils/nodeDateCalculator";
 import { useNavigationStore } from "../../state/core/useNavigationStore";
 import InterventionWorkflowPlaceholder from "../util/InterventionWorkflowPlaceholder";
 import { debounce } from "lodash";
+import ExerciseOverviewList from "./session_editor/ExerciseOverviewList";
+import ExerciseDetailsEditor from "./session_editor/ExerciseDetailsEditor";
+import BulkAssignPanel from "./session_editor/BulkAssignPanel";
+import SplitPane, { Pane } from 'split-pane-react';
+import 'split-pane-react/esm/themes/default.css';
 
 const SessionEditor = () => {
   const [containers, setContainers] = useState([]);
@@ -32,19 +31,21 @@ const SessionEditor = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSaved, setIsSaved] = useState(true);
   const [selectedContainers, setSelectedContainers] = useState(new Set());
+  const [selectedExerciseId, setSelectedExerciseId] = useState(null);
   const [isBulkEditVisible, setIsBulkEditVisible] = useState(false);
   const [bulkEditTargetFields, setBulkEditTargetFields] = useState(null);
   const [bulkEditValue, setBulkEditValue] = useState("");
   const [bulkEditOperation, setBulkEditOperation] = useState('replace');
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+  const [sizes, setSizes] = useState(['50%', '50%']);
 
-  const { 
-    sessions, 
-    selectedSessionId, 
+  const {
+    sessions,
+    selectedSessionId,
     selectedInterventionId,
-    updateSession, 
-    exercises, 
-    saveExercise, 
+    updateSession,
+    exercises,
+    saveExercise,
     deleteExercise,
     setSelectedSessionId
   } = useInterventionStore();
@@ -72,10 +73,10 @@ const SessionEditor = () => {
   const debouncedSave = useCallback(
     debounce((sessionId, data) => {
       if (!sessionId) return;
-      
+
       const { containers: currentContainers, formValues: currentFormValues } = data;
       const outputData = {};
-      
+
       currentContainers.forEach(c => {
         // Use existing mangledKey or generate a new one
         const mkey = c.mangledKey || createMangledContainerKey(c.name, uuidv4());
@@ -106,7 +107,7 @@ const SessionEditor = () => {
         Object.keys(existingExerciseData).forEach(mangledKey => {
           const containerName = getExerciseContainerDisplayName(mangledKey);
           const savedContainerWrapper = existingExerciseData[mangledKey];
-          
+
           if (savedContainerWrapper && Array.isArray(savedContainerWrapper.fields)) {
             const newContainerId = generateId();
             const reconstructedFields = [];
@@ -153,6 +154,13 @@ const SessionEditor = () => {
 
       setContainers(structureToSet);
       setFormValues(valuesToSet);
+      
+      if (structureToSet.length > 0 && (!selectedExerciseId || !structureToSet.find(c => c.id === selectedExerciseId))) {
+        setSelectedExerciseId(structureToSet[0].id);
+      } else if (structureToSet.length === 0) {
+        setSelectedExerciseId(null);
+      }
+
       setErrors({});
       setIsSubmitting(false);
       setIsSaved(true);
@@ -167,12 +175,17 @@ const SessionEditor = () => {
     triggerSave();
   };
 
+  const handleForceSave = () => {
+    debouncedSave.flush();
+    setToaster({ show: true, message: "Manual save triggered", type: "success" });
+  };
+
   const updateContainerName = (containerId, newName) => {
     setContainers(prev => prev.map(c => {
       if (c.id !== containerId) return c;
       const existingId = c.mangledKey ? getExerciseContainerId(c.mangledKey) : uuidv4();
-      return { 
-        ...c, 
+      return {
+        ...c,
         name: newName,
         mangledKey: createMangledContainerKey(newName, existingId)
       };
@@ -188,7 +201,7 @@ const SessionEditor = () => {
         fields: container.fields.map(field => {
           if (field.id !== fieldId) return field;
           const newFieldName = generateFieldNameFromLabel(newLabel, field.id);
-          
+
           setFormValues(current => {
             const containerVals = current[containerId] || {};
             const valueToTransfer = containerVals[field.name];
@@ -207,7 +220,11 @@ const SessionEditor = () => {
     const newContainer = createDefaultContainer(undefined, containers);
     // Initialize mangledKey immediately to ensure stability
     newContainer.mangledKey = createMangledContainerKey(newContainer.name, uuidv4());
-    setContainers(prev => [...prev, newContainer]);
+    setContainers(prev => {
+      const next = [...prev, newContainer];
+      setSelectedExerciseId(newContainer.id);
+      return next;
+    });
     setFormValues(prev => ({
       ...prev,
       [newContainer.id]: newContainer.fields.reduce((acc, f) => ({ ...acc, [f.name]: "" }), {})
@@ -216,7 +233,13 @@ const SessionEditor = () => {
   };
 
   const removeContainer = (id) => {
-    setContainers(prev => prev.filter(c => c.id !== id));
+    setContainers(prev => {
+      const filtered = prev.filter(c => c.id !== id);
+      if (selectedExerciseId === id) {
+        setSelectedExerciseId(filtered.length > 0 ? filtered[0].id : null);
+      }
+      return filtered;
+    });
     setFormValues(prev => {
       const { [id]: _, ...rest } = prev;
       return rest;
@@ -226,7 +249,7 @@ const SessionEditor = () => {
 
   const addField = (containerId, type, subtype, label) => {
     const newField = createDefaultField(type, label, subtype);
-    setContainers(prev => prev.map(c => 
+    setContainers(prev => prev.map(c =>
       c.id === containerId ? { ...c, fields: [...c.fields, newField] } : c
     ));
     setFormValues((prev) => ({
@@ -266,8 +289,8 @@ const SessionEditor = () => {
   const handleSelection = (selectedOption) => {
     const newId = generateId();
     // Ensure mangledKey is present if not already in the template
-    const newContainer = { 
-      ...selectedOption, 
+    const newContainer = {
+      ...selectedOption,
       id: newId,
       mangledKey: selectedOption.mangledKey || createMangledContainerKey(selectedOption.name, uuidv4())
     };
@@ -292,7 +315,7 @@ const SessionEditor = () => {
     if (!bulkEditTargetFields) return;
     const targets = selectedContainers.size > 0 ? Array.from(selectedContainers) : containers.map(c => c.id);
     const updated = { ...formValues };
-    
+
     targets.forEach(cid => {
       const container = containers.find(c => c.id === cid);
       if (container) {
@@ -342,7 +365,7 @@ const SessionEditor = () => {
               displayClassName="text-[10px] text-zinc-400 uppercase font-bold tracking-widest hover:text-zinc-300 transition-colors"
               inputClassName="text-[10px] bg-zinc-800 text-white border border-zinc-500 rounded px-1 outline-none"
             />
-            <button 
+            <button
               onClick={() => setIsDatePickerOpen(true)}
               className="flex items-center space-x-1.5 text-zinc-500 hover:text-zinc-400 transition-colors group"
             >
@@ -353,192 +376,94 @@ const SessionEditor = () => {
             </button>
           </div>
         </div>
-        <div className="text-[9px] text-zinc-600 mr-2 font-mono">
-           ID: {selectedSession.id.slice(0, 8)}...
-        </div>
-      </div>
-
-      {/* Timeline Integration Removed */}
-
-      {/* Subheader */}
-      <div className="bg-zinc-900 flex flex-row items-center gap-4 p-2 border-b border-zinc-800 flex-shrink-0">
-        <CustomAutocompleteSelect
-          label="Select exercise"
-          options={exercises}
-          onSelect={handleSelection}
-          onDelete={deleteExercise}
-        />
-        <button
-          type="button"
-          onClick={() => setIsBulkEditVisible(!isBulkEditVisible)}
-          className="px-3 py-1 border border-dashed rounded-md border-neutral-900 text-neutral-400 bg-neutral-800 hover:bg-neutral-700 hover:text-neutral-200 text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2"
-        >
-          {isBulkEditVisible ? 'Hide Bulk Assign' : 'Bulk Assign'}
-        </button>
-      </div>
-
-      {/* Body */}
-      <div className="p-4 flex-grow overflow-y-auto space-y-4 bg-zinc-900 flex flex-col relative">
-        {/* Bulk Edit Panel */}
-        <AnimatePresence>
-          {isBulkEditVisible && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.3 }}
-              className="p-4 border border-zinc-600 rounded-lg bg-neutral-800 space-y-3 mb-4"
-            >
-              <h3 className="text-lg font-semibold text-gray-100">Bulk Assign Values</h3>
-              <p className="text-sm text-gray-400">
-                Applying to: {selectedContainers.size === 0 ? 'All Containers' : `${selectedContainers.size} Selected Container(s)`}
-              </p>
-              {bulkEditFieldOptions.length > 0 ? (
-                <div className="flex flex-col space-y-2">
-                  <label className="text-sm font-medium text-gray-300">Select Field Labels:</label>
-                  <MultiListBox
-                    options={bulkEditFieldOptions}
-                    value={bulkEditTargetFields}
-                    onChange={setBulkEditTargetFields}
-                    size={5}
-                  />
-                  <label className="text-sm font-medium text-gray-300 mt-2">Value to Assign:</label>
-                  <input
-                    type="text"
-                    className="block w-full p-2 text-sm text-gray-300 border border-zinc-600 rounded-lg bg-zinc-700 focus:outline-none"
-                    value={bulkEditValue}
-                    onChange={(e) => setBulkEditValue(e.target.value)}
-                    placeholder="Enter value"
-                  />
-                  <div className="flex gap-2 mt-2">
-                    <button
-                      type="button"
-                      onClick={() => setBulkEditOperation('replace')}
-                      className={`px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${bulkEditOperation === 'replace' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
-                    >Replace</button>
-                    <button
-                      type="button"
-                      onClick={() => setBulkEditOperation('append')}
-                      className={`px-4 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${bulkEditOperation === 'append' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
-                    >Append</button>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleBulkApply}
-                    disabled={!bulkEditTargetFields || bulkEditValue === ''}
-                    className="mt-3 px-4 py-2 bg-neutral-700 text-white rounded-md hover:bg-neutral-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 text-sm font-medium"
-                  >Apply</button>
-                </div>
-              ) : (
-                <p className="text-sm text-gray-400">No field labels available in the target containers for bulk editing.</p>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {errors.form && (
-          <div className="mb-4 p-3 bg-red-100 dark:bg-red-800/50 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-200 rounded-md text-sm">
-            {errors.form}
-          </div>
-        )}
-
-        <div className="flex-grow space-y-4">
-          {containers.map((container) => (
-            <div
-              key={container.id}
-              className="pb-2 px-2 border border-gray-600 rounded-lg bg-neutral-800 space-y-2 relative group"
-            >
-              <div className="flex justify-between items-center border-b border-gray-200 dark:border-gray-600/50">
-                <input
-                  type="checkbox"
-                  className="mr-2 leading-tight"
-                  checked={selectedContainers.has(container.id)}
-                  onChange={(e) => handleContainerSelect(container.id, e.target.checked)}
-                />
-                <div className="flex-grow mr-2">
-                  <InlineEdit
-                    value={container.name}
-                    onSave={(newName) => updateContainerName(container.id, newName)}
-                    inputClassName="text-md font-semibold w-full"
-                    displayClassName="text-md font-semibold text-gray-800 dark:text-gray-100"
-                  />
-                </div>
-                <div className="flex items-center space-x-1">
-                  <button
-                    type="button"
-                    onClick={() => handleSave(container)}
-                    className="p-1.5 opacity-60 hover:opacity-100 transition-opacity text-green-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-full flex-shrink-0"
-                    title={`Save ${container.name}`}
-                  >
-                    <MdOutlineDataSaverOn size={16} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => removeContainer(container.id)}
-                    className="p-1.5 opacity-60 hover:opacity-100 transition-opacity text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-full flex-shrink-0"
-                    title={`Delete ${container.name}`}
-                  >
-                    <FiTrash2 size={16} />
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-x-3 flex flex-row">
-                {container.fields.map((field) => (
-                  <Field
-                    key={field.id}
-                    containerId={container.id}
-                    field={field}
-                    value={formValues[container.id]?.[field.name] ?? ""}
-                    error={errors[container.id]?.[field.name]}
-                    onChange={handleInputChange}
-                    onLabelSave={updateFieldProperties}
-                    onRemove={removeField}
-                  />
-                ))}
-              </div>
-
-              <div className="pt-3 mt-3 border-t border-gray-200 dark:border-gray-600/50 flex flex-wrap items-center gap-2">
-                <span className="text-xs font-medium mr-2 text-gray-600 dark:text-gray-400">
-                  Add Field:
-                </span>
-                <FieldTypeButtons containerId={container.id} onAddField={addField} />
-              </div>
-            </div>
-          ))}
-
-          <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-            <button
-              type="button"
-              onClick={addContainer}
-              className="w-full px-4 py-2 border border-dashed rounded-md border-neutral-900 text-neutral-400 bg-neutral-800 hover:bg-neutral-700 hover:text-neutral-200 text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2"
-            >
-              <span className="text-lg">+</span> Add New Exercise
-            </button>
-          </div>
-        </div>
-
-        {/* Footer Actions */}
-        <div className="flex justify-end items-center gap-3 pt-4 border-t border-zinc-800 flex-shrink-0 mt-auto sticky bottom-0 bg-zinc-900">
-          <div className="flex items-center gap-2 px-3 py-1 text-xs text-zinc-500 font-mono">
+        
+        <div className="flex items-center gap-4 mr-2">
+          <div className="flex items-center gap-2 px-3 py-1 text-[10px] text-zinc-500 font-mono border border-zinc-800 rounded bg-zinc-900/50">
             {isSaved ? (
               <>
                 <FiCheck className="text-green-500" />
-                <span>SAVED</span>
+                <span className="text-zinc-400">SAVED</span>
               </>
             ) : (
               <>
-                <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse" />
-                <span>SAVING...</span>
+                <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full animate-pulse" />
+                <span className="text-zinc-400">SAVING...</span>
               </>
             )}
+          </div>
+          <div className="text-[9px] text-zinc-600 font-mono">
+            ID: {selectedSession.id.slice(0, 8)}...
           </div>
         </div>
       </div>
 
-      <DatepickerModal 
-        isOpen={isDatePickerOpen} 
-        onClose={() => setIsDatePickerOpen(false)} 
+      {/* Bulk Edit Panel */}
+      <AnimatePresence>
+        {isBulkEditVisible && (
+          <BulkAssignPanel
+            isVisible={isBulkEditVisible}
+            onClose={() => setIsBulkEditVisible(false)}
+            containers={containers}
+            selectedContainers={selectedContainers}
+            onApplyBulk={handleBulkApply}
+            bulkEditFieldOptions={bulkEditFieldOptions}
+            bulkEditTargetFields={bulkEditTargetFields}
+            setBulkEditTargetFields={setBulkEditTargetFields}
+            bulkEditValue={bulkEditValue}
+            setBulkEditValue={setBulkEditValue}
+            bulkEditOperation={bulkEditOperation}
+            setBulkEditOperation={setBulkEditOperation}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Main Body: Split Pane */}
+      <div className="flex-grow flex overflow-hidden bg-zinc-900">
+        <SplitPane
+          split='vertical'
+          sizes={sizes}
+          onChange={setSizes}
+        >
+          <Pane minSize='200px'>
+            <ExerciseOverviewList
+              containers={containers}
+              selectedExerciseId={selectedExerciseId}
+              onSelect={setSelectedExerciseId}
+              onAdd={addContainer}
+              onRemove={removeContainer}
+              onSaveTemplate={handleSave}
+              selectedContainers={selectedContainers}
+              onToggleSelection={handleContainerSelect}
+              onUpdateName={updateContainerName}
+              exercises={exercises}
+              onExerciseSelect={handleSelection}
+              onExerciseDelete={deleteExercise}
+              formValues={formValues}
+              isBulkEditActive={isBulkEditVisible}
+            />
+          </Pane>
+          <Pane minSize='400px'>
+            <ExerciseDetailsEditor
+              container={containers.find(c => c.id === selectedExerciseId)}
+              formValues={formValues}
+              errors={errors}
+              onInputChange={handleInputChange}
+              onUpdateName={updateContainerName}
+              onUpdateField={updateFieldProperties}
+              onAddField={addField}
+              onRemoveField={removeField}
+              onForceSave={handleForceSave}
+              onAddExercise={addContainer}
+              onToggleBulkAssign={() => setIsBulkEditVisible(!isBulkEditVisible)}
+              isBulkAssignOpen={isBulkEditVisible}
+            />
+          </Pane>
+        </SplitPane>
+      </div>
+
+      <DatepickerModal
+        isOpen={isDatePickerOpen}
+        onClose={() => setIsDatePickerOpen(false)}
       />
     </div>
   );
