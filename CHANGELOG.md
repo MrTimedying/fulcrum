@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.0] - 2026-04-20
+
+### Added
+- **Session Editor UI/UX**: Integrated `ExerciseDataDisplay` and `ExerciseOverviewList` for an improved left panel experience.
+- **Session Editor Legenda**: Added an interactive Legenda for better clarity during session editing.
+- **Data Analysis Suite**: Completed the second iteration of the data analysis suite implementation, featuring significant UI and UX improvements.
+
+### Changed
+- **Sidebar Tree Logic**: Refactored the tree logic in sidebars to utilize custom components for better maintainability and performance.
+- **Phase & Micro Panel**: Minor improvements to the phase and micro panel overviews.
+
+### Fixed
+- **Data Analysis State**: Fixed an important state bug in the Data Analysis layer and adjusted the UI manually.
+
+## [1.7.0] - 2026-04-18
+
+### Added
+- **Session Editor - Field Guide**: Introduced a dynamic, collapsible "Field Guide" container in the Session Editor. This feature provides real-time tips, syntax rules, and descriptions for input fields based on user focus and hover events.
+- **Interactive Guidance**: Updated the `Field` component to support focus/hover event bubbling, enabling a responsive and context-aware guidance system.
+- **Schema-Driven Documentation**: The guide is populated with precise data derived from project validation schemas, including:
+    - Semicolon-separated lists for repetitions.
+    - Specific `HH:MM:SS` formats for durations.
+    - Hashtag-prefixed tags for better organization.
+
 ## [1.6.2] - 2026-04-16
 
 ### Fixed

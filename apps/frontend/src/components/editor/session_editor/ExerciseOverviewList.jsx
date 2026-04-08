@@ -3,6 +3,7 @@ import { FiTrash2, FiPlus, FiSave } from 'react-icons/fi';
 import { MdOutlineDataSaverOn } from 'react-icons/md';
 import { InlineEdit } from '../exercise_modal/InlineEdit';
 import CustomAutocompleteSelect from '../exercise_modal/CustomAutocompleteSelect';
+import ExerciseDataDisplay from './ExerciseDataDisplay';
 
 const ExerciseOverviewList = ({
   containers,
@@ -99,19 +100,8 @@ const ExerciseOverviewList = ({
                 </div>
 
                 {/* Field Vectors/Data */}
-                <div className="mt-0.5 flex flex-wrap gap-x-2 gap-y-0.5">
-                  {container.fields.map(field => {
-                    const val = containerVals[field.name];
-                    if (!val) return null;
-                    return (
-                      <div key={field.id} className="flex items-center gap-1">
-                        <span className="text-[11px] text-zinc-300 font-bold">{field.label}:</span>
-                        <span className="text-[11px] font-medium text-zinc-500">
-                          {val}
-                        </span>
-                      </div>
-                    );
-                  })}
+                <div className="mt-0.5">
+                  <ExerciseDataDisplay fields={container.fields} values={containerVals} />
                 </div>
               </div>
             );

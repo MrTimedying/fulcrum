@@ -5,7 +5,8 @@ Fulcrum is a comprehensive management software for movement science experts. It 
 ## Key Features
 
 - **Intervention Creation**: Design complex interventions using an intuitive flow-based interface.
-- **Session Editor & Data Analysis (v1.6.2)**: 
+- **Session Editor & Data Analysis (v1.7.0)**: 
+    - **Field Guide**: Added a dynamic, collapsible "Field Guide" in the Session Editor that provides real-time tips, syntax, and descriptions for input fields based on focus and hover events.
     - **Unified Exercise Data Schema**: Improved backward compatibility for manually created and generated plans, ensuring seamless loading in the Session Editor and correct rendering in the Data Analysis tree.
 - **Intervention Explorer (v1.6.0)**:
     - **Tree Component Migration**: Transitioned to `react-complex-tree` for improved tree management and stability.
