@@ -8,6 +8,10 @@ function Field({
   error,
   onChange,
   onRemove,
+  onFocus,
+  onBlur,
+  onMouseEnter,
+  onMouseLeave
 }) {
   const fieldIdPath = `${containerId}-${field.id}`;
   const inputClasses =
@@ -16,7 +20,11 @@ function Field({
     "border-red-500/50 focus:ring-red-500/30";
 
   return (
-    <div className="relative group/field space-y-1">
+    <div 
+      className="relative group/field space-y-1"
+      onMouseEnter={() => onMouseEnter && onMouseEnter(field)}
+      onMouseLeave={() => onMouseLeave && onMouseLeave()}
+    >
       {/* Field Header */}
       <div className="flex justify-between items-center px-0.5">
         <label htmlFor={fieldIdPath} className="text-[11px] text-zinc-300 font-bold tracking-tight">
@@ -40,6 +48,8 @@ function Field({
           type="text"
           value={value}
           onChange={(e) => onChange(containerId, field.name, e.target.value)}
+          onFocus={() => onFocus && onFocus(field)}
+          onBlur={() => onBlur && onBlur()}
           placeholder={`Enter ${field.label}...`}
           className={`${inputClasses} ${error ? errorClasses : ""}`}
         />
@@ -52,6 +62,8 @@ function Field({
           type="number"
           value={value}
           onChange={(e) => onChange(containerId, field.name, e.target.value)}
+          onFocus={() => onFocus && onFocus(field)}
+          onBlur={() => onBlur && onBlur()}
           placeholder={`0`}
           className={`${inputClasses} [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${error ? errorClasses : ""}`}
         />
@@ -63,6 +75,8 @@ function Field({
           name={field.name}
           value={value}
           onChange={(e) => onChange(containerId, field.name, e.target.value)}
+          onFocus={() => onFocus && onFocus(field)}
+          onBlur={() => onBlur && onBlur()}
           placeholder={`Enter ${field.label}...`}
           className={`${inputClasses} min-h-[40px] resize-none ${error ? errorClasses : ""}`}
         />

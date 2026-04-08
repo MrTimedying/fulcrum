@@ -57,10 +57,17 @@ const MicroPanel = () => {
       if (session.exercises) {
         Object.keys(session.exercises).forEach(key => {
           totalExercises++;
-          const fields = session.exercises[key]?.fields || [];
+          const exercise = session.exercises[key];
+          const fields = exercise?.fields || [];
+          let tagValue = '';
           const tagField = fields.find(f => f.subtype === 'tags');
           if (tagField && tagField.value) {
-            const tags = tagField.value.split(';').map(t => t.trim().replace(/^#/, '')).filter(Boolean);
+            tagValue = tagField.value;
+          } else if (exercise.tags) {
+            tagValue = exercise.tags;
+          }
+          if (tagValue) {
+            const tags = tagValue.split(';').map(t => t.trim().replace(/^#/, '')).filter(Boolean);
             tags.forEach(t => allTags.add(t));
           }
         });
@@ -140,20 +147,31 @@ const MicroPanel = () => {
                     <ul className="list-disc pl-6 space-y-1 text-zinc-400 text-xs">
                       {exerciseKeys.map(key => {
                         const name = getExerciseContainerDisplayName(key);
-                        const fields = session.exercises[key]?.fields || [];
-                        let sets = '-', reps = '-', intensity = '-';
-                        fields.forEach(f => {
-                          if (f.subtype === 'sets') sets = f.value || '-';
-                          if (f.subtype === 'reps_constant' || f.subtype === 'reps_variant') reps = f.value || '-';
-                          if (f.subtype === 'intensity_number' || f.subtype === 'intensity_string') intensity = f.value || '-';
-                        });
+                        const exercise = session.exercises[key];
+                        let sets = exercise?.sets || '-';
+                        let reps = exercise?.reps || '-';
+                        let intensity = exercise?.intensity || '-';
+                        let duration = exercise?.duration || '-';
+                        let intensity_type = exercise?.intensity_type || '-';
+                        let reps_variant = exercise?.reps_variant || '';
+                        let duration_variant = exercise?.duration_variant || '';
+                        let intensity_string = exercise?.intensity_string || '';
+                        let tags = exercise?.tags ? exercise.tags.split(';').filter(t => t.trim()).map(t => t.trim().replace(/^#/, '')).filter(Boolean).map(t => `#${t}`).join(' ') : '';
 
                         return (
-                          <li key={key}>
-                            <span className="text-zinc-300">{name}</span>
-                            <span className="text-zinc-500 ml-2">
-                              (Sets: {sets}, Reps: {reps}, Int: {intensity})
-                            </span>
+                          <li key={key} className="space-y-1">
+                            <div>
+                              <span className="text-zinc-300">{name}</span>
+                              <span className="text-zinc-500 ml-2">
+                                (Sets: {sets}, Reps: {reps}, Int: {intensity}, Dur: {duration}, Type: {intensity_type})
+                                {tags && <span className="ml-2 text-zinc-400">{tags}</span>}
+                              </span>
+                            </div>
+                            {(reps_variant || duration_variant || intensity_string) && (
+                              <div className="text-zinc-600 text-xs ml-4">
+                                Variants - Reps: {reps_variant || '-'}, Dur: {duration_variant || '-'}, Int: {intensity_string || '-'}
+                              </div>
+                            )}
                           </li>
                         );
                       })}

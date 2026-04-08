@@ -62,7 +62,7 @@ const IconBar = ({ activeContext, onContextChange, isSidebarCollapsed, onSetting
   ];
 
   return (
-    <div className="w-14 bg-zinc-900 border-r border-zinc-800 flex flex-col items-center py-4 space-y-4 z-20 flex-shrink-0 select-none">
+    <div className="w-10 bg-zinc-900 border-r border-zinc-800 flex flex-col items-center py-4 space-y-4 z-20 flex-shrink-0 select-none">
       {/* Top Icons */}
       <div className="flex-1 flex flex-col items-center space-y-4 w-full">
         {iconGroups.map(({ id, icon: Icon, label }) => {
